@@ -222,8 +222,7 @@ export const useRealtime = () => {
           table: 'session_players',
           filter: `session_id=eq.${sessionId}`,
         },
-        (payload) => {
-          const updated = dbSessionPlayerToSessionPlayer(payload.new as DbSessionPlayer);
+        () => {
           // Reload players to get accurate list
           supabase
             .from('session_players')

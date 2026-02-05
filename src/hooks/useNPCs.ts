@@ -36,17 +36,18 @@ export const useNPCs = () => {
       name: string,
       defaultSize: TokenSize,
       tokenFile?: File,
-      notes?: string
+      notes?: string,
+      existingTokenUrl?: string // For using global asset URLs
     ): Promise<{ success: boolean; template?: NPCTemplate; error?: string }> => {
       if (!session) {
         return { success: false, error: 'Not in a session' };
       }
 
       try {
-        let tokenUrl: string | null = null;
+        let tokenUrl: string | null = existingTokenUrl || null;
 
-        // Upload token if provided
-        if (tokenFile) {
+        // Upload token if provided (only if no existing URL given)
+        if (tokenFile && !existingTokenUrl) {
           const fileId = nanoid();
           const extension = tokenFile.name.split('.').pop() || 'png';
           const storagePath = `npcs/${session.id}/${fileId}.${extension}`;

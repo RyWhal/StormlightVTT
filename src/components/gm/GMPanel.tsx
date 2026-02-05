@@ -4,13 +4,7 @@ import {
   Map as MapIcon,
   Users,
   Skull,
-  Upload,
-  Grid,
   Eye,
-  EyeOff,
-  Settings,
-  Trash2,
-  Plus,
   Download,
 } from 'lucide-react';
 import { MapManager } from './MapManager';
@@ -18,7 +12,6 @@ import { CharacterManager } from './CharacterManager';
 import { NPCManager } from './NPCManager';
 import { FogTools } from './FogTools';
 import { SessionExport } from './SessionExport';
-import { Button } from '../shared/Button';
 
 type GMTab = 'maps' | 'characters' | 'npcs' | 'fog' | 'export';
 

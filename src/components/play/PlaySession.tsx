@@ -39,7 +39,6 @@ export const PlaySession: React.FC = () => {
 
   const [sideTab, setSideTab] = useState<SideTab>('chat');
   const [showGMPanel, setShowGMPanel] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     // Open GM panel by default for GM

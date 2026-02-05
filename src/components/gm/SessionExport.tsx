@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Download, Upload, FileJson, AlertTriangle } from 'lucide-react';
+import { Download, Upload, AlertTriangle } from 'lucide-react';
 import { useSessionStore } from '../../stores/sessionStore';
 import { useMapStore } from '../../stores/mapStore';
-import { useSession } from '../../hooks/useSession';
 import { Button } from '../shared/Button';
 import { useToast } from '../shared/Toast';
 import type { SessionExport as SessionExportType, TokenSize } from '../../types';

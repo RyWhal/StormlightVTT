@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Group, Circle, Text, Image as KonvaImage, Ring } from 'react-konva';
 import useImage from 'use-image';
 import { TOKEN_SIZE_MULTIPLIERS, type TokenSize } from '../../types';
@@ -41,8 +41,6 @@ const getColorForName = (name: string): string => {
 };
 
 export const Token: React.FC<TokenProps> = ({
-  id,
-  type,
   name,
   imageUrl,
   x,

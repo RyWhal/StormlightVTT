@@ -1,27 +1,29 @@
 import React, { useState, useRef } from 'react';
 import {
   Upload,
-  Map as MapIcon,
   Trash2,
   Settings,
   Check,
   Image,
+  Library,
 } from 'lucide-react';
 import { useMap } from '../../hooks/useMap';
-import { useMapStore } from '../../stores/mapStore';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { useToast } from '../shared/Toast';
 import { validateMapUpload, getImageDimensions } from '../../lib/validation';
+import { GlobalAssetBrowser } from './GlobalAssetBrowser';
+import type { GlobalAsset } from '../../hooks/useGlobalAssets';
 
 export const MapManager: React.FC = () => {
   const { showToast } = useToast();
-  const { maps, activeMap, uploadMap, setMapActive, updateMapSettings, deleteMap } =
+  const { maps, activeMap, uploadMap, addMapFromGlobalAsset, setMapActive, updateMapSettings, deleteMap } =
     useMap();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [editingMapId, setEditingMapId] = useState<string | null>(null);
+  const [showAssetBrowser, setShowAssetBrowser] = useState(false);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,6 +59,30 @@ export const MapManager: React.FC = () => {
     }
   };
 
+  const handleSelectGlobalAsset = async (asset: GlobalAsset) => {
+    setShowAssetBrowser(false);
+
+    if (!asset.width || !asset.height) {
+      showToast('Global map asset missing dimensions', 'error');
+      return;
+    }
+
+    setIsUploading(true);
+    const result = await addMapFromGlobalAsset(
+      asset.name,
+      asset.imageUrl,
+      asset.width,
+      asset.height
+    );
+    setIsUploading(false);
+
+    if (result.success) {
+      showToast('Map added from library', 'success');
+    } else {
+      showToast(result.error || 'Failed to add map', 'error');
+    }
+  };
+
   const handleSetActive = async (mapId: string) => {
     const result = await setMapActive(mapId);
     if (!result.success) {
@@ -77,8 +103,8 @@ export const MapManager: React.FC = () => {
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      {/* Upload button */}
-      <div className="mb-4">
+      {/* Upload and library buttons */}
+      <div className="mb-4 space-y-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -86,17 +112,26 @@ export const MapManager: React.FC = () => {
           onChange={handleFileSelect}
           className="hidden"
         />
-        <Button
-          variant="primary"
-          className="w-full"
-          onClick={() => fileInputRef.current?.click()}
-          isLoading={isUploading}
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Upload Map
-        </Button>
-        <p className="text-xs text-storm-500 mt-1 text-center">
-          PNG, JPG, WEBP - Max 25MB, 5000x5000px
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => setShowAssetBrowser(true)}
+            isLoading={isUploading}
+          >
+            <Library className="w-4 h-4 mr-2" />
+            Library
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => fileInputRef.current?.click()}
+            isLoading={isUploading}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Upload
+          </Button>
+        </div>
+        <p className="text-xs text-storm-500 text-center">
+          Browse global library or upload custom (PNG, JPG, WEBP)
         </p>
       </div>
 
@@ -188,26 +223,37 @@ export const MapManager: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Global Asset Browser Modal */}
+      {showAssetBrowser && (
+        <GlobalAssetBrowser
+          assetType="map"
+          onSelect={handleSelectGlobalAsset}
+          onClose={() => setShowAssetBrowser(false)}
+        />
+      )}
     </div>
   );
 };
 
+interface MapSettingsData {
+  id: string;
+  name: string;
+  gridEnabled: boolean;
+  gridOffsetX: number;
+  gridOffsetY: number;
+  gridCellSize: number;
+  gridColor: string;
+  fogEnabled: boolean;
+  fogDefaultState: 'fogged' | 'revealed';
+  showPlayerTokens: boolean;
+}
+
 interface MapSettingsProps {
-  map: {
-    id: string;
-    name: string;
-    gridEnabled: boolean;
-    gridOffsetX: number;
-    gridOffsetY: number;
-    gridCellSize: number;
-    gridColor: string;
-    fogEnabled: boolean;
-    fogDefaultState: 'fogged' | 'revealed';
-    showPlayerTokens: boolean;
-  };
+  map: MapSettingsData;
   onUpdate: (
     mapId: string,
-    settings: Partial<typeof map>
+    settings: Partial<MapSettingsData>
   ) => Promise<{ success: boolean; error?: string }>;
   onClose: () => void;
 }
