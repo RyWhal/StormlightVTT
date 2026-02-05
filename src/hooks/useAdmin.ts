@@ -57,9 +57,15 @@ export const useAdmin = () => {
           .eq('key', 'admin_password')
           .single();
 
-        if (error || !data) {
+        if (error) {
+          console.error('Admin login query error:', error);
           setIsLoading(false);
-          return { success: false, error: 'Failed to verify password' };
+          return { success: false, error: `Database error: ${error.message}` };
+        }
+
+        if (!data) {
+          setIsLoading(false);
+          return { success: false, error: 'Admin password not configured in database' };
         }
 
         if (data.value === password) {
@@ -75,6 +81,7 @@ export const useAdmin = () => {
         setIsLoading(false);
         return { success: false, error: 'Invalid password' };
       } catch (error) {
+        console.error('Admin login error:', error);
         setIsLoading(false);
         return {
           success: false,
