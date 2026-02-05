@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, EyeOff, Eraser, RotateCcw, Paintbrush } from 'lucide-react';
+import { Eye, EyeOff, Eraser, RotateCcw, Paintbrush, Square } from 'lucide-react';
 import { useMapStore, getFogBrushPixelSize } from '../../stores/mapStore';
 import { useMap } from '../../hooks/useMap';
 import { Button } from '../shared/Button';
@@ -10,8 +10,10 @@ export const FogTools: React.FC = () => {
   const activeMap = useMapStore((state) => state.activeMap);
   const fogToolMode = useMapStore((state) => state.fogToolMode);
   const fogBrushSize = useMapStore((state) => state.fogBrushSize);
+  const fogToolShape = useMapStore((state) => state.fogToolShape);
   const setFogToolMode = useMapStore((state) => state.setFogToolMode);
   const setFogBrushSize = useMapStore((state) => state.setFogBrushSize);
+  const setFogToolShape = useMapStore((state) => state.setFogToolShape);
   const { updateFogData } = useMap();
 
   if (!activeMap) {
@@ -105,40 +107,79 @@ export const FogTools: React.FC = () => {
           )}
         </div>
 
-        {/* Brush size */}
+        {/* Tool shape */}
         <div>
           <label className="text-sm text-storm-400 mb-2 block">
-            Brush Size
+            Tool Shape
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['small', 'medium', 'large'] as const).map((size) => (
-              <button
-                key={size}
-                onClick={() => setFogBrushSize(size)}
-                className={`
-                  flex flex-col items-center justify-center p-2 rounded-lg border transition-colors
-                  ${
-                    fogBrushSize === size
-                      ? 'bg-storm-700 border-storm-500 text-storm-100'
-                      : 'bg-storm-800/50 border-storm-700 text-storm-400 hover:bg-storm-700/50'
-                  }
-                `}
-              >
-                <div
-                  className="rounded-full bg-storm-400 mb-1"
-                  style={{
-                    width: size === 'small' ? 8 : size === 'medium' ? 16 : 24,
-                    height: size === 'small' ? 8 : size === 'medium' ? 16 : 24,
-                  }}
-                />
-                <span className="text-xs capitalize">{size}</span>
-                <span className="text-xs text-storm-500">
-                  {getFogBrushPixelSize(size)}px
-                </span>
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setFogToolShape('brush')}
+              className={`
+                flex items-center justify-center gap-2 p-2 rounded-lg border transition-colors
+                ${
+                  fogToolShape === 'brush'
+                    ? 'bg-storm-700 border-storm-500 text-storm-100'
+                    : 'bg-storm-800/50 border-storm-700 text-storm-400 hover:bg-storm-700/50'
+                }
+              `}
+            >
+              <Paintbrush className="w-4 h-4" />
+              <span className="text-sm">Brush</span>
+            </button>
+            <button
+              onClick={() => setFogToolShape('rectangle')}
+              className={`
+                flex items-center justify-center gap-2 p-2 rounded-lg border transition-colors
+                ${
+                  fogToolShape === 'rectangle'
+                    ? 'bg-storm-700 border-storm-500 text-storm-100'
+                    : 'bg-storm-800/50 border-storm-700 text-storm-400 hover:bg-storm-700/50'
+                }
+              `}
+            >
+              <Square className="w-4 h-4" />
+              <span className="text-sm">Rectangle</span>
+            </button>
           </div>
         </div>
+
+        {/* Brush size (only for brush tool) */}
+        {fogToolShape === 'brush' && (
+          <div>
+            <label className="text-sm text-storm-400 mb-2 block">
+              Brush Size
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['small', 'medium', 'large'] as const).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setFogBrushSize(size)}
+                  className={`
+                    flex flex-col items-center justify-center p-2 rounded-lg border transition-colors
+                    ${
+                      fogBrushSize === size
+                        ? 'bg-storm-700 border-storm-500 text-storm-100'
+                        : 'bg-storm-800/50 border-storm-700 text-storm-400 hover:bg-storm-700/50'
+                    }
+                  `}
+                >
+                  <div
+                    className="rounded-full bg-storm-400 mb-1"
+                    style={{
+                      width: size === 'small' ? 8 : size === 'medium' ? 16 : 24,
+                      height: size === 'small' ? 8 : size === 'medium' ? 16 : 24,
+                    }}
+                  />
+                  <span className="text-xs capitalize">{size}</span>
+                  <span className="text-xs text-storm-500">
+                    {getFogBrushPixelSize(size)}px
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick actions */}
         <div>
@@ -174,7 +215,10 @@ export const FogTools: React.FC = () => {
             <li>
               - Select <strong>Reveal</strong> or <strong>Hide</strong> tool
             </li>
-            <li>- Click and drag on the map to paint</li>
+            <li>
+              - Choose <strong>Brush</strong> for freehand or <strong>Rectangle</strong> for areas
+            </li>
+            <li>- Click and drag on the map to paint/select</li>
             <li>- Players see solid black fog</li>
             <li>- You see semi-transparent fog</li>
             <li>

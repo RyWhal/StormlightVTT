@@ -17,6 +17,8 @@ interface MapState {
   viewportScale: number;
   viewportX: number;
   viewportY: number;
+  stageWidth: number;
+  stageHeight: number;
 
   // Selected token
   selectedTokenId: string | null;
@@ -25,6 +27,7 @@ interface MapState {
   // Fog tool state (GM only)
   fogToolMode: 'reveal' | 'hide' | null;
   fogBrushSize: 'small' | 'medium' | 'large';
+  fogToolShape: 'brush' | 'rectangle';
 
   // Actions - Maps
   setMaps: (maps: Map[]) => void;
@@ -56,7 +59,11 @@ interface MapState {
   // Actions - Viewport
   setViewportScale: (scale: number) => void;
   setViewportPosition: (x: number, y: number) => void;
+  setStageSize: (width: number, height: number) => void;
   resetViewport: () => void;
+  fitMapToView: () => void;
+  panBy: (dx: number, dy: number) => void;
+  zoomTo: (scale: number, centerOnScreen?: boolean) => void;
 
   // Actions - Selection
   selectToken: (id: string | null, type: 'character' | 'npc' | null) => void;
@@ -65,6 +72,7 @@ interface MapState {
   // Actions - Fog tools
   setFogToolMode: (mode: 'reveal' | 'hide' | null) => void;
   setFogBrushSize: (size: 'small' | 'medium' | 'large') => void;
+  setFogToolShape: (shape: 'brush' | 'rectangle') => void;
   addFogRegion: (mapId: string, region: FogRegion) => void;
   clearFog: (mapId: string) => void;
   resetFog: (mapId: string) => void;
@@ -89,10 +97,13 @@ export const useMapStore = create<MapState>()((set, get) => ({
   viewportScale: 1,
   viewportX: 0,
   viewportY: 0,
+  stageWidth: 800,
+  stageHeight: 600,
   selectedTokenId: null,
   selectedTokenType: null,
   fogToolMode: null,
   fogBrushSize: 'medium',
+  fogToolShape: 'brush',
 
   // Map actions
   setMaps: (maps) => set({ maps }),
@@ -117,7 +128,13 @@ export const useMapStore = create<MapState>()((set, get) => ({
       activeMap: state.activeMap?.id === mapId ? null : state.activeMap,
     })),
 
-  setActiveMap: (map) => set({ activeMap: map }),
+  setActiveMap: (map) => {
+    set({ activeMap: map });
+    // Auto-fit map to view when a new map is activated
+    if (map) {
+      setTimeout(() => get().fitMapToView(), 50);
+    }
+  },
 
   // Character actions
   setCharacters: (characters) => set({ characters }),
@@ -216,7 +233,72 @@ export const useMapStore = create<MapState>()((set, get) => ({
 
   setViewportPosition: (x, y) => set({ viewportX: x, viewportY: y }),
 
+  setStageSize: (width, height) => set({ stageWidth: width, stageHeight: height }),
+
   resetViewport: () => set({ viewportScale: 1, viewportX: 0, viewportY: 0 }),
+
+  fitMapToView: () => {
+    const state = get();
+    const { activeMap, stageWidth, stageHeight } = state;
+    if (!activeMap || stageWidth === 0 || stageHeight === 0) return;
+
+    const padding = 40; // Padding around the map
+    const availableWidth = stageWidth - padding * 2;
+    const availableHeight = stageHeight - padding * 2;
+
+    // Calculate scale to fit map in view
+    const scaleX = availableWidth / activeMap.width;
+    const scaleY = availableHeight / activeMap.height;
+    const scale = Math.min(scaleX, scaleY, 2); // Cap at 2x zoom
+
+    // Center the map
+    const scaledWidth = activeMap.width * scale;
+    const scaledHeight = activeMap.height * scale;
+    const x = (stageWidth - scaledWidth) / 2;
+    const y = (stageHeight - scaledHeight) / 2;
+
+    set({
+      viewportScale: scale,
+      viewportX: x,
+      viewportY: y,
+    });
+  },
+
+  panBy: (dx, dy) =>
+    set((state) => ({
+      viewportX: state.viewportX + dx,
+      viewportY: state.viewportY + dy,
+    })),
+
+  zoomTo: (scale, centerOnScreen = true) => {
+    const state = get();
+    const clampedScale = Math.max(0.1, Math.min(5, scale));
+
+    if (centerOnScreen) {
+      // Zoom towards center of screen
+      const centerX = state.stageWidth / 2;
+      const centerY = state.stageHeight / 2;
+
+      const oldScale = state.viewportScale;
+      const mousePointTo = {
+        x: (centerX - state.viewportX) / oldScale,
+        y: (centerY - state.viewportY) / oldScale,
+      };
+
+      const newPos = {
+        x: centerX - mousePointTo.x * clampedScale,
+        y: centerY - mousePointTo.y * clampedScale,
+      };
+
+      set({
+        viewportScale: clampedScale,
+        viewportX: newPos.x,
+        viewportY: newPos.y,
+      });
+    } else {
+      set({ viewportScale: clampedScale });
+    }
+  },
 
   // Selection actions
   selectToken: (id, type) =>
@@ -228,6 +310,8 @@ export const useMapStore = create<MapState>()((set, get) => ({
   setFogToolMode: (mode) => set({ fogToolMode: mode }),
 
   setFogBrushSize: (size) => set({ fogBrushSize: size }),
+
+  setFogToolShape: (shape) => set({ fogToolShape: shape }),
 
   addFogRegion: (mapId, region) => {
     const state = get();
@@ -285,6 +369,7 @@ export const useMapStore = create<MapState>()((set, get) => ({
       selectedTokenId: null,
       selectedTokenType: null,
       fogToolMode: null,
+      fogToolShape: 'brush',
     }),
 }));
 

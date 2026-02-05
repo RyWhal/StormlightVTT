@@ -1,6 +1,16 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Stage, Layer, Image as KonvaImage, Line, Rect, Circle, Text, Group } from 'react-konva';
+import { Stage, Layer, Image as KonvaImage, Rect } from 'react-konva';
 import useImage from 'use-image';
+import {
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Move,
+} from 'lucide-react';
 import { useMapStore, getFogBrushPixelSize } from '../../stores/mapStore';
 import { useSessionStore, useIsGM } from '../../stores/sessionStore';
 import { useCharacters } from '../../hooks/useCharacters';
@@ -20,43 +30,69 @@ export const MapCanvas: React.FC = () => {
     viewportScale,
     viewportX,
     viewportY,
+    stageWidth,
+    stageHeight,
     selectedTokenId,
     selectedTokenType,
     fogToolMode,
     fogBrushSize,
+    fogToolShape,
     setViewportScale,
     setViewportPosition,
+    setStageSize,
     selectToken,
     clearSelection,
     addFogRegion,
+    fitMapToView,
+    panBy,
+    zoomTo,
   } = useMapStore();
 
   const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
-  const { characters, moveCharacterPosition, myCharacter } = useCharacters();
+  const { characters, moveCharacterPosition } = useCharacters();
   const { currentMapNPCs, moveNPCPosition } = useNPCs();
   const { updateFogData } = useMap();
 
-  const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
   const [mapImage] = useImage(activeMap?.imageUrl || '');
   const [currentFogStroke, setCurrentFogStroke] = useState<{ x: number; y: number }[]>([]);
   const [isPainting, setIsPainting] = useState(false);
+  const [rectStart, setRectStart] = useState<{ x: number; y: number } | null>(null);
+  const [rectEnd, setRectEnd] = useState<{ x: number; y: number } | null>(null);
 
   // Handle container resize
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
-        setStageSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-        });
+        const width = containerRef.current.offsetWidth;
+        const height = containerRef.current.offsetHeight;
+        setStageSize(width, height);
       }
     };
 
     updateSize();
     window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
+
+    // Use ResizeObserver for more accurate resize detection
+    const resizeObserver = new ResizeObserver(updateSize);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateSize);
+      resizeObserver.disconnect();
+    };
+  }, [setStageSize]);
+
+  // Fit map to view when map changes or image loads
+  useEffect(() => {
+    if (activeMap && stageWidth > 0 && stageHeight > 0 && mapImage) {
+      // Small delay to ensure stage size is properly set
+      const timer = setTimeout(() => fitMapToView(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeMap?.id, mapImage, stageWidth, stageHeight, fitMapToView]);
 
   // Handle wheel zoom
   const handleWheel = useCallback(
@@ -134,6 +170,17 @@ export const MapCanvas: React.FC = () => {
     [isGM, currentUser]
   );
 
+  // Convert screen coordinates to map coordinates
+  const screenToMap = useCallback(
+    (screenX: number, screenY: number) => {
+      return {
+        x: (screenX - viewportX) / viewportScale,
+        y: (screenY - viewportY) / viewportScale,
+      };
+    },
+    [viewportX, viewportY, viewportScale]
+  );
+
   // Fog painting handlers
   const handleFogMouseDown = useCallback(
     (e: any) => {
@@ -143,53 +190,111 @@ export const MapCanvas: React.FC = () => {
       if (!stage) return;
 
       const pointer = stage.getPointerPosition();
-      const x = (pointer.x - viewportX) / viewportScale;
-      const y = (pointer.y - viewportY) / viewportScale;
+      const mapPos = screenToMap(pointer.x, pointer.y);
 
-      setIsPainting(true);
-      setCurrentFogStroke([{ x, y }]);
+      if (fogToolShape === 'rectangle') {
+        setRectStart(mapPos);
+        setRectEnd(mapPos);
+      } else {
+        setIsPainting(true);
+        setCurrentFogStroke([mapPos]);
+      }
     },
-    [fogToolMode, isGM, activeMap, viewportX, viewportY, viewportScale]
+    [fogToolMode, fogToolShape, isGM, activeMap, screenToMap]
   );
 
   const handleFogMouseMove = useCallback(
     (e: any) => {
-      if (!isPainting || !fogToolMode || !isGM) return;
+      if (!fogToolMode || !isGM) return;
 
       const stage = stageRef.current;
       if (!stage) return;
 
       const pointer = stage.getPointerPosition();
-      const x = (pointer.x - viewportX) / viewportScale;
-      const y = (pointer.y - viewportY) / viewportScale;
+      const mapPos = screenToMap(pointer.x, pointer.y);
 
-      setCurrentFogStroke((prev) => [...prev, { x, y }]);
+      if (fogToolShape === 'rectangle' && rectStart) {
+        setRectEnd(mapPos);
+      } else if (isPainting) {
+        setCurrentFogStroke((prev) => [...prev, mapPos]);
+      }
     },
-    [isPainting, fogToolMode, isGM, viewportX, viewportY, viewportScale]
+    [fogToolMode, fogToolShape, isGM, isPainting, rectStart, screenToMap]
   );
 
   const handleFogMouseUp = useCallback(async () => {
-    if (!isPainting || !fogToolMode || !isGM || !activeMap) return;
+    if (!fogToolMode || !isGM || !activeMap) return;
 
-    setIsPainting(false);
+    if (fogToolShape === 'rectangle' && rectStart && rectEnd) {
+      // Create rectangle fog region
+      const minX = Math.min(rectStart.x, rectEnd.x);
+      const minY = Math.min(rectStart.y, rectEnd.y);
+      const maxX = Math.max(rectStart.x, rectEnd.x);
+      const maxY = Math.max(rectStart.y, rectEnd.y);
 
-    if (currentFogStroke.length > 0) {
+      // Only create if rectangle has some size
+      if (maxX - minX > 5 && maxY - minY > 5) {
+        // Convert rectangle to points (4 corners forming a closed path)
+        const points = [
+          { x: minX, y: minY },
+          { x: maxX, y: minY },
+          { x: maxX, y: maxY },
+          { x: minX, y: maxY },
+          { x: minX, y: minY },
+        ];
+
+        const newRegion: FogRegion = {
+          type: fogToolMode,
+          points,
+          brushSize: Math.max(maxX - minX, maxY - minY),
+        };
+
+        addFogRegion(activeMap.id, newRegion);
+        const newFogData = [...activeMap.fogData, newRegion];
+        await updateFogData(activeMap.id, newFogData);
+      }
+
+      setRectStart(null);
+      setRectEnd(null);
+    } else if (isPainting && currentFogStroke.length > 0) {
       const newRegion: FogRegion = {
         type: fogToolMode,
         points: currentFogStroke,
         brushSize: getFogBrushPixelSize(fogBrushSize),
       };
 
-      // Add to local state
       addFogRegion(activeMap.id, newRegion);
-
-      // Save to database
       const newFogData = [...activeMap.fogData, newRegion];
       await updateFogData(activeMap.id, newFogData);
-    }
 
-    setCurrentFogStroke([]);
-  }, [isPainting, fogToolMode, isGM, activeMap, currentFogStroke, fogBrushSize, addFogRegion, updateFogData]);
+      setIsPainting(false);
+      setCurrentFogStroke([]);
+    }
+  }, [
+    fogToolMode,
+    fogToolShape,
+    isGM,
+    activeMap,
+    rectStart,
+    rectEnd,
+    isPainting,
+    currentFogStroke,
+    fogBrushSize,
+    addFogRegion,
+    updateFogData,
+  ]);
+
+  // Zoom controls
+  const handleZoomIn = () => zoomTo(viewportScale * 1.25);
+  const handleZoomOut = () => zoomTo(viewportScale / 1.25);
+  const handleFitToView = () => fitMapToView();
+
+  // Pan controls
+  const panStep = 100;
+  const handlePanUp = () => panBy(0, panStep);
+  const handlePanDown = () => panBy(0, -panStep);
+  const handlePanLeft = () => panBy(panStep, 0);
+  const handlePanRight = () => panBy(-panStep, 0);
 
   if (!activeMap) {
     return (
@@ -211,17 +316,18 @@ export const MapCanvas: React.FC = () => {
   }
 
   const gridCellSize = activeMap.gridCellSize;
+  const zoomPercent = Math.round(viewportScale * 100);
 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full bg-storm-950 overflow-hidden"
+      className="w-full h-full bg-storm-950 overflow-hidden relative"
       style={{ cursor: fogToolMode ? 'crosshair' : 'default' }}
     >
       <Stage
         ref={stageRef}
-        width={stageSize.width}
-        height={stageSize.height}
+        width={stageWidth}
+        height={stageHeight}
         scaleX={viewportScale}
         scaleY={viewportScale}
         x={viewportX}
@@ -324,6 +430,22 @@ export const MapCanvas: React.FC = () => {
             />
           </Layer>
         )}
+
+        {/* Rectangle selection preview for fog */}
+        {fogToolMode && fogToolShape === 'rectangle' && rectStart && rectEnd && (
+          <Layer>
+            <Rect
+              x={Math.min(rectStart.x, rectEnd.x)}
+              y={Math.min(rectStart.y, rectEnd.y)}
+              width={Math.abs(rectEnd.x - rectStart.x)}
+              height={Math.abs(rectEnd.y - rectStart.y)}
+              stroke={fogToolMode === 'reveal' ? '#00ff00' : '#ff0000'}
+              strokeWidth={2 / viewportScale}
+              dash={[10 / viewportScale, 5 / viewportScale]}
+              fill={fogToolMode === 'reveal' ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)'}
+            />
+          </Layer>
+        )}
       </Stage>
 
       {/* Fog tool indicator */}
@@ -331,9 +453,104 @@ export const MapCanvas: React.FC = () => {
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-storm-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-storm-600">
           <span className="text-storm-100">
             Fog Tool: <span className="font-semibold capitalize">{fogToolMode}</span>
+            {' - '}
+            <span className="capitalize">{fogToolShape}</span>
           </span>
         </div>
       )}
+
+      {/* Map controls overlay - Bottom left */}
+      <div className="absolute bottom-4 left-4 flex flex-col gap-2">
+        {/* Zoom controls */}
+        <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              onClick={handleZoomOut}
+              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+
+            {/* Zoom slider */}
+            <input
+              type="range"
+              min="10"
+              max="500"
+              value={zoomPercent}
+              onChange={(e) => zoomTo(parseInt(e.target.value) / 100)}
+              className="w-24 h-1.5 bg-storm-700 rounded-lg appearance-none cursor-pointer accent-storm-400"
+            />
+
+            <button
+              onClick={handleZoomIn}
+              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+              title="Zoom In"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-storm-400 font-mono">{zoomPercent}%</span>
+            <button
+              onClick={handleFitToView}
+              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+              title="Fit to View"
+            >
+              <Maximize className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Pan controls */}
+        <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
+          <div className="grid grid-cols-3 gap-0.5 w-fit">
+            <div />
+            <button
+              onClick={handlePanUp}
+              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+              title="Pan Up"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+            <div />
+            <button
+              onClick={handlePanLeft}
+              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+              title="Pan Left"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="p-1.5 flex items-center justify-center text-storm-500">
+              <Move className="w-3 h-3" />
+            </div>
+            <button
+              onClick={handlePanRight}
+              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+              title="Pan Right"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div />
+            <button
+              onClick={handlePanDown}
+              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+              title="Pan Down"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            <div />
+          </div>
+        </div>
+      </div>
+
+      {/* Map info overlay - Bottom right */}
+      <div className="absolute bottom-4 right-4 bg-storm-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-storm-700">
+        <span className="text-sm text-storm-300">
+          {activeMap.name} ({activeMap.width}x{activeMap.height})
+        </span>
+      </div>
     </div>
   );
 };

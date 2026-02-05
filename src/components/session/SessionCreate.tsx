@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { Button } from '../shared/Button';
@@ -6,12 +6,25 @@ import { Input } from '../shared/Input';
 import { Card, CardHeader, CardTitle } from '../shared/Card';
 import { useToast } from '../shared/Toast';
 import { useSession } from '../../hooks/useSession';
+import { useSessionStore } from '../../stores/sessionStore';
+import { useMapStore } from '../../stores/mapStore';
+import { useChatStore } from '../../stores/chatStore';
 import { validateSessionName, validateUsername } from '../../lib/validation';
 
 export const SessionCreate: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { createSession } = useSession();
+  const clearSession = useSessionStore((state) => state.clearSession);
+  const clearMapState = useMapStore((state) => state.clearMapState);
+  const clearChatState = useChatStore((state) => state.clearChatState);
+
+  // Clear any existing session state when entering create page
+  useEffect(() => {
+    clearSession();
+    clearMapState();
+    clearChatState();
+  }, [clearSession, clearMapState, clearChatState]);
 
   const [sessionName, setSessionName] = useState('');
   const [username, setUsername] = useState('');
