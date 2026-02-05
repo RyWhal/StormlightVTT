@@ -5,7 +5,6 @@ import { Button } from '../shared/Button';
 import { Card, CardHeader, CardTitle } from '../shared/Card';
 import { useToast } from '../shared/Toast';
 import { useSessionStore } from '../../stores/sessionStore';
-import { useMapStore } from '../../stores/mapStore';
 import { useCharacters } from '../../hooks/useCharacters';
 import { useSession } from '../../hooks/useSession';
 import type { Character } from '../../types';

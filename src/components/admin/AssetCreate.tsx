@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { Card, CardHeader, CardTitle } from '../shared/Card';
 import { useToast } from '../shared/Toast';
 import { useAdmin } from '../../hooks/useAdmin';
-import { supabase, uploadFile, STORAGE_BUCKETS } from '../../lib/supabase';
+import { uploadFile, STORAGE_BUCKETS } from '../../lib/supabase';
 import { validateMapUpload, validateTokenUpload, getImageDimensions } from '../../lib/validation';
 import { nanoid } from 'nanoid';
 

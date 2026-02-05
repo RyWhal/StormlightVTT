@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Plus, User, Trash2, Upload, Edit2, X } from 'lucide-react';
+import { Plus, User, Trash2, Upload, X } from 'lucide-react';
 import { useCharacters } from '../../hooks/useCharacters';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
@@ -11,7 +11,6 @@ export const CharacterManager: React.FC = () => {
   const {
     characters,
     createCharacter,
-    updateCharacterDetails,
     updateCharacterToken,
     deleteCharacter,
     releaseCharacter,
@@ -21,9 +20,7 @@ export const CharacterManager: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newTokenFile, setNewTokenFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const tokenInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

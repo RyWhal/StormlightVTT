@@ -3,7 +3,7 @@ import { Dices, Eye, EyeOff, Lock, Star, AlertTriangle, Circle } from 'lucide-re
 import { useChat } from '../../hooks/useChat';
 import { useCharacters } from '../../hooks/useCharacters';
 import { Button } from '../shared/Button';
-import { buildDiceExpression, formatRollResults, getPlotDieFaceName } from '../../lib/dice';
+import { buildDiceExpression, getPlotDieFaceName } from '../../lib/dice';
 import type { RollVisibility, PlotDieFace } from '../../types';
 
 const DICE_TYPES = [4, 6, 8, 10, 12, 20] as const;
@@ -53,7 +53,6 @@ export const DicePanel: React.FC = () => {
   };
 
   const totalDice = Object.values(dice).reduce((a, b) => a + b, 0);
-  const expression = buildDiceExpression(dice, modifier);
 
   return (
     <div className="h-full flex flex-col">

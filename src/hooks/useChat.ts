@@ -8,7 +8,7 @@ import type { RollVisibility, PlotDieResult, RollResults } from '../types';
 export const useChat = () => {
   const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
-  const { messages, diceRolls, addMessage, addDiceRoll, resetUnread } = useChatStore();
+  const { messages, diceRolls, addDiceRoll, resetUnread } = useChatStore();
 
   /**
    * Send a chat message

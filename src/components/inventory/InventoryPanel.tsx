@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Package, Save, X } from 'lucide-react';
 import { useCharacters } from '../../hooks/useCharacters';
-import { useSessionStore, useIsGM } from '../../stores/sessionStore';
+import { useIsGM } from '../../stores/sessionStore';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { useToast } from '../shared/Toast';
@@ -9,7 +9,6 @@ import type { InventoryItem } from '../../types';
 
 export const InventoryPanel: React.FC = () => {
   const { showToast } = useToast();
-  const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
   const { characters, myCharacter, updateInventory } = useCharacters();
 

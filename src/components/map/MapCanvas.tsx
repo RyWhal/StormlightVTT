@@ -183,7 +183,7 @@ export const MapCanvas: React.FC = () => {
 
   // Fog painting handlers
   const handleFogMouseDown = useCallback(
-    (e: any) => {
+    (_e: unknown) => {
       if (!fogToolMode || !isGM || !activeMap) return;
 
       const stage = stageRef.current;
@@ -204,7 +204,7 @@ export const MapCanvas: React.FC = () => {
   );
 
   const handleFogMouseMove = useCallback(
-    (e: any) => {
+    (_e: unknown) => {
       if (!fogToolMode || !isGM) return;
 
       const stage = stageRef.current;

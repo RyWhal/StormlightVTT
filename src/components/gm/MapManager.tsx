@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
   Upload,
-  Map as MapIcon,
   Trash2,
   Settings,
   Check,
@@ -9,7 +8,6 @@ import {
   Library,
 } from 'lucide-react';
 import { useMap } from '../../hooks/useMap';
-import { useMapStore } from '../../stores/mapStore';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { useToast } from '../shared/Toast';
@@ -238,22 +236,24 @@ export const MapManager: React.FC = () => {
   );
 };
 
+interface MapSettingsData {
+  id: string;
+  name: string;
+  gridEnabled: boolean;
+  gridOffsetX: number;
+  gridOffsetY: number;
+  gridCellSize: number;
+  gridColor: string;
+  fogEnabled: boolean;
+  fogDefaultState: 'fogged' | 'revealed';
+  showPlayerTokens: boolean;
+}
+
 interface MapSettingsProps {
-  map: {
-    id: string;
-    name: string;
-    gridEnabled: boolean;
-    gridOffsetX: number;
-    gridOffsetY: number;
-    gridCellSize: number;
-    gridColor: string;
-    fogEnabled: boolean;
-    fogDefaultState: 'fogged' | 'revealed';
-    showPlayerTokens: boolean;
-  };
+  map: MapSettingsData;
   onUpdate: (
     mapId: string,
-    settings: Partial<typeof map>
+    settings: Partial<MapSettingsData>
   ) => Promise<{ success: boolean; error?: string }>;
   onClose: () => void;
 }

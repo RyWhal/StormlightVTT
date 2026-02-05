@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, X, Image as ImageIcon, User, Map as MapIcon, Loader2 } from 'lucide-react';
 import { useGlobalAssets, GlobalAsset } from '../../hooks/useGlobalAssets';
-import { Button } from '../shared/Button';
-import { Input } from '../shared/Input';
 
 interface GlobalAssetBrowserProps {
   assetType: 'token' | 'map';
