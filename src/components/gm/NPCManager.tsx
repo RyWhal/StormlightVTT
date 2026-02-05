@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   MapPin,
+  Library,
 } from 'lucide-react';
 import { useNPCs } from '../../hooks/useNPCs';
 import { useMapStore } from '../../stores/mapStore';
@@ -15,6 +16,8 @@ import { Input } from '../shared/Input';
 import { useToast } from '../shared/Toast';
 import { validateTokenUpload } from '../../lib/validation';
 import { TOKEN_SIZE_MULTIPLIERS, type TokenSize } from '../../types';
+import { GlobalAssetBrowser } from './GlobalAssetBrowser';
+import type { GlobalAsset } from '../../hooks/useGlobalAssets';
 
 const SIZE_OPTIONS: TokenSize[] = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
 
@@ -35,7 +38,9 @@ export const NPCManager: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newSize, setNewSize] = useState<TokenSize>('medium');
   const [newTokenFile, setNewTokenFile] = useState<File | null>(null);
+  const [selectedGlobalAsset, setSelectedGlobalAsset] = useState<GlobalAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAssetBrowser, setShowAssetBrowser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,6 +54,15 @@ export const NPCManager: React.FC = () => {
     }
 
     setNewTokenFile(file);
+    setSelectedGlobalAsset(null); // Clear global asset when uploading custom
+  };
+
+  const handleSelectGlobalAsset = (asset: GlobalAsset) => {
+    setSelectedGlobalAsset(asset);
+    setNewTokenFile(null); // Clear file when selecting global asset
+    setNewName(asset.name);
+    setNewSize((asset.defaultSize as TokenSize) || 'medium');
+    setShowAssetBrowser(false);
   };
 
   const handleCreate = async () => {
@@ -58,7 +72,9 @@ export const NPCManager: React.FC = () => {
     const result = await createNPCTemplate(
       newName,
       newSize,
-      newTokenFile || undefined
+      newTokenFile || undefined,
+      undefined,
+      selectedGlobalAsset?.imageUrl
     );
     setIsSubmitting(false);
 
@@ -68,6 +84,7 @@ export const NPCManager: React.FC = () => {
       setNewName('');
       setNewSize('medium');
       setNewTokenFile(null);
+      setSelectedGlobalAsset(null);
     } else {
       showToast(result.error || 'Failed to create NPC template', 'error');
     }
@@ -159,7 +176,7 @@ export const NPCManager: React.FC = () => {
                 </select>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -167,15 +184,48 @@ export const NPCManager: React.FC = () => {
                   onChange={handleFileChange}
                   className="hidden"
                 />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="w-4 h-4 mr-1" />
-                  {newTokenFile ? newTokenFile.name : 'Upload Token'}
-                </Button>
+
+                {/* Show selected asset preview */}
+                {selectedGlobalAsset && (
+                  <div className="flex items-center gap-2 p-2 bg-storm-700 rounded">
+                    <img
+                      src={selectedGlobalAsset.imageUrl}
+                      alt={selectedGlobalAsset.name}
+                      className="w-10 h-10 rounded object-cover"
+                    />
+                    <span className="text-sm text-storm-200 flex-1 truncate">
+                      {selectedGlobalAsset.name}
+                    </span>
+                    <button
+                      onClick={() => setSelectedGlobalAsset(null)}
+                      className="text-storm-400 hover:text-storm-200"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowAssetBrowser(true)}
+                  >
+                    <Library className="w-4 h-4 mr-1" />
+                    Library
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="w-4 h-4 mr-1" />
+                    {newTokenFile ? 'Change' : 'Upload'}
+                  </Button>
+                </div>
+                {newTokenFile && (
+                  <p className="text-xs text-storm-400 truncate">{newTokenFile.name}</p>
+                )}
               </div>
 
               <div className="flex gap-2">
@@ -186,6 +236,7 @@ export const NPCManager: React.FC = () => {
                     setIsCreating(false);
                     setNewName('');
                     setNewTokenFile(null);
+                    setSelectedGlobalAsset(null);
                   }}
                   className="flex-1"
                 >
@@ -329,6 +380,15 @@ export const NPCManager: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Global Asset Browser Modal */}
+      {showAssetBrowser && (
+        <GlobalAssetBrowser
+          assetType="token"
+          onSelect={handleSelectGlobalAsset}
+          onClose={() => setShowAssetBrowser(false)}
+        />
+      )}
     </div>
   );
 };

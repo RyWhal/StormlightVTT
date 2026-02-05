@@ -74,6 +74,58 @@ export const useMap = () => {
   );
 
   /**
+   * Add a map from a global asset (pre-existing URL)
+   */
+  const addMapFromGlobalAsset = useCallback(
+    async (
+      name: string,
+      imageUrl: string,
+      width: number,
+      height: number
+    ): Promise<{ success: boolean; map?: Map; error?: string }> => {
+      if (!session) {
+        return { success: false, error: 'Not in a session' };
+      }
+
+      try {
+        // Create map record with existing URL
+        const { data, error } = await supabase
+          .from('maps')
+          .insert({
+            session_id: session.id,
+            name,
+            image_url: imageUrl,
+            width,
+            height,
+            sort_order: maps.length,
+          })
+          .select()
+          .single();
+
+        if (error || !data) {
+          return { success: false, error: error?.message || 'Failed to create map' };
+        }
+
+        const newMap = dbMapToMap(data as DbMap);
+        addMap(newMap);
+
+        // If this is the first map, set it as active
+        if (maps.length === 0) {
+          await setMapActive(newMap.id);
+        }
+
+        return { success: true, map: newMap };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+    [session, maps, addMap]
+  );
+
+  /**
    * Set a map as active
    */
   const setMapActive = useCallback(
@@ -226,6 +278,7 @@ export const useMap = () => {
     maps,
     activeMap,
     uploadMap,
+    addMapFromGlobalAsset,
     setMapActive,
     updateMapSettings,
     updateFogData,

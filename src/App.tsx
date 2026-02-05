@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './components/shared/Toast';
 import { Home } from './components/session/Home';
 import { SessionCreate } from './components/session/SessionCreate';
 import { SessionJoin } from './components/session/SessionJoin';
 import { SessionLobby } from './components/session/SessionLobby';
 import { PlaySession } from './components/play/PlaySession';
+import { AdminLogin } from './components/admin/AdminLogin';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AssetCreate } from './components/admin/AssetCreate';
 import { useSessionStore } from './stores/sessionStore';
 import { useRealtime } from './hooks/useRealtime';
 
@@ -49,6 +52,10 @@ const AppContent: React.FC = () => {
           </ProtectedRoute>
         }
       />
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLogin />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/assets/new" element={<AssetCreate />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
