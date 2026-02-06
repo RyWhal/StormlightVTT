@@ -20,6 +20,7 @@ export interface Session {
   notepadContent: string;
   allowPlayersRenameNpcs: boolean;
   allowPlayersMoveNpcs: boolean;
+  isBlindfolded: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -242,6 +243,7 @@ export interface DbSession {
   notepad_content: string;
   allow_players_rename_npcs: boolean;
   allow_players_move_npcs: boolean;
+  is_blindfolded: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -380,6 +382,7 @@ export function dbSessionToSession(db: DbSession): Session {
     notepadContent: db.notepad_content,
     allowPlayersRenameNpcs: db.allow_players_rename_npcs ?? false,
     allowPlayersMoveNpcs: db.allow_players_move_npcs ?? false,
+    isBlindfolded: db.is_blindfolded ?? false,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
   };

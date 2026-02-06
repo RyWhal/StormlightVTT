@@ -16,6 +16,7 @@ import { useSessionStore, useIsGM } from '../../stores/sessionStore';
 import { useCharacters } from '../../hooks/useCharacters';
 import { useNPCs } from '../../hooks/useNPCs';
 import { useMap } from '../../hooks/useMap';
+import { useToast } from '../shared/Toast';
 import { Token } from './Token';
 import { GridOverlay } from './GridOverlay';
 import { FogLayer } from './FogLayer';
@@ -50,8 +51,9 @@ export const MapCanvas: React.FC = () => {
   const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
+  const { showToast } = useToast();
   const { characters, moveCharacterPosition } = useCharacters();
-  const { currentMapNPCs, moveNPCPosition } = useNPCs();
+  const { currentMapNPCs, moveNPCPosition, updateNPCInstanceDetails } = useNPCs();
   const { updateFogData } = useMap();
 
   const [mapImage] = useImage(activeMap?.imageUrl || '');
@@ -174,6 +176,28 @@ export const MapCanvas: React.FC = () => {
       return false;
     },
     [isGM, currentUser, session?.allowPlayersMoveNpcs]
+  );
+
+  const canRenameNPC = useCallback(() => {
+    if (isGM) return true;
+    return session?.allowPlayersRenameNpcs ?? false;
+  }, [isGM, session?.allowPlayersRenameNpcs]);
+
+  const handleRenameNPC = useCallback(
+    async (npcId: string, currentName: string) => {
+      if (!canRenameNPC()) return;
+
+      const nextName = window.prompt('Rename NPC', currentName);
+      if (nextName === null) return;
+      const trimmedName = nextName.trim();
+      if (!trimmedName || trimmedName === currentName) return;
+
+      const result = await updateNPCInstanceDetails(npcId, { displayName: trimmedName });
+      if (!result.success) {
+        showToast(result.error || 'Failed to rename NPC', 'error');
+      }
+    },
+    [canRenameNPC, showToast, updateNPCInstanceDetails]
   );
 
   // Convert screen coordinates to map coordinates
@@ -347,6 +371,19 @@ export const MapCanvas: React.FC = () => {
     );
   }
 
+  if (session?.isBlindfolded && !isGM) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-storm-950">
+        <div className="text-center max-w-sm">
+          <p className="text-storm-100 text-lg mb-2">GM Blindfold active</p>
+          <p className="text-storm-500 text-sm">
+            The GM has temporarily hidden the map. Hang tight while they reveal it.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const gridCellSize = activeMap.gridCellSize;
   const zoomPercent = Math.round(viewportScale * 100);
 
@@ -418,6 +455,11 @@ export const MapCanvas: React.FC = () => {
                 isGM={isGM}
                 onSelect={() => selectToken(npc.id, 'npc')}
                 onDragEnd={(x, y) => handleTokenDragEnd(npc.id, 'npc', x, y)}
+                onRename={
+                  canRenameNPC()
+                    ? () => handleRenameNPC(npc.id, npc.displayName || 'NPC')
+                    : undefined
+                }
               />
             ))}
         </Layer>

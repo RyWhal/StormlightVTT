@@ -11,7 +11,10 @@ export const GMSettings: React.FC = () => {
 
   if (!session) return null;
 
-  const handleToggle = async (field: 'allowPlayersRenameNpcs' | 'allowPlayersMoveNpcs', value: boolean) => {
+  const handleToggle = async (
+    field: 'allowPlayersRenameNpcs' | 'allowPlayersMoveNpcs' | 'isBlindfolded',
+    value: boolean
+  ) => {
     const result = await updateSessionSettings({ [field]: value });
     if (!result.success) {
       showToast(result.error || 'Failed to update setting', 'error');
@@ -38,6 +41,19 @@ export const GMSettings: React.FC = () => {
             type="checkbox"
             checked={session.allowPlayersMoveNpcs}
             onChange={(e) => handleToggle('allowPlayersMoveNpcs', e.target.checked)}
+          />
+        </label>
+      </div>
+
+      <div className="bg-storm-800/50 rounded-lg p-3 space-y-3">
+        <h3 className="text-storm-100 font-semibold">GM Controls</h3>
+
+        <label className="flex items-center justify-between gap-3 text-sm text-storm-300">
+          <span>GM Blindfold (hide map from players)</span>
+          <input
+            type="checkbox"
+            checked={session.isBlindfolded}
+            onChange={(e) => handleToggle('isBlindfolded', e.target.checked)}
           />
         </label>
       </div>

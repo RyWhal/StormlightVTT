@@ -18,6 +18,7 @@ interface TokenProps {
   isGM: boolean;
   onSelect: () => void;
   onDragEnd: (x: number, y: number) => void;
+  onRename?: () => void;
 }
 
 // Color palette for tokens without images
@@ -53,6 +54,7 @@ export const Token: React.FC<TokenProps> = ({
   isGM,
   onSelect,
   onDragEnd,
+  onRename,
 }) => {
   const groupRef = useRef<any>(null);
   const [image] = useImage(imageUrl || '');
@@ -82,6 +84,8 @@ export const Token: React.FC<TokenProps> = ({
       onDragEnd={handleDragEnd}
       onClick={onSelect}
       onTap={onSelect}
+      onDblClick={onRename}
+      onDblTap={onRename}
       opacity={opacity}
     >
       {/* Selection ring */}
