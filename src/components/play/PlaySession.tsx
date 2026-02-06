@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Palette,
+  PencilLine,
 } from 'lucide-react';
 import { MapCanvas } from '../map/MapCanvas';
 import { ChatPanel } from '../chat/ChatPanel';
@@ -29,7 +30,7 @@ import { useMapStore } from '../../stores/mapStore';
 import { useSession } from '../../hooks/useSession';
 import { useToast } from '../shared/Toast';
 
-type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'settings';
+type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'draw' | 'settings';
 type ColorScheme =
   | 'storm'
   | 'dawn'
@@ -459,6 +460,14 @@ export const PlaySession: React.FC = () => {
                 inactiveClassName={scheme.tabInactive}
               />
               <TabButton
+                active={sideTab === 'draw'}
+                onClick={() => setSideTab('draw')}
+                icon={<PencilLine className="w-4 h-4" />}
+                label="Draw"
+                activeClassName={scheme.tabActive}
+                inactiveClassName={scheme.tabInactive}
+              />
+              <TabButton
                 active={sideTab === 'settings'}
                 onClick={() => setSideTab('settings')}
                 icon={<Palette className="w-4 h-4" />}
@@ -475,6 +484,19 @@ export const PlaySession: React.FC = () => {
               {!isGM && sideTab === 'initiative' && <InitiativePanel />}
               {sideTab === 'notes' && <NotepadPanel />}
               {sideTab === 'inventory' && <InventoryPanel />}
+              {sideTab === 'draw' && (
+                <div className={`h-full overflow-y-auto p-4 ${scheme.settingsPanelBg}`}>
+                  <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
+                    <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Drawing Tools</h3>
+                    <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
+                      Use these tools to annotate the map without cluttering the canvas.
+                    </p>
+                    <div className="mt-3 max-h-72 overflow-y-auto pr-2">
+                      <DrawingTools />
+                    </div>
+                  </div>
+                </div>
+              )}
               {sideTab === 'settings' && (
                 <PlayerSettingsPanel
                   colorScheme={colorScheme}
@@ -579,15 +601,6 @@ const PlayerSettingsPanel: React.FC<PlayerSettingsPanelProps> = ({
         </div>
       </div>
 
-      <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
-        <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Drawing Tools</h3>
-        <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
-          Keep the map clear by accessing drawing tools here.
-        </p>
-        <div className="mt-3 max-h-56 overflow-y-auto pr-2">
-          <DrawingTools />
-        </div>
-      </div>
     </div>
   </div>
 );
