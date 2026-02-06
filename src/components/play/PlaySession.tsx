@@ -11,6 +11,9 @@ import {
   Wifi,
   WifiOff,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Palette,
 } from 'lucide-react';
 import { MapCanvas } from '../map/MapCanvas';
 import { ChatPanel } from '../chat/ChatPanel';
@@ -25,7 +28,82 @@ import { useMapStore } from '../../stores/mapStore';
 import { useSession } from '../../hooks/useSession';
 import { useToast } from '../shared/Toast';
 
-type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory';
+type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'settings';
+type ColorScheme = 'storm' | 'dawn';
+
+const COLOR_SCHEMES: Record<
+  ColorScheme,
+  {
+    label: string;
+    appBg: string;
+    headerBg: string;
+    headerBorder: string;
+    headerText: string;
+    headerMuted: string;
+    headerSubtle: string;
+    badgeBg: string;
+    sidePanelBg: string;
+    sidePanelBorder: string;
+    overlayBg: string;
+    overlayBorder: string;
+    tabActive: string;
+    tabInactive: string;
+    buttonActive: string;
+    settingsPanelBg: string;
+    settingsPanelBorder: string;
+    settingsInputBg: string;
+    settingsInputBorder: string;
+    settingsInputText: string;
+    settingsInputMuted: string;
+  }
+> = {
+  storm: {
+    label: 'Stormlight',
+    appBg: 'bg-storm-950',
+    headerBg: 'bg-storm-900',
+    headerBorder: 'border-storm-700',
+    headerText: 'text-storm-100',
+    headerMuted: 'text-storm-300',
+    headerSubtle: 'text-storm-400',
+    badgeBg: 'bg-storm-800',
+    sidePanelBg: 'bg-storm-900',
+    sidePanelBorder: 'border-storm-700',
+    overlayBg: 'bg-storm-900/90',
+    overlayBorder: 'border-storm-700',
+    tabActive: 'text-storm-100 border-storm-400 bg-storm-800/50',
+    tabInactive: 'text-storm-400 border-transparent hover:text-storm-200 hover:bg-storm-800/30',
+    buttonActive: 'bg-storm-800',
+    settingsPanelBg: 'bg-storm-950',
+    settingsPanelBorder: 'border-storm-800',
+    settingsInputBg: 'bg-storm-900',
+    settingsInputBorder: 'border-storm-700',
+    settingsInputText: 'text-storm-100',
+    settingsInputMuted: 'text-storm-400',
+  },
+  dawn: {
+    label: 'Dawn',
+    appBg: 'bg-slate-100',
+    headerBg: 'bg-white',
+    headerBorder: 'border-slate-200',
+    headerText: 'text-slate-900',
+    headerMuted: 'text-slate-600',
+    headerSubtle: 'text-slate-500',
+    badgeBg: 'bg-slate-100',
+    sidePanelBg: 'bg-white',
+    sidePanelBorder: 'border-slate-200',
+    overlayBg: 'bg-white/90',
+    overlayBorder: 'border-slate-200',
+    tabActive: 'text-slate-900 border-slate-400 bg-slate-200/60',
+    tabInactive: 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100',
+    buttonActive: 'bg-slate-200',
+    settingsPanelBg: 'bg-slate-50',
+    settingsPanelBorder: 'border-slate-200',
+    settingsInputBg: 'bg-white',
+    settingsInputBorder: 'border-slate-300',
+    settingsInputText: 'text-slate-900',
+    settingsInputMuted: 'text-slate-600',
+  },
+};
 
 export const PlaySession: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +118,22 @@ export const PlaySession: React.FC = () => {
 
   const [sideTab, setSideTab] = useState<SideTab>('chat');
   const [showGMPanel, setShowGMPanel] = useState(false);
+  const [isPlayerPanelCollapsed, setIsPlayerPanelCollapsed] = useState(() => {
+    const stored = localStorage.getItem('stormlight-player-panel-collapsed');
+    return stored === 'true';
+  });
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
+    const stored = localStorage.getItem('stormlight-color-scheme') as ColorScheme | null;
+    return stored && stored in COLOR_SCHEMES ? stored : 'storm';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('stormlight-player-panel-collapsed', String(isPlayerPanelCollapsed));
+  }, [isPlayerPanelCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem('stormlight-color-scheme', colorScheme);
+  }, [colorScheme]);
 
   useEffect(() => {
     // Open GM panel by default for GM
@@ -80,17 +174,21 @@ export const PlaySession: React.FC = () => {
     }
   };
 
+  const scheme = COLOR_SCHEMES[colorScheme];
+
   return (
-    <div className="h-screen flex flex-col bg-storm-950">
+    <div className={`h-screen flex flex-col ${scheme.appBg}`}>
       {/* Header */}
-      <header className="flex-shrink-0 h-12 bg-storm-900 border-b border-storm-700 px-4 flex items-center justify-between">
+      <header
+        className={`flex-shrink-0 h-12 ${scheme.headerBg} border-b ${scheme.headerBorder} px-4 flex items-center justify-between`}
+      >
         <div className="flex items-center gap-4">
-          <h1 className="font-semibold text-storm-100">{session.name}</h1>
-          <span className="text-sm font-mono text-storm-400 bg-storm-800 px-2 py-0.5 rounded">
+          <h1 className={`font-semibold ${scheme.headerText}`}>{session.name}</h1>
+          <span className={`text-sm font-mono ${scheme.headerSubtle} ${scheme.badgeBg} px-2 py-0.5 rounded`}>
             {session.code}
           </span>
           {activeMap && (
-            <span className="text-sm text-storm-300 flex items-center gap-1">
+            <span className={`text-sm ${scheme.headerMuted} flex items-center gap-1`}>
               <MapIcon className="w-4 h-4" />
               {activeMap.name}
             </span>
@@ -116,7 +214,7 @@ export const PlaySession: React.FC = () => {
           </span>
 
           {/* Players count */}
-          <span className="text-sm text-storm-300 flex items-center gap-1">
+          <span className={`text-sm ${scheme.headerMuted} flex items-center gap-1`}>
             <Users className="w-4 h-4" />
             {players.length}
           </span>
@@ -144,11 +242,21 @@ export const PlaySession: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowGMPanel(!showGMPanel)}
-              className={showGMPanel ? 'bg-storm-800' : ''}
+              className={showGMPanel ? scheme.buttonActive : ''}
             >
               <Settings className="w-4 h-4" />
             </Button>
           )}
+
+          {/* Player panel toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsPlayerPanelCollapsed((prev) => !prev)}
+            title={isPlayerPanelCollapsed ? 'Show player panel' : 'Hide player panel'}
+          >
+            {isPlayerPanelCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </Button>
 
           {/* Leave */}
           <Button variant="ghost" size="sm" onClick={handleLeave}>
@@ -161,7 +269,7 @@ export const PlaySession: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* GM Panel (collapsible) */}
         {isGM && showGMPanel && (
-          <div className="w-80 flex-shrink-0 border-r border-storm-700 bg-storm-900 overflow-hidden">
+          <div className={`w-80 flex-shrink-0 border-r ${scheme.sidePanelBorder} ${scheme.sidePanelBg} overflow-hidden`}>
             <GMPanel onClose={() => setShowGMPanel(false)} />
           </div>
         )}
@@ -171,60 +279,91 @@ export const PlaySession: React.FC = () => {
           <MapCanvas />
 
           {/* Map controls overlay */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-storm-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-storm-700">
-            <span className="text-sm text-storm-300">
+          <div
+            className={`absolute bottom-4 left-4 flex items-center gap-2 ${scheme.overlayBg} backdrop-blur-sm rounded-lg px-3 py-2 border ${scheme.overlayBorder}`}
+          >
+            <span className={`text-sm ${scheme.headerMuted}`}>
               {activeMap ? `${activeMap.width}x${activeMap.height}` : 'No map'}
             </span>
           </div>
         </div>
 
         {/* Side panel */}
-        <div className="w-96 flex-shrink-0 border-l border-storm-700 bg-storm-900 flex flex-col">
-          {/* Tabs */}
-          <div className="flex border-b border-storm-700">
-            <TabButton
-              active={sideTab === 'chat'}
-              onClick={() => setSideTab('chat')}
-              icon={<MessageSquare className="w-4 h-4" />}
-              label="Chat"
-            />
-            <TabButton
-              active={sideTab === 'dice'}
-              onClick={() => setSideTab('dice')}
-              icon={<Dices className="w-4 h-4" />}
-              label="Dice"
-            />
-            {!isGM && (
+        {!isPlayerPanelCollapsed && (
+          <div className={`w-96 flex-shrink-0 border-l ${scheme.sidePanelBorder} ${scheme.sidePanelBg} flex flex-col`}>
+            {/* Tabs */}
+            <div className={`flex border-b ${scheme.sidePanelBorder}`}>
               <TabButton
-                active={sideTab === 'initiative'}
-                onClick={() => setSideTab('initiative')}
-                icon={<Users className="w-4 h-4" />}
-                label="Initiative"
+                active={sideTab === 'chat'}
+                onClick={() => setSideTab('chat')}
+                icon={<MessageSquare className="w-4 h-4" />}
+                label="Chat"
+                activeClassName={scheme.tabActive}
+                inactiveClassName={scheme.tabInactive}
               />
-            )}
-            <TabButton
-              active={sideTab === 'notes'}
-              onClick={() => setSideTab('notes')}
-              icon={<FileText className="w-4 h-4" />}
-              label="Notes"
-            />
-            <TabButton
-              active={sideTab === 'inventory'}
-              onClick={() => setSideTab('inventory')}
-              icon={<FileText className="w-4 h-4" />}
-              label="Items"
-            />
-          </div>
+              <TabButton
+                active={sideTab === 'dice'}
+                onClick={() => setSideTab('dice')}
+                icon={<Dices className="w-4 h-4" />}
+                label="Dice"
+                activeClassName={scheme.tabActive}
+                inactiveClassName={scheme.tabInactive}
+              />
+              {!isGM && (
+                <TabButton
+                  active={sideTab === 'initiative'}
+                  onClick={() => setSideTab('initiative')}
+                  icon={<Users className="w-4 h-4" />}
+                  label="Initiative"
+                  activeClassName={scheme.tabActive}
+                  inactiveClassName={scheme.tabInactive}
+                />
+              )}
+              <TabButton
+                active={sideTab === 'notes'}
+                onClick={() => setSideTab('notes')}
+                icon={<FileText className="w-4 h-4" />}
+                label="Notes"
+                activeClassName={scheme.tabActive}
+                inactiveClassName={scheme.tabInactive}
+              />
+              <TabButton
+                active={sideTab === 'inventory'}
+                onClick={() => setSideTab('inventory')}
+                icon={<FileText className="w-4 h-4" />}
+                label="Items"
+                activeClassName={scheme.tabActive}
+                inactiveClassName={scheme.tabInactive}
+              />
+              <TabButton
+                active={sideTab === 'settings'}
+                onClick={() => setSideTab('settings')}
+                icon={<Palette className="w-4 h-4" />}
+                label="Prefs"
+                activeClassName={scheme.tabActive}
+                inactiveClassName={scheme.tabInactive}
+              />
+            </div>
 
-          {/* Tab content */}
-          <div className="flex-1 overflow-hidden">
-            {sideTab === 'chat' && <ChatPanel />}
-            {sideTab === 'dice' && <DicePanel />}
-            {!isGM && sideTab === 'initiative' && <InitiativePanel />}
-            {sideTab === 'notes' && <NotepadPanel />}
-            {sideTab === 'inventory' && <InventoryPanel />}
+            {/* Tab content */}
+            <div className="flex-1 overflow-hidden">
+              {sideTab === 'chat' && <ChatPanel />}
+              {sideTab === 'dice' && <DicePanel />}
+              {!isGM && sideTab === 'initiative' && <InitiativePanel />}
+              {sideTab === 'notes' && <NotepadPanel />}
+              {sideTab === 'inventory' && <InventoryPanel />}
+              {sideTab === 'settings' && (
+                <PlayerSettingsPanel
+                  colorScheme={colorScheme}
+                  onColorSchemeChange={setColorScheme}
+                  isPanelCollapsed={isPlayerPanelCollapsed}
+                  onTogglePanel={() => setIsPlayerPanelCollapsed((prev) => !prev)}
+                  scheme={scheme}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -235,22 +374,87 @@ interface TabButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
+  activeClassName: string;
+  inactiveClassName: string;
 }
 
-const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => (
+const TabButton: React.FC<TabButtonProps> = ({
+  active,
+  onClick,
+  icon,
+  label,
+  activeClassName,
+  inactiveClassName,
+}) => (
   <button
     onClick={onClick}
     className={`
       flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium
       transition-colors border-b-2
-      ${
-        active
-          ? 'text-storm-100 border-storm-400 bg-storm-800/50'
-          : 'text-storm-400 border-transparent hover:text-storm-200 hover:bg-storm-800/30'
-      }
+      ${active ? activeClassName : inactiveClassName}
     `}
   >
     {icon}
     {label}
   </button>
+);
+
+interface PlayerSettingsPanelProps {
+  colorScheme: ColorScheme;
+  onColorSchemeChange: (value: ColorScheme) => void;
+  isPanelCollapsed: boolean;
+  onTogglePanel: () => void;
+  scheme: (typeof COLOR_SCHEMES)[ColorScheme];
+}
+
+const PlayerSettingsPanel: React.FC<PlayerSettingsPanelProps> = ({
+  colorScheme,
+  onColorSchemeChange,
+  isPanelCollapsed,
+  onTogglePanel,
+  scheme,
+}) => (
+  <div className={`h-full overflow-y-auto p-4 ${scheme.settingsPanelBg}`}>
+    <div className="space-y-4">
+      <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
+        <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Player Panel</h3>
+        <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
+          Collapse the right-side panel to keep the map front and center.
+        </p>
+        <label className="mt-3 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="h-4 w-4"
+            checked={isPanelCollapsed}
+            onChange={onTogglePanel}
+          />
+          <span className={scheme.settingsInputText}>Collapse player panel</span>
+        </label>
+      </div>
+
+      <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
+        <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Color Scheme</h3>
+        <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
+          This only changes your local view.
+        </p>
+        <div className="mt-3">
+          <label className={`block text-xs ${scheme.settingsInputMuted} mb-2`} htmlFor="color-scheme-select">
+            Theme
+          </label>
+          <select
+            id="color-scheme-select"
+            className={`w-full rounded-md border ${scheme.settingsInputBorder} ${scheme.settingsInputBg} px-2 py-1 text-sm ${scheme.settingsInputText}`}
+            value={colorScheme}
+            onChange={(event) => onColorSchemeChange(event.target.value as ColorScheme)}
+          >
+            {Object.entries(COLOR_SCHEMES).map(([value, data]) => (
+              <option key={value} value={value}>
+                {data.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
 );
