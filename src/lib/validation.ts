@@ -51,7 +51,7 @@ export const validateMapUpload = async (file: File): Promise<ValidationResult> =
 
 /**
  * Validate token image upload
- * Max size: 500KB
+ * Max size: 2MB
  * Allowed formats: PNG, JPG, WEBP, GIF
  */
 export const validateTokenUpload = (file: File): ValidationResult => {
@@ -64,12 +64,12 @@ export const validateTokenUpload = (file: File): ValidationResult => {
     };
   }
 
-  // Check file size (500KB max)
-  const maxSize = 500 * 1024;
+  // Check file size (2MB max)
+  const maxSize = 2 * 1024 * 1024;
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: 'Token image must be under 500KB',
+      error: 'Token image must be under 2MB',
     };
   }
 

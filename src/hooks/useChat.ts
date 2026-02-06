@@ -2,13 +2,14 @@ import { useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/sessionStore';
 import { useChatStore } from '../stores/chatStore';
+import { dbChatMessageToChatMessage, dbDiceRollToDiceRoll, type DbChatMessage, type DbDiceRoll } from '../types';
 import { parseAndRoll, rollPlotDice } from '../lib/dice';
 import type { RollVisibility, PlotDieResult, RollResults } from '../types';
 
 export const useChat = () => {
   const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
-  const { messages, diceRolls, addDiceRoll, resetUnread } = useChatStore();
+  const { messages, diceRolls, addMessage, addDiceRoll, resetUnread } = useChatStore();
 
   /**
    * Send a chat message
@@ -27,15 +28,23 @@ export const useChat = () => {
       }
 
       try {
-        const { error } = await supabase.from('chat_messages').insert({
-          session_id: session.id,
-          username: currentUser.username,
-          message: message.trim(),
-          is_gm_announcement: isGmAnnouncement && currentUser.isGm,
-        });
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .insert({
+            session_id: session.id,
+            username: currentUser.username,
+            message: message.trim(),
+            is_gm_announcement: isGmAnnouncement && currentUser.isGm,
+          })
+          .select('*')
+          .single();
 
         if (error) {
           return { success: false, error: error.message };
+        }
+
+        if (data) {
+          addMessage(dbChatMessageToChatMessage(data as DbChatMessage));
         }
 
         return { success: true };
@@ -46,7 +55,7 @@ export const useChat = () => {
         };
       }
     },
-    [session, currentUser]
+    [session, currentUser, addMessage]
   );
 
   /**
@@ -74,32 +83,34 @@ export const useChat = () => {
         }
 
         // Save to database
-        const { error } = await supabase.from('dice_rolls').insert({
-          session_id: session.id,
-          username: currentUser.username,
-          character_name: characterName || null,
-          roll_expression: expression,
-          roll_results: results,
-          visibility,
-          plot_dice_results: plotDiceResults,
-        });
+        const { data, error } = await supabase
+          .from('dice_rolls')
+          .insert({
+            session_id: session.id,
+            username: currentUser.username,
+            character_name: characterName || null,
+            roll_expression: expression,
+            roll_results: results,
+            visibility,
+            plot_dice_results: plotDiceResults,
+          })
+          .select('*')
+          .single();
 
         if (error) {
           return { success: false, error: error.message };
         }
 
-        // Optimistically add roll locally (in case realtime is slow)
-        addDiceRoll({
-          id: crypto.randomUUID(),
-          sessionId: session.id,
-          username: currentUser.username,
-          characterName: characterName || null,
-          rollExpression: expression,
-          rollResults: results,
-          visibility,
-          plotDiceResults,
-          createdAt: new Date().toISOString(),
-        });
+        if (data) {
+          const roll = dbDiceRollToDiceRoll(data as DbDiceRoll);
+          if (roll.visibility === 'public') {
+            addDiceRoll(roll);
+          } else if (roll.visibility === 'gm_only' && currentUser.isGm) {
+            addDiceRoll(roll);
+          } else if (roll.visibility === 'self' && roll.username === currentUser.username) {
+            addDiceRoll(roll);
+          }
+        }
 
         return { success: true, results };
       } catch (error) {

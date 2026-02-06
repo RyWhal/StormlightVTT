@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import { Stage, Layer, Image as KonvaImage, Rect } from 'react-konva';
 import useImage from 'use-image';
 import {
@@ -42,12 +42,12 @@ export const MapCanvas: React.FC = () => {
     setStageSize,
     selectToken,
     clearSelection,
-    addFogRegion,
     fitMapToView,
     panBy,
     zoomTo,
   } = useMapStore();
 
+  const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
   const { characters, moveCharacterPosition } = useCharacters();
@@ -60,30 +60,35 @@ export const MapCanvas: React.FC = () => {
   const [rectStart, setRectStart] = useState<{ x: number; y: number } | null>(null);
   const [rectEnd, setRectEnd] = useState<{ x: number; y: number } | null>(null);
 
-  // Handle container resize
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
-        const height = containerRef.current.offsetHeight;
-        setStageSize(width, height);
-      }
-    };
+  const syncStageSize = useCallback(() => {
+    if (!containerRef.current) return;
 
-    updateSize();
-    window.addEventListener('resize', updateSize);
+    const rect = containerRef.current.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    setStageSize(width, height);
+  }, [setStageSize]);
+
+  // Handle container resize
+  useLayoutEffect(() => {
+    syncStageSize();
 
     // Use ResizeObserver for more accurate resize detection
-    const resizeObserver = new ResizeObserver(updateSize);
+    const resizeObserver = new ResizeObserver(() => {
+      syncStageSize();
+    });
+
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
 
+    window.addEventListener('resize', syncStageSize);
+
     return () => {
-      window.removeEventListener('resize', updateSize);
       resizeObserver.disconnect();
+      window.removeEventListener('resize', syncStageSize);
     };
-  }, [setStageSize]);
+  }, [syncStageSize]);
 
   // Fit map to view when map changes or image loads
   useEffect(() => {
@@ -165,9 +170,10 @@ export const MapCanvas: React.FC = () => {
     (type: 'character' | 'npc', ownerId?: string | null) => {
       if (isGM) return true;
       if (type === 'character' && ownerId === currentUser?.username) return true;
+      if (type === 'npc' && session?.allowPlayersMoveNpcs) return true;
       return false;
     },
-    [isGM, currentUser]
+    [isGM, currentUser, session?.allowPlayersMoveNpcs]
   );
 
   // Convert screen coordinates to map coordinates
@@ -181,6 +187,18 @@ export const MapCanvas: React.FC = () => {
     [viewportX, viewportY, viewportScale]
   );
 
+  const clampToMapBounds = useCallback(
+    (point: { x: number; y: number }) => {
+      if (!activeMap) return point;
+
+      return {
+        x: Math.max(0, Math.min(activeMap.width, point.x)),
+        y: Math.max(0, Math.min(activeMap.height, point.y)),
+      };
+    },
+    [activeMap]
+  );
+
   // Fog painting handlers
   const handleFogMouseDown = useCallback(
     (_e: unknown) => {
@@ -190,7 +208,7 @@ export const MapCanvas: React.FC = () => {
       if (!stage) return;
 
       const pointer = stage.getPointerPosition();
-      const mapPos = screenToMap(pointer.x, pointer.y);
+      const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
 
       if (fogToolShape === 'rectangle') {
         setRectStart(mapPos);
@@ -200,7 +218,7 @@ export const MapCanvas: React.FC = () => {
         setCurrentFogStroke([mapPos]);
       }
     },
-    [fogToolMode, fogToolShape, isGM, activeMap, screenToMap]
+    [fogToolMode, fogToolShape, isGM, activeMap, screenToMap, clampToMapBounds]
   );
 
   const handleFogMouseMove = useCallback(
@@ -211,26 +229,35 @@ export const MapCanvas: React.FC = () => {
       if (!stage) return;
 
       const pointer = stage.getPointerPosition();
-      const mapPos = screenToMap(pointer.x, pointer.y);
+      const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
 
       if (fogToolShape === 'rectangle' && rectStart) {
         setRectEnd(mapPos);
       } else if (isPainting) {
-        setCurrentFogStroke((prev) => [...prev, mapPos]);
+        setCurrentFogStroke((prev) => {
+          const lastPoint = prev[prev.length - 1];
+          if (lastPoint && lastPoint.x === mapPos.x && lastPoint.y === mapPos.y) {
+            return prev;
+          }
+          return [...prev, mapPos];
+        });
       }
     },
-    [fogToolMode, fogToolShape, isGM, isPainting, rectStart, screenToMap]
+    [fogToolMode, fogToolShape, isGM, isPainting, rectStart, screenToMap, clampToMapBounds]
   );
 
   const handleFogMouseUp = useCallback(async () => {
     if (!fogToolMode || !isGM || !activeMap) return;
 
+    const isWithinMap = (point: { x: number; y: number }) =>
+      point.x >= 0 && point.y >= 0 && point.x <= activeMap.width && point.y <= activeMap.height;
+
     if (fogToolShape === 'rectangle' && rectStart && rectEnd) {
-      // Create rectangle fog region
-      const minX = Math.min(rectStart.x, rectEnd.x);
-      const minY = Math.min(rectStart.y, rectEnd.y);
-      const maxX = Math.max(rectStart.x, rectEnd.x);
-      const maxY = Math.max(rectStart.y, rectEnd.y);
+      // Create rectangle fog region constrained to map bounds
+      const minX = Math.max(0, Math.min(rectStart.x, rectEnd.x));
+      const minY = Math.max(0, Math.min(rectStart.y, rectEnd.y));
+      const maxX = Math.min(activeMap.width, Math.max(rectStart.x, rectEnd.x));
+      const maxY = Math.min(activeMap.height, Math.max(rectStart.y, rectEnd.y));
 
       // Only create if rectangle has some size
       if (maxX - minX > 5 && maxY - minY > 5) {
@@ -249,23 +276,25 @@ export const MapCanvas: React.FC = () => {
           brushSize: Math.max(maxX - minX, maxY - minY),
         };
 
-        addFogRegion(activeMap.id, newRegion);
         const newFogData = [...activeMap.fogData, newRegion];
         await updateFogData(activeMap.id, newFogData);
       }
 
       setRectStart(null);
       setRectEnd(null);
-    } else if (isPainting && currentFogStroke.length > 0) {
-      const newRegion: FogRegion = {
-        type: fogToolMode,
-        points: currentFogStroke,
-        brushSize: getFogBrushPixelSize(fogBrushSize),
-      };
+    } else if (isPainting && currentFogStroke.length > 1) {
+      const boundedStroke = currentFogStroke.filter(isWithinMap);
 
-      addFogRegion(activeMap.id, newRegion);
-      const newFogData = [...activeMap.fogData, newRegion];
-      await updateFogData(activeMap.id, newFogData);
+      if (boundedStroke.length > 1) {
+        const newRegion: FogRegion = {
+          type: fogToolMode,
+          points: boundedStroke,
+          brushSize: getFogBrushPixelSize(fogBrushSize),
+        };
+
+        const newFogData = [...activeMap.fogData, newRegion];
+        await updateFogData(activeMap.id, newFogData);
+      }
 
       setIsPainting(false);
       setCurrentFogStroke([]);
@@ -280,14 +309,17 @@ export const MapCanvas: React.FC = () => {
     isPainting,
     currentFogStroke,
     fogBrushSize,
-    addFogRegion,
     updateFogData,
   ]);
 
   // Zoom controls
   const handleZoomIn = () => zoomTo(viewportScale * 1.25);
   const handleZoomOut = () => zoomTo(viewportScale / 1.25);
-  const handleFitToView = () => fitMapToView();
+  const handleFitToView = () => {
+    // Ensure fit uses current container size (avoids stale stage dimensions)
+    syncStageSize();
+    requestAnimationFrame(() => fitMapToView());
+  };
 
   // Pan controls
   const panStep = 100;
@@ -326,8 +358,8 @@ export const MapCanvas: React.FC = () => {
     >
       <Stage
         ref={stageRef}
-        width={stageWidth}
-        height={stageHeight}
+        width={Math.max(1, stageWidth)}
+        height={Math.max(1, stageHeight)}
         scaleX={viewportScale}
         scaleY={viewportScale}
         x={viewportX}

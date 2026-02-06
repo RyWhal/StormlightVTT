@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { useChatStore } from '../stores/chatStore';
+import { useInitiativeStore } from '../stores/initiativeStore';
 import {
   dbSessionToSession,
   dbMapToMap,
@@ -12,6 +13,8 @@ import {
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
+  dbInitiativeEntryToInitiativeEntry,
+  dbInitiativeRollLogToInitiativeRollLog,
   type DbSession,
   type DbMap,
   type DbCharacter,
@@ -19,10 +22,16 @@ import {
   type DbSessionPlayer,
   type DbChatMessage,
   type DbDiceRoll,
+  type DbInitiativeEntry,
+  type DbInitiativeRollLog,
 } from '../types';
+
+const isMissingRelationError = (error: { code?: string; message?: string } | null) =>
+  error?.code === '42P01' || error?.message?.toLowerCase().includes('does not exist');
 
 export const useRealtime = () => {
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const initiativeChannelRef = useRef<RealtimeChannel | null>(null);
   const { session, currentUser, updateSession, setPlayers, addPlayer, removePlayer, setConnectionStatus } =
     useSessionStore();
   const {
@@ -39,6 +48,7 @@ export const useRealtime = () => {
     removeNPCInstance,
   } = useMapStore();
   const { addMessage, addDiceRoll } = useChatStore();
+  const { upsertEntry, removeEntry, addRollLog } = useInitiativeStore();
 
   useEffect(() => {
     if (!session?.id) {
@@ -49,8 +59,8 @@ export const useRealtime = () => {
     setConnectionStatus('connecting');
 
     const sessionId = session.id;
+    let cancelled = false;
 
-    // Create channel for this session
     const channel = supabase.channel(`session:${sessionId}`, {
       config: {
         broadcast: { self: false },
@@ -58,7 +68,6 @@ export const useRealtime = () => {
       },
     });
 
-    // Session changes
     channel.on(
       'postgres_changes',
       {
@@ -71,7 +80,6 @@ export const useRealtime = () => {
         const updated = dbSessionToSession(payload.new as DbSession);
         updateSession(updated);
 
-        // If active map changed, update it
         if (updated.activeMapId !== session.activeMapId) {
           const activeMap = maps.find((m) => m.id === updated.activeMapId);
           setActiveMap(activeMap || null);
@@ -79,7 +87,6 @@ export const useRealtime = () => {
       }
     );
 
-    // Map changes
     channel
       .on(
         'postgres_changes',
@@ -119,7 +126,6 @@ export const useRealtime = () => {
         }
       );
 
-    // Character changes
     channel
       .on(
         'postgres_changes',
@@ -159,7 +165,6 @@ export const useRealtime = () => {
         }
       );
 
-    // NPC Instance changes (we need to handle this differently since filter is by map_id)
     channel
       .on(
         'postgres_changes',
@@ -170,7 +175,6 @@ export const useRealtime = () => {
         },
         (payload) => {
           const instance = payload.new as DbNPCInstance;
-          // Check if this NPC belongs to a map in our session
           if (maps.some((m) => m.id === instance.map_id)) {
             addNPCInstance(dbNPCInstanceToNPCInstance(instance));
           }
@@ -200,7 +204,6 @@ export const useRealtime = () => {
         }
       );
 
-    // Player changes
     channel
       .on(
         'postgres_changes',
@@ -223,7 +226,6 @@ export const useRealtime = () => {
           filter: `session_id=eq.${sessionId}`,
         },
         () => {
-          // Reload players to get accurate list
           supabase
             .from('session_players')
             .select('*')
@@ -248,7 +250,6 @@ export const useRealtime = () => {
         }
       );
 
-    // Chat messages
     channel.on(
       'postgres_changes',
       {
@@ -262,7 +263,6 @@ export const useRealtime = () => {
       }
     );
 
-    // Dice rolls
     channel.on(
       'postgres_changes',
       {
@@ -273,7 +273,6 @@ export const useRealtime = () => {
       },
       (payload) => {
         const roll = dbDiceRollToDiceRoll(payload.new as DbDiceRoll);
-        // Filter based on visibility
         if (roll.visibility === 'public') {
           addDiceRoll(roll);
         } else if (roll.visibility === 'gm_only' && currentUser?.isGm) {
@@ -284,7 +283,6 @@ export const useRealtime = () => {
       }
     );
 
-    // Subscribe to channel
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setConnectionStatus('connected');
@@ -295,11 +293,83 @@ export const useRealtime = () => {
 
     channelRef.current = channel;
 
-    // Cleanup
+    const connectInitiativeChannel = async () => {
+      const { error: entriesError } = await supabase.from('initiative_entries').select('id').limit(1);
+      if (isMissingRelationError(entriesError) || cancelled) {
+        return;
+      }
+
+      const initiativeChannel = supabase.channel(`initiative:${sessionId}`);
+
+      initiativeChannel
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'initiative_entries',
+            filter: `session_id=eq.${sessionId}`,
+          },
+          (payload) => {
+            upsertEntry(dbInitiativeEntryToInitiativeEntry(payload.new as DbInitiativeEntry));
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'initiative_entries',
+            filter: `session_id=eq.${sessionId}`,
+          },
+          (payload) => {
+            upsertEntry(dbInitiativeEntryToInitiativeEntry(payload.new as DbInitiativeEntry));
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'initiative_entries',
+            filter: `session_id=eq.${sessionId}`,
+          },
+          (payload) => {
+            removeEntry((payload.old as { id: string }).id);
+          }
+        );
+
+      const { error: logsError } = await supabase.from('initiative_roll_logs').select('id').limit(1);
+      if (!isMissingRelationError(logsError)) {
+        initiativeChannel.on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'initiative_roll_logs',
+            filter: `session_id=eq.${sessionId}`,
+          },
+          (payload) => {
+            addRollLog(dbInitiativeRollLogToInitiativeRollLog(payload.new as DbInitiativeRollLog));
+          }
+        );
+      }
+
+      initiativeChannel.subscribe();
+      initiativeChannelRef.current = initiativeChannel;
+    };
+
+    void connectInitiativeChannel();
+
     return () => {
+      cancelled = true;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+      }
+      if (initiativeChannelRef.current) {
+        supabase.removeChannel(initiativeChannelRef.current);
+        initiativeChannelRef.current = null;
       }
     };
   }, [
@@ -323,6 +393,9 @@ export const useRealtime = () => {
     removeNPCInstance,
     addMessage,
     addDiceRoll,
+    upsertEntry,
+    removeEntry,
+    addRollLog,
     setConnectionStatus,
   ]);
 
