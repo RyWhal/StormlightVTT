@@ -18,6 +18,7 @@ export type TokenLockPayload = {
 
 let tokenChannel: RealtimeChannel | null = null;
 let activeSessionId: string | null = null;
+let tokenChannelReady: Promise<void> | null = null;
 
 export const getTokenBroadcastChannel = (sessionId: string) => {
   if (!tokenChannel || activeSessionId !== sessionId) {
@@ -28,7 +29,13 @@ export const getTokenBroadcastChannel = (sessionId: string) => {
     tokenChannel = supabase.channel(`token-moves:${sessionId}`, {
       config: { broadcast: { self: false } },
     });
-    tokenChannel.subscribe();
+    tokenChannelReady = new Promise((resolve) => {
+      tokenChannel?.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          resolve();
+        }
+      });
+    });
     activeSessionId = sessionId;
   }
 
@@ -41,9 +48,18 @@ export const clearTokenBroadcastChannel = () => {
   }
   tokenChannel = null;
   activeSessionId = null;
+  tokenChannelReady = null;
+};
+
+const ensureTokenBroadcastReady = async (sessionId: string) => {
+  getTokenBroadcastChannel(sessionId);
+  if (tokenChannelReady) {
+    await tokenChannelReady;
+  }
 };
 
 export const broadcastTokenMove = async (payload: TokenMovePayload) => {
+  await ensureTokenBroadcastReady(payload.sessionId);
   const channel = getTokenBroadcastChannel(payload.sessionId);
   await channel.send({
     type: 'broadcast',
@@ -53,6 +69,7 @@ export const broadcastTokenMove = async (payload: TokenMovePayload) => {
 };
 
 export const broadcastTokenLock = async (payload: TokenLockPayload) => {
+  await ensureTokenBroadcastReady(payload.sessionId);
   const channel = getTokenBroadcastChannel(payload.sessionId);
   await channel.send({
     type: 'broadcast',
@@ -62,6 +79,7 @@ export const broadcastTokenLock = async (payload: TokenLockPayload) => {
 };
 
 export const broadcastTokenUnlock = async (payload: TokenLockPayload) => {
+  await ensureTokenBroadcastReady(payload.sessionId);
   const channel = getTokenBroadcastChannel(payload.sessionId);
   await channel.send({
     type: 'broadcast',
