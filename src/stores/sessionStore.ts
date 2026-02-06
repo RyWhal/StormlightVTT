@@ -90,7 +90,7 @@ export const useSessionStore = create<SessionState>()(
       partialize: (state) => ({
         // Only persist essential data for session reconnection
         session: state.session
-          ? { code: state.session.code, name: state.session.name }
+          ? { id: state.session.id, code: state.session.code, name: state.session.name }
           : null,
         currentUser: state.currentUser
           ? {

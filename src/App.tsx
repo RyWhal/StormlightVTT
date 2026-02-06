@@ -29,12 +29,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppContent: React.FC = () => {
   // Set up realtime subscriptions when in a session
   useRealtime();
-  const { joinSession } = useSession();
+  const { joinSession, loadSessionData } = useSession();
   const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
   const clearSession = useSessionStore((state) => state.clearSession);
   const setCurrentUser = useSessionStore((state) => state.setCurrentUser);
   const hasAttemptedRejoin = useRef(false);
+  const hasHydratedSession = useRef(false);
 
   useEffect(() => {
     const attemptRejoin = async () => {
@@ -53,6 +54,19 @@ const AppContent: React.FC = () => {
 
     void attemptRejoin();
   }, [session, currentUser, joinSession, clearSession, setCurrentUser]);
+
+  useEffect(() => {
+    const hydrateSession = async () => {
+      if (!session?.id || !currentUser?.username || hasHydratedSession.current) {
+        return;
+      }
+
+      hasHydratedSession.current = true;
+      await loadSessionData(session.id);
+    };
+
+    void hydrateSession();
+  }, [session, currentUser, loadSessionData]);
 
   return (
     <Routes>
