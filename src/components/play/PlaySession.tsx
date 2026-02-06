@@ -416,7 +416,7 @@ export const PlaySession: React.FC = () => {
         {!isPlayerPanelCollapsed && (
           <div className={`w-96 flex-shrink-0 border-l ${scheme.sidePanelBorder} ${scheme.sidePanelBg} flex flex-col`}>
             {/* Tabs */}
-            <div className={`flex border-b ${scheme.sidePanelBorder}`}>
+            <div className={`flex border-b ${scheme.sidePanelBorder} overflow-x-auto`}>
               <TabButton
                 active={sideTab === 'chat'}
                 onClick={() => setSideTab('chat')}
@@ -534,7 +534,7 @@ const TabButton: React.FC<TabButtonProps> = ({
   <button
     onClick={onClick}
     className={`
-      flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium
+      flex-1 min-w-[84px] flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium
       transition-colors border-b-2
       ${active ? activeClassName : inactiveClassName}
     `}
