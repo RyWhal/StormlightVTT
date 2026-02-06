@@ -23,11 +23,11 @@ interface GMPanelProps {
 }
 
 export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
-  // Cloudflare deployment sync note: intentional no-op touch to ensure latest commit is built.
   const [activeTab, setActiveTab] = useState<GMTab>('maps');
   const setFogToolMode = useMapStore((state) => state.setFogToolMode);
 
   const handleTabChange = (tab: GMTab) => {
+    // Prevent fog painting from remaining active when leaving the Fog tab
     if (activeTab === 'fog' && tab !== 'fog') {
       setFogToolMode(null);
     }
