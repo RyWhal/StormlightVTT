@@ -20,6 +20,7 @@ import { ChatPanel } from '../chat/ChatPanel';
 import { DicePanel } from '../dice/DicePanel';
 import { NotepadPanel } from '../shared/NotepadPanel';
 import { GMPanel } from '../gm/GMPanel';
+import { DrawingTools } from '../map/DrawingTools';
 import { InventoryPanel } from '../inventory/InventoryPanel';
 import { InitiativePanel } from '../initiative/InitiativePanel';
 import { Button } from '../shared/Button';
@@ -399,6 +400,10 @@ export const PlaySession: React.FC = () => {
         {/* Map canvas */}
         <div className="flex-1 relative overflow-hidden">
           <MapCanvas />
+
+          <div className="absolute top-4 left-4">
+            <DrawingTools />
+          </div>
 
           {/* Map controls overlay */}
           <div

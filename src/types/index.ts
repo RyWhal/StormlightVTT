@@ -55,6 +55,7 @@ export interface Map {
   fogEnabled: boolean;
   fogDefaultState: 'fogged' | 'revealed';
   fogData: FogRegion[];
+  drawingData: DrawingRegion[];
 
   showPlayerTokens: boolean;
 }
@@ -63,6 +64,48 @@ export interface FogRegion {
   type: 'reveal' | 'hide';
   points: { x: number; y: number }[];
   brushSize: number;
+}
+
+export type DrawingShape = 'free' | 'line' | 'square' | 'circle' | 'triangle';
+export type DrawingAuthorRole = 'gm' | 'player';
+
+export const DRAWING_COLORS = {
+  black: '#000000',
+  white: '#ffffff',
+  red: '#ef4444',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  yellow: '#eab308',
+  brown: '#92400e',
+  gray: '#6b7280',
+} as const;
+
+export type DrawingColor = (typeof DRAWING_COLORS)[keyof typeof DRAWING_COLORS];
+
+export const DRAWING_COLOR_OPTIONS: Array<{ label: string; value: DrawingColor }> = [
+  { label: 'Black', value: DRAWING_COLORS.black },
+  { label: 'White', value: DRAWING_COLORS.white },
+  { label: 'Red', value: DRAWING_COLORS.red },
+  { label: 'Blue', value: DRAWING_COLORS.blue },
+  { label: 'Green', value: DRAWING_COLORS.green },
+  { label: 'Yellow', value: DRAWING_COLORS.yellow },
+  { label: 'Brown', value: DRAWING_COLORS.brown },
+  { label: 'Gray', value: DRAWING_COLORS.gray },
+];
+
+export const isDrawingColor = (value: string): value is DrawingColor => {
+  return Object.values(DRAWING_COLORS).includes(value as DrawingColor);
+};
+
+export interface DrawingRegion {
+  id: string;
+  authorRole: DrawingAuthorRole;
+  shape: DrawingShape;
+  points: { x: number; y: number }[];
+  strokeWidth: number;
+  color: DrawingColor;
+  filled: boolean;
+  createdAt: string;
 }
 
 export interface Character {
@@ -273,6 +316,7 @@ export interface DbMap {
   fog_enabled: boolean;
   fog_default_state: 'fogged' | 'revealed';
   fog_data: FogRegion[];
+  drawing_data: DrawingRegion[];
   show_player_tokens: boolean;
 }
 
@@ -403,6 +447,7 @@ export function dbMapToMap(db: DbMap): Map {
     fogEnabled: db.fog_enabled,
     fogDefaultState: db.fog_default_state,
     fogData: db.fog_data || [],
+    drawingData: db.drawing_data || [],
     showPlayerTokens: db.show_player_tokens,
   };
 }

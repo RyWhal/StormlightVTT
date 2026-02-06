@@ -1,5 +1,14 @@
 import { create } from 'zustand';
-import type { Map, Character, NPCInstance, NPCTemplate, FogRegion } from '../types';
+import type {
+  Map,
+  Character,
+  NPCInstance,
+  NPCTemplate,
+  FogRegion,
+  DrawingRegion,
+  DrawingColor,
+  DrawingShape,
+} from '../types';
 
 interface MapState {
   // Maps
@@ -31,6 +40,12 @@ interface MapState {
   fogToolMode: 'reveal' | 'hide' | null;
   fogBrushSize: 'small' | 'medium' | 'large';
   fogToolShape: 'brush' | 'rectangle';
+
+  // Drawing state
+  drawingData: DrawingRegion[];
+  drawingTool: DrawingShape | 'eraser' | null;
+  drawingColor: DrawingColor;
+  drawingStrokeWidth: number;
 
   // Actions - Maps
   setMaps: (maps: Map[]) => void;
@@ -84,6 +99,15 @@ interface MapState {
   clearFog: (mapId: string) => void;
   resetFog: (mapId: string) => void;
 
+  // Actions - Drawings
+  setDrawingTool: (tool: DrawingShape | 'eraser' | null) => void;
+  setDrawingColor: (color: DrawingColor) => void;
+  setDrawingStrokeWidth: (width: number) => void;
+  setDrawingData: (data: DrawingRegion[]) => void;
+  addDrawingRegion: (mapId: string, region: DrawingRegion) => void;
+  updateDrawingRegion: (mapId: string, regionId: string, updates: Partial<DrawingRegion>) => void;
+  removeDrawingRegion: (mapId: string, regionId: string) => void;
+
   // Clear all state
   clearMapState: () => void;
 }
@@ -112,6 +136,10 @@ export const useMapStore = create<MapState>()((set, get) => ({
   fogToolMode: null,
   fogBrushSize: 'medium',
   fogToolShape: 'brush',
+  drawingData: [],
+  drawingTool: null,
+  drawingColor: '#000000',
+  drawingStrokeWidth: 4,
 
   // Map actions
   setMaps: (maps) => set({ maps }),
@@ -122,22 +150,26 @@ export const useMapStore = create<MapState>()((set, get) => ({
     })),
 
   updateMap: (mapId, updates) =>
-    set((state) => ({
-      maps: state.maps.map((m) => (m.id === mapId ? { ...m, ...updates } : m)),
-      activeMap:
-        state.activeMap?.id === mapId
-          ? { ...state.activeMap, ...updates }
-          : state.activeMap,
-    })),
+    set((state) => {
+      const isActive = state.activeMap?.id === mapId;
+      const hasDrawingUpdate = Object.prototype.hasOwnProperty.call(updates, 'drawingData');
+      return {
+        maps: state.maps.map((m) => (m.id === mapId ? { ...m, ...updates } : m)),
+        activeMap: isActive ? { ...state.activeMap, ...updates } : state.activeMap,
+        drawingData:
+          isActive && hasDrawingUpdate ? updates.drawingData ?? [] : state.drawingData,
+      };
+    }),
 
   removeMap: (mapId) =>
     set((state) => ({
       maps: state.maps.filter((m) => m.id !== mapId),
       activeMap: state.activeMap?.id === mapId ? null : state.activeMap,
+      drawingData: state.activeMap?.id === mapId ? [] : state.drawingData,
     })),
 
   setActiveMap: (map) => {
-    set({ activeMap: map });
+    set({ activeMap: map, drawingData: map?.drawingData ?? [] });
     // Auto-fit map to view when a new map is activated
     if (map) {
       setTimeout(() => get().fitMapToView(), 50);
@@ -377,6 +409,74 @@ export const useMapStore = create<MapState>()((set, get) => ({
     }));
   },
 
+  // Drawing actions
+  setDrawingTool: (tool) => set({ drawingTool: tool }),
+
+  setDrawingColor: (color) => set({ drawingColor: color }),
+
+  setDrawingStrokeWidth: (width) => set({ drawingStrokeWidth: Math.max(1, width) }),
+
+  setDrawingData: (data) => set({ drawingData: data }),
+
+  addDrawingRegion: (mapId, region) => {
+    const state = get();
+    const map = state.maps.find((m) => m.id === mapId);
+    if (!map) return;
+
+    const newDrawingData = [...map.drawingData, region];
+    set((state) => ({
+      maps: state.maps.map((m) =>
+        m.id === mapId ? { ...m, drawingData: newDrawingData } : m
+      ),
+      activeMap:
+        state.activeMap?.id === mapId
+          ? { ...state.activeMap, drawingData: newDrawingData }
+          : state.activeMap,
+      drawingData:
+        state.activeMap?.id === mapId ? newDrawingData : state.drawingData,
+    }));
+  },
+
+  updateDrawingRegion: (mapId, regionId, updates) => {
+    const state = get();
+    const map = state.maps.find((m) => m.id === mapId);
+    if (!map) return;
+
+    const newDrawingData = map.drawingData.map((region) =>
+      region.id === regionId ? { ...region, ...updates } : region
+    );
+    set((state) => ({
+      maps: state.maps.map((m) =>
+        m.id === mapId ? { ...m, drawingData: newDrawingData } : m
+      ),
+      activeMap:
+        state.activeMap?.id === mapId
+          ? { ...state.activeMap, drawingData: newDrawingData }
+          : state.activeMap,
+      drawingData:
+        state.activeMap?.id === mapId ? newDrawingData : state.drawingData,
+    }));
+  },
+
+  removeDrawingRegion: (mapId, regionId) => {
+    const state = get();
+    const map = state.maps.find((m) => m.id === mapId);
+    if (!map) return;
+
+    const newDrawingData = map.drawingData.filter((region) => region.id !== regionId);
+    set((state) => ({
+      maps: state.maps.map((m) =>
+        m.id === mapId ? { ...m, drawingData: newDrawingData } : m
+      ),
+      activeMap:
+        state.activeMap?.id === mapId
+          ? { ...state.activeMap, drawingData: newDrawingData }
+          : state.activeMap,
+      drawingData:
+        state.activeMap?.id === mapId ? newDrawingData : state.drawingData,
+    }));
+  },
+
   clearMapState: () =>
     set({
       maps: [],
@@ -392,6 +492,10 @@ export const useMapStore = create<MapState>()((set, get) => ({
       tokenLocks: {},
       fogToolMode: null,
       fogToolShape: 'brush',
+      drawingData: [],
+      drawingTool: null,
+      drawingColor: '#000000',
+      drawingStrokeWidth: 4,
     }),
 }));
 
