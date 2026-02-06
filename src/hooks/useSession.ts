@@ -29,6 +29,10 @@ import {
   type Session,
 } from '../types';
 
+
+const isMissingRelationError = (error: { code?: string; message?: string } | null) =>
+  error?.code === '42P01' || error?.message?.toLowerCase().includes('does not exist');
+
 export const useSession = () => {
   const {
     session,
@@ -260,25 +264,29 @@ export const useSession = () => {
           setDiceRolls((rollsData as DbDiceRoll[]).map(dbDiceRollToDiceRoll).reverse());
         }
 
-        const { data: initiativeData } = await supabase
+        const { data: initiativeData, error: initiativeError } = await supabase
           .from('initiative_entries')
           .select('*')
           .eq('session_id', sessionId)
           .order('created_at', { ascending: true });
 
-        if (initiativeData) {
+        if (!initiativeError && initiativeData) {
           setEntries((initiativeData as DbInitiativeEntry[]).map(dbInitiativeEntryToInitiativeEntry));
         }
 
-        const { data: initiativeLogsData } = await supabase
+        const { data: initiativeLogsData, error: initiativeLogsError } = await supabase
           .from('initiative_roll_logs')
           .select('*')
           .eq('session_id', sessionId)
           .order('created_at', { ascending: false })
           .limit(200);
 
-        if (initiativeLogsData) {
+        if (!initiativeLogsError && initiativeLogsData) {
           setRollLogs((initiativeLogsData as DbInitiativeRollLog[]).map(dbInitiativeRollLogToInitiativeRollLog));
+        }
+
+        if (isMissingRelationError(initiativeError) || isMissingRelationError(initiativeLogsError)) {
+          console.warn('Initiative tables are not available yet; skipping initiative hydration.');
         }
       } catch (error) {
         console.error('Error loading session data:', error);
