@@ -3,12 +3,13 @@ import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { useInitiativeStore } from '../stores/initiativeStore';
-import {
-  dbInitiativeEntryToInitiativeEntry,
-  type DbInitiativeEntry,
-  type InitiativePhase,
-  type InitiativeVisibility,
-} from '../types';
+import type { InitiativePhase, InitiativeVisibility } from '../types';
+
+interface RollSource {
+  sourceType: 'player' | 'npc';
+  sourceId: string | null;
+  sourceName: string;
+}
 
 export const useInitiative = () => {
   const session = useSessionStore((state) => state.session);
@@ -18,11 +19,112 @@ export const useInitiative = () => {
   const activeMap = useMapStore((state) => state.activeMap);
   const npcInstances = useMapStore((state) => state.npcInstances);
   const entries = useInitiativeStore((state) => state.entries);
+  const rollLogs = useInitiativeStore((state) => state.rollLogs);
 
   const visibleEntries = useMemo(() => {
     if (currentUser?.isGm) return entries;
     return entries.filter((entry) => entry.visibility === 'public');
   }, [entries, currentUser?.isGm]);
+
+  const visibleLogs = useMemo(() => {
+    if (currentUser?.isGm) return rollLogs;
+    return rollLogs.filter((log) => log.visibility === 'public');
+  }, [rollLogs, currentUser?.isGm]);
+
+  const upsertRollForSource = useCallback(
+    async (
+      source: RollSource,
+      phase: InitiativePhase,
+      visibility: InitiativeVisibility,
+      modifier: number,
+      rollValue: number
+    ) => {
+      if (!session || !currentUser) return { success: false as const, error: 'No session' };
+
+      const total = rollValue + modifier;
+
+      let existingEntryId: string | null = null;
+
+      if (source.sourceId) {
+        const { data: existing } = await supabase
+          .from('initiative_entries')
+          .select('id')
+          .eq('session_id', session.id)
+          .eq('source_type', source.sourceType)
+          .eq('source_id', source.sourceId)
+          .maybeSingle();
+
+        existingEntryId = existing?.id ?? null;
+      } else {
+        const { data: existing } = await supabase
+          .from('initiative_entries')
+          .select('id')
+          .eq('session_id', session.id)
+          .eq('source_type', source.sourceType)
+          .is('source_id', null)
+          .eq('source_name', source.sourceName)
+          .maybeSingle();
+
+        existingEntryId = existing?.id ?? null;
+      }
+
+      if (existingEntryId) {
+        const { error } = await supabase
+          .from('initiative_entries')
+          .update({
+            source_name: source.sourceName,
+            rolled_by_username: currentUser.username,
+            modifier,
+            roll_value: rollValue,
+            total,
+            phase,
+            visibility,
+            is_manual_override: false,
+          })
+          .eq('id', existingEntryId);
+
+        if (error) return { success: false as const, error: error.message };
+      } else {
+        const { data, error } = await supabase
+          .from('initiative_entries')
+          .insert({
+            session_id: session.id,
+            source_type: source.sourceType,
+            source_id: source.sourceId,
+            source_name: source.sourceName,
+            rolled_by_username: currentUser.username,
+            modifier,
+            roll_value: rollValue,
+            total,
+            phase,
+            visibility,
+          })
+          .select('id')
+          .single();
+
+        if (error) return { success: false as const, error: error.message };
+        existingEntryId = data?.id ?? null;
+      }
+
+      const { error: logError } = await supabase.from('initiative_roll_logs').insert({
+        session_id: session.id,
+        source_type: source.sourceType,
+        source_id: source.sourceId,
+        source_name: source.sourceName,
+        rolled_by_username: currentUser.username,
+        phase,
+        visibility,
+        modifier,
+        roll_value: rollValue,
+        total,
+        entry_id: existingEntryId,
+      });
+
+      if (logError) return { success: false as const, error: logError.message };
+      return { success: true as const, rollValue, total };
+    },
+    [session, currentUser]
+  );
 
   const setMyModifier = useCallback(
     async (modifier: number) => {
@@ -49,28 +151,21 @@ export const useInitiative = () => {
       const player = players.find((p) => p.username === currentUser.username);
       const modifier = player?.initiativeModifier ?? 0;
       const rollValue = Math.floor(Math.random() * 20) + 1;
-      const total = rollValue + modifier;
-
       const myCharacter = characters.find((c) => c.claimedByUsername === currentUser.username);
-      const sourceName = myCharacter?.name || currentUser.username;
 
-      const { error } = await supabase.from('initiative_entries').insert({
-        session_id: session.id,
-        source_type: 'player',
-        source_id: myCharacter?.id || null,
-        source_name: sourceName,
-        rolled_by_username: currentUser.username,
-        modifier,
-        roll_value: rollValue,
-        total,
+      return upsertRollForSource(
+        {
+          sourceType: 'player',
+          sourceId: myCharacter?.id || null,
+          sourceName: myCharacter?.name || currentUser.username,
+        },
         phase,
         visibility,
-      });
-
-      if (error) return { success: false, error: error.message };
-      return { success: true, rollValue, total };
+        modifier,
+        rollValue
+      );
     },
-    [session, currentUser, players, characters]
+    [session, currentUser, players, characters, upsertRollForSource]
   );
 
   const addNpcInitiative = useCallback(
@@ -82,36 +177,39 @@ export const useInitiative = () => {
     ) => {
       if (!session || !currentUser?.isGm) return { success: false, error: 'GM only' };
 
-      const rows = npcIds
+      const npcs = npcIds
         .map((id) => npcInstances.find((npc) => npc.id === id))
-        .filter(Boolean)
-        .map((npc) => {
-          const rollValue = Math.floor(Math.random() * 20) + 1;
-          const total = rollValue + modifier;
-          return {
-            session_id: session.id,
-            source_type: 'npc' as const,
-            source_id: npc!.id,
-            source_name: npc!.displayName || 'NPC',
-            rolled_by_username: currentUser.username,
-            modifier,
-            roll_value: rollValue,
-            total,
-            phase,
-            visibility,
-          };
-        });
+        .filter((npc): npc is NonNullable<typeof npc> => Boolean(npc));
 
-      if (rows.length === 0) return { success: false, error: 'No NPCs selected' };
-      const { error } = await supabase.from('initiative_entries').insert(rows);
-      if (error) return { success: false, error: error.message };
+      if (npcs.length === 0) return { success: false, error: 'No NPCs selected' };
+
+      for (const npc of npcs) {
+        const rollValue = Math.floor(Math.random() * 20) + 1;
+        const result = await upsertRollForSource(
+          {
+            sourceType: 'npc',
+            sourceId: npc.id,
+            sourceName: npc.displayName || 'NPC',
+          },
+          phase,
+          visibility,
+          modifier,
+          rollValue
+        );
+
+        if (!result.success) return result;
+      }
+
       return { success: true };
     },
-    [session, currentUser, npcInstances]
+    [session, currentUser, npcInstances, upsertRollForSource]
   );
 
   const updateEntry = useCallback(
-    async (id: string, updates: Partial<{ total: number; phase: InitiativePhase; visibility: InitiativeVisibility }>) => {
+    async (
+      id: string,
+      updates: Partial<{ total: number; phase: InitiativePhase; visibility: InitiativeVisibility }>
+    ) => {
       if (!currentUser?.isGm) return { success: false, error: 'GM only' };
       const dbUpdates: Record<string, unknown> = { is_manual_override: true };
       if (updates.total !== undefined) dbUpdates.total = updates.total;
@@ -147,13 +245,10 @@ export const useInitiative = () => {
     return npcInstances.filter((npc) => npc.mapId === activeMap.id);
   }, [npcInstances, activeMap]);
 
-  const hydrateEntries = useCallback((rows: DbInitiativeEntry[]) => {
-    useInitiativeStore.getState().setEntries(rows.map(dbInitiativeEntryToInitiativeEntry));
-  }, []);
-
   return {
     entries: visibleEntries,
     allEntries: entries,
+    rollLogs: visibleLogs,
     currentMapNpcs,
     setMyModifier,
     addPlayerInitiative,
@@ -161,6 +256,5 @@ export const useInitiative = () => {
     updateEntry,
     deleteEntry,
     clearTracker,
-    hydrateEntries,
   };
 };

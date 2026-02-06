@@ -14,6 +14,7 @@ import {
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
   dbInitiativeEntryToInitiativeEntry,
+  dbInitiativeRollLogToInitiativeRollLog,
   type DbSession,
   type DbMap,
   type DbCharacter,
@@ -22,6 +23,7 @@ import {
   type DbChatMessage,
   type DbDiceRoll,
   type DbInitiativeEntry,
+  type DbInitiativeRollLog,
 } from '../types';
 
 export const useRealtime = () => {
@@ -42,7 +44,7 @@ export const useRealtime = () => {
     removeNPCInstance,
   } = useMapStore();
   const { addMessage, addDiceRoll } = useChatStore();
-  const { upsertEntry, removeEntry } = useInitiativeStore();
+  const { upsertEntry, removeEntry, addRollLog } = useInitiativeStore();
 
   useEffect(() => {
     if (!session?.id) {
@@ -328,6 +330,20 @@ export const useRealtime = () => {
         }
       );
 
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'initiative_roll_logs',
+        filter: `session_id=eq.${sessionId}`,
+      },
+      (payload) => {
+        addRollLog(dbInitiativeRollLogToInitiativeRollLog(payload.new as DbInitiativeRollLog));
+      }
+    );
+
     // Subscribe to channel
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
@@ -369,6 +385,7 @@ export const useRealtime = () => {
     addDiceRoll,
     upsertEntry,
     removeEntry,
+    addRollLog,
     setConnectionStatus,
   ]);
 

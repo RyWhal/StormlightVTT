@@ -189,12 +189,14 @@ export const PlaySession: React.FC = () => {
               icon={<Dices className="w-4 h-4" />}
               label="Dice"
             />
-            <TabButton
-              active={sideTab === 'initiative'}
-              onClick={() => setSideTab('initiative')}
-              icon={<Users className="w-4 h-4" />}
-              label="Initiative"
-            />
+            {!isGM && (
+              <TabButton
+                active={sideTab === 'initiative'}
+                onClick={() => setSideTab('initiative')}
+                icon={<Users className="w-4 h-4" />}
+                label="Initiative"
+              />
+            )}
             <TabButton
               active={sideTab === 'notes'}
               onClick={() => setSideTab('notes')}
@@ -213,7 +215,7 @@ export const PlaySession: React.FC = () => {
           <div className="flex-1 overflow-hidden">
             {sideTab === 'chat' && <ChatPanel />}
             {sideTab === 'dice' && <DicePanel />}
-            {sideTab === 'initiative' && <InitiativePanel />}
+            {!isGM && sideTab === 'initiative' && <InitiativePanel />}
             {sideTab === 'notes' && <NotepadPanel />}
             {sideTab === 'inventory' && <InventoryPanel />}
           </div>

@@ -1,11 +1,14 @@
 import { create } from 'zustand';
-import type { InitiativeEntry } from '../types';
+import type { InitiativeEntry, InitiativeRollLog } from '../types';
 
 interface InitiativeState {
   entries: InitiativeEntry[];
+  rollLogs: InitiativeRollLog[];
   setEntries: (entries: InitiativeEntry[]) => void;
   upsertEntry: (entry: InitiativeEntry) => void;
   removeEntry: (id: string) => void;
+  setRollLogs: (logs: InitiativeRollLog[]) => void;
+  addRollLog: (log: InitiativeRollLog) => void;
   clearInitiativeState: () => void;
 }
 
@@ -18,8 +21,14 @@ const sortEntries = (entries: InitiativeEntry[]) =>
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
+const sortLogs = (logs: InitiativeRollLog[]) =>
+  [...logs].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
 export const useInitiativeStore = create<InitiativeState>()((set) => ({
   entries: [],
+  rollLogs: [],
   setEntries: (entries) => set({ entries: sortEntries(entries) }),
   upsertEntry: (entry) =>
     set((state) => ({
@@ -30,5 +39,8 @@ export const useInitiativeStore = create<InitiativeState>()((set) => ({
     })),
   removeEntry: (id) =>
     set((state) => ({ entries: state.entries.filter((entry) => entry.id !== id) })),
-  clearInitiativeState: () => set({ entries: [] }),
+  setRollLogs: (rollLogs) => set({ rollLogs: sortLogs(rollLogs).slice(0, 200) }),
+  addRollLog: (log) =>
+    set((state) => ({ rollLogs: sortLogs([log, ...state.rollLogs]).slice(0, 200) })),
+  clearInitiativeState: () => set({ entries: [], rollLogs: [] }),
 }));

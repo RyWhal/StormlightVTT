@@ -15,6 +15,7 @@ import {
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
   dbInitiativeEntryToInitiativeEntry,
+  dbInitiativeRollLogToInitiativeRollLog,
   type DbSession,
   type DbMap,
   type DbCharacter,
@@ -24,6 +25,7 @@ import {
   type DbChatMessage,
   type DbDiceRoll,
   type DbInitiativeEntry,
+  type DbInitiativeRollLog,
   type Session,
 } from '../types';
 
@@ -48,7 +50,7 @@ export const useSession = () => {
   } = useMapStore();
 
   const { setMessages, setDiceRolls, clearChatState } = useChatStore();
-  const { setEntries, clearInitiativeState } = useInitiativeStore();
+  const { setEntries, setRollLogs, clearInitiativeState } = useInitiativeStore();
 
   const createSession = useCallback(
     async (
@@ -267,11 +269,22 @@ export const useSession = () => {
         if (initiativeData) {
           setEntries((initiativeData as DbInitiativeEntry[]).map(dbInitiativeEntryToInitiativeEntry));
         }
+
+        const { data: initiativeLogsData } = await supabase
+          .from('initiative_roll_logs')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        if (initiativeLogsData) {
+          setRollLogs((initiativeLogsData as DbInitiativeRollLog[]).map(dbInitiativeRollLogToInitiativeRollLog));
+        }
       } catch (error) {
         console.error('Error loading session data:', error);
       }
     },
-    [setMaps, setActiveMap, setCharacters, setNPCTemplates, setNPCInstances, setPlayers, setMessages, setDiceRolls, setEntries]
+    [setMaps, setActiveMap, setCharacters, setNPCTemplates, setNPCInstances, setPlayers, setMessages, setDiceRolls, setEntries, setRollLogs]
   );
 
   const claimGM = useCallback(async (): Promise<{ success: boolean; error?: string }> => {

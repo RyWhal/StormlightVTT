@@ -165,6 +165,22 @@ export interface InitiativeEntry {
   updatedAt: string;
 }
 
+export interface InitiativeRollLog {
+  id: string;
+  sessionId: string;
+  sourceType: 'player' | 'npc';
+  sourceId: string | null;
+  sourceName: string;
+  rolledByUsername: string;
+  phase: InitiativePhase;
+  visibility: InitiativeVisibility;
+  modifier: number;
+  rollValue: number;
+  total: number;
+  entryId: string | null;
+  createdAt: string;
+}
+
 // Session export/import types
 export interface SessionExport {
   version: '1.0';
@@ -328,6 +344,22 @@ export interface DbInitiativeEntry {
   updated_at: string;
 }
 
+export interface DbInitiativeRollLog {
+  id: string;
+  session_id: string;
+  source_type: 'player' | 'npc';
+  source_id: string | null;
+  source_name: string;
+  rolled_by_username: string;
+  phase: InitiativePhase;
+  visibility: InitiativeVisibility;
+  modifier: number;
+  roll_value: number;
+  total: number;
+  entry_id: string | null;
+  created_at: string;
+}
+
 export interface DbChatMessage {
   id: string;
   session_id: string;
@@ -450,6 +482,24 @@ export function dbInitiativeEntryToInitiativeEntry(db: DbInitiativeEntry): Initi
     sortOrder: db.sort_order ?? 0,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
+  };
+}
+
+export function dbInitiativeRollLogToInitiativeRollLog(db: DbInitiativeRollLog): InitiativeRollLog {
+  return {
+    id: db.id,
+    sessionId: db.session_id,
+    sourceType: db.source_type,
+    sourceId: db.source_id,
+    sourceName: db.source_name,
+    rolledByUsername: db.rolled_by_username,
+    phase: db.phase,
+    visibility: db.visibility,
+    modifier: db.modifier ?? 0,
+    rollValue: db.roll_value,
+    total: db.total,
+    entryId: db.entry_id,
+    createdAt: db.created_at,
   };
 }
 
