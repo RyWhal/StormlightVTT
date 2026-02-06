@@ -25,6 +25,7 @@ import {
   type DbInitiativeEntry,
   type DbInitiativeRollLog,
 } from '../types';
+import { clearTokenBroadcastChannel, getTokenBroadcastChannel } from '../lib/tokenBroadcast';
 
 const isMissingRelationError = (error: { code?: string; message?: string } | null) =>
   error?.code === '42P01' || error?.message?.toLowerCase().includes('does not exist');
@@ -43,9 +44,11 @@ export const useRealtime = () => {
     updateCharacter,
     addCharacter,
     removeCharacter,
+    moveCharacter,
     updateNPCInstance,
     addNPCInstance,
     removeNPCInstance,
+    moveNPCInstance,
   } = useMapStore();
   const { addMessage, addDiceRoll } = useChatStore();
   const { upsertEntry, removeEntry, addRollLog } = useInitiativeStore();
@@ -292,6 +295,24 @@ export const useRealtime = () => {
     });
 
     channelRef.current = channel;
+    const tokenChannel = getTokenBroadcastChannel(sessionId);
+    tokenChannel.on('broadcast', { event: 'token_move' }, ({ payload }) => {
+      const movePayload = payload as {
+        sessionId: string;
+        tokenId: string;
+        tokenType: 'character' | 'npc';
+        x: number;
+        y: number;
+      };
+
+      if (movePayload.sessionId !== sessionId) return;
+
+      if (movePayload.tokenType === 'character') {
+        moveCharacter(movePayload.tokenId, movePayload.x, movePayload.y);
+      } else {
+        moveNPCInstance(movePayload.tokenId, movePayload.x, movePayload.y);
+      }
+    });
 
     const connectInitiativeChannel = async () => {
       const { error: entriesError } = await supabase.from('initiative_entries').select('id').limit(1);
@@ -371,6 +392,7 @@ export const useRealtime = () => {
         supabase.removeChannel(initiativeChannelRef.current);
         initiativeChannelRef.current = null;
       }
+      clearTokenBroadcastChannel();
     };
   }, [
     session?.id,
@@ -388,9 +410,11 @@ export const useRealtime = () => {
     updateCharacter,
     addCharacter,
     removeCharacter,
+    moveCharacter,
     updateNPCInstance,
     addNPCInstance,
     removeNPCInstance,
+    moveNPCInstance,
     addMessage,
     addDiceRoll,
     upsertEntry,

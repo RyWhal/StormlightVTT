@@ -4,6 +4,7 @@ import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { dbCharacterToCharacter, type DbCharacter, type Character, type InventoryItem } from '../types';
 import { nanoid } from 'nanoid';
+import { broadcastTokenMove } from '../lib/tokenBroadcast';
 
 export const useCharacters = () => {
   const session = useSessionStore((state) => state.session);
@@ -235,6 +236,10 @@ export const useCharacters = () => {
       x: number,
       y: number
     ): Promise<{ success: boolean; error?: string }> => {
+      if (!session) {
+        return { success: false, error: 'Not in a session' };
+      }
+
       // Optimistic update
       moveCharacter(characterId, x, y);
 
@@ -253,6 +258,14 @@ export const useCharacters = () => {
           return { success: false, error: error.message };
         }
 
+        await broadcastTokenMove({
+          sessionId: session.id,
+          tokenId: characterId,
+          tokenType: 'character',
+          x,
+          y,
+        });
+
         return { success: true };
       } catch (error) {
         return {
@@ -261,7 +274,7 @@ export const useCharacters = () => {
         };
       }
     },
-    [characters, moveCharacter]
+    [session, characters, moveCharacter]
   );
 
   /**
