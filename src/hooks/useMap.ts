@@ -4,6 +4,7 @@ import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { dbMapToMap, type DbMap, type Map, type FogRegion } from '../types';
 import { nanoid } from 'nanoid';
+import { broadcastActiveMap } from '../lib/tokenBroadcast';
 
 export const useMap = () => {
   const session = useSessionStore((state) => state.session);
@@ -150,6 +151,7 @@ export const useMap = () => {
         }
 
         setActiveMap(map);
+        await broadcastActiveMap({ sessionId: session.id, mapId });
         return { success: true };
       } catch (error) {
         return {

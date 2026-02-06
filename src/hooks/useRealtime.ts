@@ -24,7 +24,11 @@ import {
   type DbDiceRoll,
   type DbInitiativeEntry,
   type DbInitiativeRollLog,
+  type ChatMessage,
+  type DiceRoll,
+  type Map,
 } from '../types';
+import { clearTokenBroadcastChannel, getTokenBroadcastChannel } from '../lib/tokenBroadcast';
 
 const isMissingRelationError = (error: { code?: string; message?: string } | null) =>
   error?.code === '42P01' || error?.message?.toLowerCase().includes('does not exist');
@@ -32,6 +36,12 @@ const isMissingRelationError = (error: { code?: string; message?: string } | nul
 export const useRealtime = () => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const initiativeChannelRef = useRef<RealtimeChannel | null>(null);
+  const mapsRef = useRef<Map[]>([]);
+  const currentUserRef = useRef<{
+    username: string;
+    characterId: string | null;
+    isGm: boolean;
+  } | null>(null);
   const { session, currentUser, updateSession, setPlayers, addPlayer, removePlayer, setConnectionStatus } =
     useSessionStore();
   const {
@@ -43,12 +53,24 @@ export const useRealtime = () => {
     updateCharacter,
     addCharacter,
     removeCharacter,
+    moveCharacter,
     updateNPCInstance,
     addNPCInstance,
     removeNPCInstance,
+    moveNPCInstance,
+    setTokenLock,
+    clearTokenLock,
   } = useMapStore();
   const { addMessage, addDiceRoll } = useChatStore();
   const { upsertEntry, removeEntry, addRollLog } = useInitiativeStore();
+
+  useEffect(() => {
+    mapsRef.current = maps;
+  }, [maps]);
+
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   useEffect(() => {
     if (!session?.id) {
@@ -81,7 +103,7 @@ export const useRealtime = () => {
         updateSession(updated);
 
         if (updated.activeMapId !== session.activeMapId) {
-          const activeMap = maps.find((m) => m.id === updated.activeMapId);
+          const activeMap = mapsRef.current.find((m) => m.id === updated.activeMapId);
           setActiveMap(activeMap || null);
         }
       }
@@ -273,11 +295,12 @@ export const useRealtime = () => {
       },
       (payload) => {
         const roll = dbDiceRollToDiceRoll(payload.new as DbDiceRoll);
+        const activeUser = currentUserRef.current;
         if (roll.visibility === 'public') {
           addDiceRoll(roll);
-        } else if (roll.visibility === 'gm_only' && currentUser?.isGm) {
+        } else if (roll.visibility === 'gm_only' && activeUser?.isGm) {
           addDiceRoll(roll);
-        } else if (roll.visibility === 'self' && roll.username === currentUser?.username) {
+        } else if (roll.visibility === 'self' && roll.username === activeUser?.username) {
           addDiceRoll(roll);
         }
       }
@@ -292,6 +315,108 @@ export const useRealtime = () => {
     });
 
     channelRef.current = channel;
+    const tokenChannel = getTokenBroadcastChannel(sessionId);
+    const buildTokenKey = (type: 'character' | 'npc', id: string) => `${type}:${id}`;
+
+    tokenChannel.on('broadcast', { event: 'token_move' }, ({ payload }) => {
+      const movePayload = payload as {
+        sessionId: string;
+        tokenId: string;
+        tokenType: 'character' | 'npc';
+        x: number;
+        y: number;
+      };
+
+      if (movePayload.sessionId !== sessionId) return;
+
+      if (movePayload.tokenType === 'character') {
+        moveCharacter(movePayload.tokenId, movePayload.x, movePayload.y);
+      } else {
+        moveNPCInstance(movePayload.tokenId, movePayload.x, movePayload.y);
+      }
+    });
+
+    tokenChannel.on('broadcast', { event: 'token_lock' }, ({ payload }) => {
+      const lockPayload = payload as {
+        sessionId: string;
+        tokenId: string;
+        tokenType: 'character' | 'npc';
+        username: string;
+      };
+
+      if (lockPayload.sessionId !== sessionId) return;
+      setTokenLock(buildTokenKey(lockPayload.tokenType, lockPayload.tokenId), lockPayload.username);
+    });
+
+    tokenChannel.on('broadcast', { event: 'token_unlock' }, ({ payload }) => {
+      const lockPayload = payload as {
+        sessionId: string;
+        tokenId: string;
+        tokenType: 'character' | 'npc';
+        username: string;
+      };
+
+      if (lockPayload.sessionId !== sessionId) return;
+      clearTokenLock(buildTokenKey(lockPayload.tokenType, lockPayload.tokenId));
+    });
+
+    tokenChannel.on('broadcast', { event: 'chat_message' }, ({ payload }) => {
+      const chatPayload = payload as {
+        sessionId: string;
+        message: {
+          id: string;
+          sessionId: string;
+          username: string;
+          message: string;
+          isGmAnnouncement: boolean;
+          createdAt: string;
+        };
+      };
+
+      if (chatPayload.sessionId !== sessionId) return;
+      addMessage(chatPayload.message as ChatMessage);
+    });
+
+    tokenChannel.on('broadcast', { event: 'dice_roll' }, ({ payload }) => {
+      const rollPayload = payload as {
+        sessionId: string;
+        roll: {
+          id: string;
+          sessionId: string;
+          username: string;
+          characterName: string | null;
+          rollExpression: string;
+          rollResults: unknown;
+          visibility: 'public' | 'gm_only' | 'self';
+          plotDiceResults: unknown;
+          createdAt: string;
+        };
+      };
+
+      if (rollPayload.sessionId !== sessionId) return;
+      const roll = rollPayload.roll as DiceRoll;
+      const activeUser = currentUserRef.current;
+      if (roll.visibility === 'public') {
+        addDiceRoll(roll);
+      } else if (roll.visibility === 'gm_only' && activeUser?.isGm) {
+        addDiceRoll(roll);
+      } else if (roll.visibility === 'self' && roll.username === activeUser?.username) {
+        addDiceRoll(roll);
+      }
+    });
+
+    tokenChannel.on('broadcast', { event: 'active_map' }, ({ payload }) => {
+      const mapPayload = payload as {
+        sessionId: string;
+        mapId: string;
+      };
+
+      if (mapPayload.sessionId !== sessionId) return;
+      const nextMap = mapsRef.current.find((map) => map.id === mapPayload.mapId);
+      if (nextMap) {
+        setActiveMap(nextMap);
+      }
+    });
 
     const connectInitiativeChannel = async () => {
       const { error: entriesError } = await supabase.from('initiative_entries').select('id').limit(1);
@@ -371,12 +496,11 @@ export const useRealtime = () => {
         supabase.removeChannel(initiativeChannelRef.current);
         initiativeChannelRef.current = null;
       }
+      clearTokenBroadcastChannel();
     };
   }, [
     session?.id,
     currentUser?.username,
-    currentUser?.isGm,
-    maps,
     updateSession,
     setPlayers,
     addPlayer,
@@ -388,9 +512,13 @@ export const useRealtime = () => {
     updateCharacter,
     addCharacter,
     removeCharacter,
+    moveCharacter,
     updateNPCInstance,
     addNPCInstance,
     removeNPCInstance,
+    moveNPCInstance,
+    setTokenLock,
+    clearTokenLock,
     addMessage,
     addDiceRoll,
     upsertEntry,

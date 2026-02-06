@@ -16,6 +16,7 @@ import { useSessionStore, useIsGM } from '../../stores/sessionStore';
 import { useCharacters } from '../../hooks/useCharacters';
 import { useNPCs } from '../../hooks/useNPCs';
 import { useMap } from '../../hooks/useMap';
+import { broadcastTokenLock, broadcastTokenUnlock } from '../../lib/tokenBroadcast';
 import { Token } from './Token';
 import { GridOverlay } from './GridOverlay';
 import { FogLayer } from './FogLayer';
@@ -42,6 +43,9 @@ export const MapCanvas: React.FC = () => {
     setStageSize,
     selectToken,
     clearSelection,
+    tokenLocks,
+    setTokenLock,
+    clearTokenLock,
     fitMapToView,
     panBy,
     zoomTo,
@@ -153,27 +157,69 @@ export const MapCanvas: React.FC = () => {
     [clearSelection]
   );
 
+  const buildTokenKey = useCallback(
+    (type: 'character' | 'npc', id: string) => `${type}:${id}`,
+    []
+  );
+
+  const handleTokenDragStart = useCallback(
+    async (id: string, type: 'character' | 'npc') => {
+      if (!session || !currentUser) return;
+      const tokenKey = buildTokenKey(type, id);
+      setTokenLock(tokenKey, currentUser.username);
+      await broadcastTokenLock({
+        sessionId: session.id,
+        tokenId: id,
+        tokenType: type,
+        username: currentUser.username,
+      });
+    },
+    [session, currentUser, buildTokenKey, setTokenLock]
+  );
+
   // Handle token movement
   const handleTokenDragEnd = useCallback(
     async (id: string, type: 'character' | 'npc', x: number, y: number) => {
-      if (type === 'character') {
-        await moveCharacterPosition(id, x, y);
-      } else {
-        await moveNPCPosition(id, x, y);
+      if (!session || !currentUser) return;
+      const tokenKey = buildTokenKey(type, id);
+
+      try {
+        if (type === 'character') {
+          await moveCharacterPosition(id, x, y);
+        } else {
+          await moveNPCPosition(id, x, y);
+        }
+      } finally {
+        clearTokenLock(tokenKey);
+        await broadcastTokenUnlock({
+          sessionId: session.id,
+          tokenId: id,
+          tokenType: type,
+          username: currentUser.username,
+        });
       }
     },
-    [moveCharacterPosition, moveNPCPosition]
+    [
+      session,
+      currentUser,
+      buildTokenKey,
+      moveCharacterPosition,
+      moveNPCPosition,
+      clearTokenLock,
+    ]
   );
 
   // Can user move this token?
   const canMoveToken = useCallback(
-    (type: 'character' | 'npc', ownerId?: string | null) => {
+    (type: 'character' | 'npc', id: string) => {
       if (isGM) return true;
-      if (type === 'character' && ownerId === currentUser?.username) return true;
-      if (type === 'npc' && session?.allowPlayersMoveNpcs) return true;
-      return false;
+      if (!currentUser) return false;
+      const tokenKey = buildTokenKey(type, id);
+      const lockOwner = tokenLocks[tokenKey];
+      if (lockOwner && lockOwner !== currentUser.username) return false;
+      return true;
     },
-    [isGM, currentUser, session?.allowPlayersMoveNpcs]
+    [isGM, currentUser, tokenLocks, buildTokenKey]
   );
 
   // Convert screen coordinates to map coordinates
@@ -413,10 +459,11 @@ export const MapCanvas: React.FC = () => {
                 size={npc.size || 'medium'}
                 gridCellSize={gridCellSize}
                 isSelected={selectedTokenId === npc.id && selectedTokenType === 'npc'}
-                isDraggable={canMoveToken('npc')}
+                isDraggable={canMoveToken('npc', npc.id)}
                 isHidden={!npc.isVisible}
                 isGM={isGM}
                 onSelect={() => selectToken(npc.id, 'npc')}
+                onDragStart={() => handleTokenDragStart(npc.id, 'npc')}
                 onDragEnd={(x, y) => handleTokenDragEnd(npc.id, 'npc', x, y)}
               />
             ))}
@@ -437,10 +484,11 @@ export const MapCanvas: React.FC = () => {
                 size="medium"
                 gridCellSize={gridCellSize}
                 isSelected={selectedTokenId === char.id && selectedTokenType === 'character'}
-                isDraggable={canMoveToken('character', char.claimedByUsername)}
+                isDraggable={canMoveToken('character', char.id)}
                 isHidden={false}
                 isGM={isGM}
                 onSelect={() => selectToken(char.id, 'character')}
+                onDragStart={() => handleTokenDragStart(char.id, 'character')}
                 onDragEnd={(x, y) => handleTokenDragEnd(char.id, 'character', x, y)}
               />
             ))}

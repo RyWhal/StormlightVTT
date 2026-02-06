@@ -12,6 +12,7 @@ import {
   type TokenSize,
 } from '../types';
 import { nanoid } from 'nanoid';
+import { broadcastTokenMove } from '../lib/tokenBroadcast';
 
 export const useNPCs = () => {
   const session = useSessionStore((state) => state.session);
@@ -282,6 +283,10 @@ export const useNPCs = () => {
       x: number,
       y: number
     ): Promise<{ success: boolean; error?: string }> => {
+      if (!session) {
+        return { success: false, error: 'Not in a session' };
+      }
+
       // Optimistic update
       moveNPCInstance(instanceId, x, y);
 
@@ -300,6 +305,14 @@ export const useNPCs = () => {
           return { success: false, error: error.message };
         }
 
+        await broadcastTokenMove({
+          sessionId: session.id,
+          tokenId: instanceId,
+          tokenType: 'npc',
+          x,
+          y,
+        });
+
         return { success: true };
       } catch (error) {
         return {
@@ -308,7 +321,7 @@ export const useNPCs = () => {
         };
       }
     },
-    [npcInstances, moveNPCInstance]
+    [session, npcInstances, moveNPCInstance]
   );
 
   /**

@@ -137,7 +137,7 @@ export const useSession = () => {
 
         const { data: existingPlayer } = await supabase
           .from('session_players')
-          .select('id')
+          .select('id, is_gm, character_id')
           .eq('session_id', joinedSession.id)
           .eq('username', username)
           .single();
@@ -162,8 +162,12 @@ export const useSession = () => {
         }
 
         setSession(joinedSession);
-        const isGm = joinedSession.currentGmUsername === username;
-        setCurrentUser({ username, characterId: null, isGm });
+        const isGm = existingPlayer?.is_gm ?? joinedSession.currentGmUsername === username;
+        setCurrentUser({
+          username,
+          characterId: existingPlayer?.character_id ?? null,
+          isGm,
+        });
 
         await loadSessionData(joinedSession.id);
 
@@ -301,16 +305,13 @@ export const useSession = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('sessions')
         .update({ current_gm_username: currentUser.username })
-        .eq('id', session.id)
-        .is('current_gm_username', null)
-        .select()
-        .single();
+        .eq('id', session.id);
 
-      if (error || !data) {
-        return { success: false, error: 'Someone else claimed GM first' };
+      if (error) {
+        return { success: false, error: error.message };
       }
 
       await supabase
@@ -337,10 +338,12 @@ export const useSession = () => {
     }
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
         .update({ current_gm_username: null })
-        .eq('id', session.id);
+        .eq('id', session.id)
+        .eq('current_gm_username', currentUser.username)
+        .select();
 
       if (error) {
         return { success: false, error: error.message };
@@ -352,7 +355,9 @@ export const useSession = () => {
         .eq('session_id', session.id)
         .eq('username', currentUser.username);
 
-      updateSession({ currentGmUsername: null });
+      if (data && data.length > 0) {
+        updateSession({ currentGmUsername: null });
+      }
       setCurrentUser({ ...currentUser, isGm: false });
 
       return { success: true };
