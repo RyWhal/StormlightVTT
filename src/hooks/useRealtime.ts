@@ -24,6 +24,8 @@ import {
   type DbDiceRoll,
   type DbInitiativeEntry,
   type DbInitiativeRollLog,
+  type ChatMessage,
+  type DiceRoll,
 } from '../types';
 import { clearTokenBroadcastChannel, getTokenBroadcastChannel } from '../lib/tokenBroadcast';
 
@@ -340,6 +342,63 @@ export const useRealtime = () => {
 
       if (lockPayload.sessionId !== sessionId) return;
       clearTokenLock(buildTokenKey(lockPayload.tokenType, lockPayload.tokenId));
+    });
+
+    tokenChannel.on('broadcast', { event: 'chat_message' }, ({ payload }) => {
+      const chatPayload = payload as {
+        sessionId: string;
+        message: {
+          id: string;
+          sessionId: string;
+          username: string;
+          message: string;
+          isGmAnnouncement: boolean;
+          createdAt: string;
+        };
+      };
+
+      if (chatPayload.sessionId !== sessionId) return;
+      addMessage(chatPayload.message as ChatMessage);
+    });
+
+    tokenChannel.on('broadcast', { event: 'dice_roll' }, ({ payload }) => {
+      const rollPayload = payload as {
+        sessionId: string;
+        roll: {
+          id: string;
+          sessionId: string;
+          username: string;
+          characterName: string | null;
+          rollExpression: string;
+          rollResults: unknown;
+          visibility: 'public' | 'gm_only' | 'self';
+          plotDiceResults: unknown;
+          createdAt: string;
+        };
+      };
+
+      if (rollPayload.sessionId !== sessionId) return;
+      const roll = rollPayload.roll as DiceRoll;
+      if (roll.visibility === 'public') {
+        addDiceRoll(roll);
+      } else if (roll.visibility === 'gm_only' && currentUser?.isGm) {
+        addDiceRoll(roll);
+      } else if (roll.visibility === 'self' && roll.username === currentUser?.username) {
+        addDiceRoll(roll);
+      }
+    });
+
+    tokenChannel.on('broadcast', { event: 'active_map' }, ({ payload }) => {
+      const mapPayload = payload as {
+        sessionId: string;
+        mapId: string;
+      };
+
+      if (mapPayload.sessionId !== sessionId) return;
+      const nextMap = maps.find((map) => map.id === mapPayload.mapId);
+      if (nextMap) {
+        setActiveMap(nextMap);
+      }
     });
 
     const connectInitiativeChannel = async () => {

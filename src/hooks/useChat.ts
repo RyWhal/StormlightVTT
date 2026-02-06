@@ -4,6 +4,7 @@ import { useSessionStore } from '../stores/sessionStore';
 import { useChatStore } from '../stores/chatStore';
 import { dbChatMessageToChatMessage, dbDiceRollToDiceRoll, type DbChatMessage, type DbDiceRoll } from '../types';
 import { parseAndRoll, rollPlotDice } from '../lib/dice';
+import { broadcastChatMessage, broadcastDiceRoll } from '../lib/tokenBroadcast';
 import type { RollVisibility, PlotDieResult, RollResults } from '../types';
 
 export const useChat = () => {
@@ -44,7 +45,9 @@ export const useChat = () => {
         }
 
         if (data) {
-          addMessage(dbChatMessageToChatMessage(data as DbChatMessage));
+          const chatMessage = dbChatMessageToChatMessage(data as DbChatMessage);
+          addMessage(chatMessage);
+          await broadcastChatMessage({ sessionId: session.id, message: chatMessage });
         }
 
         return { success: true };
@@ -110,6 +113,7 @@ export const useChat = () => {
           } else if (roll.visibility === 'self' && roll.username === currentUser.username) {
             addDiceRoll(roll);
           }
+          await broadcastDiceRoll({ sessionId: session.id, roll });
         }
 
         return { success: true, results };
@@ -120,7 +124,7 @@ export const useChat = () => {
         };
       }
     },
-    [session, currentUser]
+    [session, currentUser, addDiceRoll]
   );
 
   /**

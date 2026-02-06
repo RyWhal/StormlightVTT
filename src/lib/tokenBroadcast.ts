@@ -16,6 +16,38 @@ export type TokenLockPayload = {
   username: string;
 };
 
+export type ChatMessagePayload = {
+  sessionId: string;
+  message: {
+    id: string;
+    sessionId: string;
+    username: string;
+    message: string;
+    isGmAnnouncement: boolean;
+    createdAt: string;
+  };
+};
+
+export type DiceRollPayload = {
+  sessionId: string;
+  roll: {
+    id: string;
+    sessionId: string;
+    username: string;
+    characterName: string | null;
+    rollExpression: string;
+    rollResults: unknown;
+    visibility: 'public' | 'gm_only' | 'self';
+    plotDiceResults: unknown;
+    createdAt: string;
+  };
+};
+
+export type ActiveMapPayload = {
+  sessionId: string;
+  mapId: string;
+};
+
 let tokenChannel: RealtimeChannel | null = null;
 let activeSessionId: string | null = null;
 let tokenChannelReady: Promise<void> | null = null;
@@ -84,6 +116,36 @@ export const broadcastTokenUnlock = async (payload: TokenLockPayload) => {
   await channel.send({
     type: 'broadcast',
     event: 'token_unlock',
+    payload,
+  });
+};
+
+export const broadcastChatMessage = async (payload: ChatMessagePayload) => {
+  await ensureTokenBroadcastReady(payload.sessionId);
+  const channel = getTokenBroadcastChannel(payload.sessionId);
+  await channel.send({
+    type: 'broadcast',
+    event: 'chat_message',
+    payload,
+  });
+};
+
+export const broadcastDiceRoll = async (payload: DiceRollPayload) => {
+  await ensureTokenBroadcastReady(payload.sessionId);
+  const channel = getTokenBroadcastChannel(payload.sessionId);
+  await channel.send({
+    type: 'broadcast',
+    event: 'dice_roll',
+    payload,
+  });
+};
+
+export const broadcastActiveMap = async (payload: ActiveMapPayload) => {
+  await ensureTokenBroadcastReady(payload.sessionId);
+  const channel = getTokenBroadcastChannel(payload.sessionId);
+  await channel.send({
+    type: 'broadcast',
+    event: 'active_map',
     payload,
   });
 };
