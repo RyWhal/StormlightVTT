@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import { Stage, Layer, Image as KonvaImage, Rect } from 'react-konva';
 import useImage from 'use-image';
 import {
@@ -59,30 +59,35 @@ export const MapCanvas: React.FC = () => {
   const [rectStart, setRectStart] = useState<{ x: number; y: number } | null>(null);
   const [rectEnd, setRectEnd] = useState<{ x: number; y: number } | null>(null);
 
-  // Handle container resize
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
-        const height = containerRef.current.offsetHeight;
-        setStageSize(width, height);
-      }
-    };
+  const syncStageSize = useCallback(() => {
+    if (!containerRef.current) return;
 
-    updateSize();
-    window.addEventListener('resize', updateSize);
+    const rect = containerRef.current.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    setStageSize(width, height);
+  }, [setStageSize]);
+
+  // Handle container resize
+  useLayoutEffect(() => {
+    syncStageSize();
 
     // Use ResizeObserver for more accurate resize detection
-    const resizeObserver = new ResizeObserver(updateSize);
+    const resizeObserver = new ResizeObserver(() => {
+      syncStageSize();
+    });
+
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
 
+    window.addEventListener('resize', syncStageSize);
+
     return () => {
-      window.removeEventListener('resize', updateSize);
       resizeObserver.disconnect();
+      window.removeEventListener('resize', syncStageSize);
     };
-  }, [setStageSize]);
+  }, [syncStageSize]);
 
   // Fit map to view when map changes or image loads
   useEffect(() => {
@@ -308,7 +313,11 @@ export const MapCanvas: React.FC = () => {
   // Zoom controls
   const handleZoomIn = () => zoomTo(viewportScale * 1.25);
   const handleZoomOut = () => zoomTo(viewportScale / 1.25);
-  const handleFitToView = () => fitMapToView();
+  const handleFitToView = () => {
+    // Ensure fit uses current container size (avoids stale stage dimensions)
+    syncStageSize();
+    requestAnimationFrame(() => fitMapToView());
+  };
 
   // Pan controls
   const panStep = 100;
@@ -347,8 +356,8 @@ export const MapCanvas: React.FC = () => {
     >
       <Stage
         ref={stageRef}
-        width={stageWidth}
-        height={stageHeight}
+        width={Math.max(1, stageWidth)}
+        height={Math.max(1, stageHeight)}
         scaleX={viewportScale}
         scaleY={viewportScale}
         x={viewportX}
