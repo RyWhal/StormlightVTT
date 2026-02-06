@@ -402,7 +402,7 @@ export const PlaySession: React.FC = () => {
 
           {/* Map controls overlay */}
           <div
-            className={`absolute bottom-4 left-4 flex items-center gap-2 ${scheme.overlayBg} backdrop-blur-sm rounded-lg px-3 py-2 border ${scheme.overlayBorder}`}
+            className={`absolute bottom-4 left-4 flex items-center gap-2 ${scheme.overlayBg} backdrop-blur-sm rounded-lg px-3 py-2 border ${scheme.overlayBorder} pointer-events-none`}
           >
             <span className={`text-sm ${scheme.headerMuted}`}>
               {activeMap ? `${activeMap.width}x${activeMap.height}` : 'No map'}
