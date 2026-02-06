@@ -27,10 +27,11 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
   const setFogToolMode = useMapStore((state) => state.setFogToolMode);
 
   const handleTabChange = (tab: GMTab) => {
-    // Prevent fog painting from remaining active when leaving the Fog tab
+    // Prevent fog painting from remaining active when leaving the Fog tab.
     if (activeTab === 'fog' && tab !== 'fog') {
       setFogToolMode(null);
     }
+
     setActiveTab(tab);
   };
 
@@ -46,13 +47,44 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
         </button>
       </div>
 
+      {/* Tabs */}
       <div className="flex border-b border-storm-700 overflow-x-auto">
-        <GMTabButton active={activeTab === 'maps'} onClick={() => handleTabChange('maps')} icon={<MapIcon className="w-4 h-4" />} label="Maps" />
-        <GMTabButton active={activeTab === 'characters'} onClick={() => handleTabChange('characters')} icon={<Users className="w-4 h-4" />} label="PCs" />
-        <GMTabButton active={activeTab === 'npcs'} onClick={() => handleTabChange('npcs')} icon={<Skull className="w-4 h-4" />} label="NPCs" />
-        <GMTabButton active={activeTab === 'fog'} onClick={() => handleTabChange('fog')} icon={<Eye className="w-4 h-4" />} label="Fog" />
-        <GMTabButton active={activeTab === 'initiative'} onClick={() => handleTabChange('initiative')} icon={<ListOrdered className="w-4 h-4" />} label="Initiative" />
-        <GMTabButton active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} icon={<SlidersHorizontal className="w-4 h-4" />} label="Settings" />
+        <GMTabButton
+          active={activeTab === 'maps'}
+          onClick={() => handleTabChange('maps')}
+          icon={<MapIcon className="w-4 h-4" />}
+          label="Maps"
+        />
+        <GMTabButton
+          active={activeTab === 'characters'}
+          onClick={() => handleTabChange('characters')}
+          icon={<Users className="w-4 h-4" />}
+          label="PCs"
+        />
+        <GMTabButton
+          active={activeTab === 'npcs'}
+          onClick={() => handleTabChange('npcs')}
+          icon={<Skull className="w-4 h-4" />}
+          label="NPCs"
+        />
+        <GMTabButton
+          active={activeTab === 'fog'}
+          onClick={() => handleTabChange('fog')}
+          icon={<Eye className="w-4 h-4" />}
+          label="Fog"
+        />
+        <GMTabButton
+          active={activeTab === 'initiative'}
+          onClick={() => handleTabChange('initiative')}
+          icon={<ListOrdered className="w-4 h-4" />}
+          label="Initiative"
+        />
+        <GMTabButton
+          active={activeTab === 'settings'}
+          onClick={() => handleTabChange('settings')}
+          icon={<SlidersHorizontal className="w-4 h-4" />}
+          label="Settings"
+        />
       </div>
 
       <div className="flex-1 overflow-hidden">
