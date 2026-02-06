@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { useChatStore } from '../stores/chatStore';
+import { useInitiativeStore } from '../stores/initiativeStore';
 import {
   dbSessionToSession,
   dbMapToMap,
@@ -12,6 +13,7 @@ import {
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
+  dbInitiativeEntryToInitiativeEntry,
   type DbSession,
   type DbMap,
   type DbCharacter,
@@ -19,6 +21,7 @@ import {
   type DbSessionPlayer,
   type DbChatMessage,
   type DbDiceRoll,
+  type DbInitiativeEntry,
 } from '../types';
 
 export const useRealtime = () => {
@@ -39,6 +42,7 @@ export const useRealtime = () => {
     removeNPCInstance,
   } = useMapStore();
   const { addMessage, addDiceRoll } = useChatStore();
+  const { upsertEntry, removeEntry } = useInitiativeStore();
 
   useEffect(() => {
     if (!session?.id) {
@@ -244,7 +248,7 @@ export const useRealtime = () => {
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          removePlayer((payload.old as { id: string }).id);
+          removeMap((payload.old as { id: string }).id);
         }
       );
 
@@ -283,6 +287,46 @@ export const useRealtime = () => {
         }
       }
     );
+
+
+    // Initiative tracker changes
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'initiative_entries',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          upsertEntry(dbInitiativeEntryToInitiativeEntry(payload.new as DbInitiativeEntry));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'initiative_entries',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          upsertEntry(dbInitiativeEntryToInitiativeEntry(payload.new as DbInitiativeEntry));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'initiative_entries',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          removeEntry((payload.old as { id: string }).id);
+        }
+      );
 
     // Subscribe to channel
     channel.subscribe((status) => {
@@ -323,6 +367,8 @@ export const useRealtime = () => {
     removeNPCInstance,
     addMessage,
     addDiceRoll,
+    upsertEntry,
+    removeEntry,
     setConnectionStatus,
   ]);
 

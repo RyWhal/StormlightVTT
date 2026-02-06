@@ -4,6 +4,7 @@ import { generateSessionCode } from '../lib/sessionCode';
 import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { useChatStore } from '../stores/chatStore';
+import { useInitiativeStore } from '../stores/initiativeStore';
 import {
   dbSessionToSession,
   dbMapToMap,
@@ -13,6 +14,7 @@ import {
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
+  dbInitiativeEntryToInitiativeEntry,
   type DbSession,
   type DbMap,
   type DbCharacter,
@@ -21,6 +23,8 @@ import {
   type DbSessionPlayer,
   type DbChatMessage,
   type DbDiceRoll,
+  type DbInitiativeEntry,
+  type Session,
 } from '../types';
 
 export const useSession = () => {
@@ -44,17 +48,14 @@ export const useSession = () => {
   } = useMapStore();
 
   const { setMessages, setDiceRolls, clearChatState } = useChatStore();
+  const { setEntries, clearInitiativeState } = useInitiativeStore();
 
-  /**
-   * Create a new session
-   */
   const createSession = useCallback(
     async (
       sessionName: string,
       username: string
     ): Promise<{ success: boolean; code?: string; error?: string }> => {
       try {
-        // Generate unique code with collision check
         let code = generateSessionCode();
         let attempts = 0;
         while (attempts < 5) {
@@ -69,7 +70,6 @@ export const useSession = () => {
           attempts++;
         }
 
-        // Create session
         const { data: sessionData, error: sessionError } = await supabase
           .from('sessions')
           .insert({
@@ -86,7 +86,6 @@ export const useSession = () => {
 
         const newSession = dbSessionToSession(sessionData as DbSession);
 
-        // Add creator as player with GM role
         const { error: playerError } = await supabase.from('session_players').insert({
           session_id: newSession.id,
           username,
@@ -94,12 +93,10 @@ export const useSession = () => {
         });
 
         if (playerError) {
-          // Cleanup session on error
           await supabase.from('sessions').delete().eq('id', newSession.id);
           return { success: false, error: playerError.message };
         }
 
-        // Set local state
         setSession(newSession);
         setCurrentUser({ username, characterId: null, isGm: true });
 
@@ -114,16 +111,12 @@ export const useSession = () => {
     [setSession, setCurrentUser]
   );
 
-  /**
-   * Join an existing session
-   */
   const joinSession = useCallback(
     async (
       code: string,
       username: string
     ): Promise<{ success: boolean; error?: string }> => {
       try {
-        // Find session by code
         const { data: sessionData, error: sessionError } = await supabase
           .from('sessions')
           .select('*')
@@ -136,7 +129,6 @@ export const useSession = () => {
 
         const joinedSession = dbSessionToSession(sessionData as DbSession);
 
-        // Check if username is already taken
         const { data: existingPlayer } = await supabase
           .from('session_players')
           .select('id')
@@ -145,13 +137,11 @@ export const useSession = () => {
           .single();
 
         if (existingPlayer) {
-          // Update last seen for reconnecting player
           await supabase
             .from('session_players')
             .update({ last_seen: new Date().toISOString() })
             .eq('id', existingPlayer.id);
         } else {
-          // Add new player
           const { error: playerError } = await supabase
             .from('session_players')
             .insert({
@@ -165,12 +155,10 @@ export const useSession = () => {
           }
         }
 
-        // Set local state
         setSession(joinedSession);
         const isGm = joinedSession.currentGmUsername === username;
         setCurrentUser({ username, characterId: null, isGm });
 
-        // Load session data
         await loadSessionData(joinedSession.id);
 
         return { success: true };
@@ -184,13 +172,9 @@ export const useSession = () => {
     [setSession, setCurrentUser]
   );
 
-  /**
-   * Load all session data (maps, characters, etc.)
-   */
   const loadSessionData = useCallback(
     async (sessionId: string) => {
       try {
-        // Load maps
         const { data: mapsData } = await supabase
           .from('maps')
           .select('*')
@@ -201,7 +185,6 @@ export const useSession = () => {
           const maps = (mapsData as DbMap[]).map(dbMapToMap);
           setMaps(maps);
 
-          // Set active map if session has one
           const { data: sessionData } = await supabase
             .from('sessions')
             .select('active_map_id')
@@ -214,7 +197,6 @@ export const useSession = () => {
           }
         }
 
-        // Load characters
         const { data: charactersData } = await supabase
           .from('characters')
           .select('*')
@@ -224,7 +206,6 @@ export const useSession = () => {
           setCharacters((charactersData as DbCharacter[]).map(dbCharacterToCharacter));
         }
 
-        // Load NPC templates
         const { data: templatesData } = await supabase
           .from('npc_templates')
           .select('*')
@@ -234,7 +215,6 @@ export const useSession = () => {
           setNPCTemplates((templatesData as DbNPCTemplate[]).map(dbNPCTemplateToNPCTemplate));
         }
 
-        // Load NPC instances for all maps
         const { data: instancesData } = await supabase
           .from('npc_instances')
           .select('*')
@@ -247,7 +227,6 @@ export const useSession = () => {
           setNPCInstances((instancesData as DbNPCInstance[]).map(dbNPCInstanceToNPCInstance));
         }
 
-        // Load players
         const { data: playersData } = await supabase
           .from('session_players')
           .select('*')
@@ -257,7 +236,6 @@ export const useSession = () => {
           setPlayers((playersData as DbSessionPlayer[]).map(dbSessionPlayerToSessionPlayer));
         }
 
-        // Load chat messages (last 100)
         const { data: messagesData } = await supabase
           .from('chat_messages')
           .select('*')
@@ -266,14 +244,9 @@ export const useSession = () => {
           .limit(100);
 
         if (messagesData) {
-          setMessages(
-            (messagesData as DbChatMessage[])
-              .map(dbChatMessageToChatMessage)
-              .reverse()
-          );
+          setMessages((messagesData as DbChatMessage[]).map(dbChatMessageToChatMessage).reverse());
         }
 
-        // Load dice rolls (last 50)
         const { data: rollsData } = await supabase
           .from('dice_rolls')
           .select('*')
@@ -282,29 +255,31 @@ export const useSession = () => {
           .limit(50);
 
         if (rollsData) {
-          setDiceRolls(
-            (rollsData as DbDiceRoll[])
-              .map(dbDiceRollToDiceRoll)
-              .reverse()
-          );
+          setDiceRolls((rollsData as DbDiceRoll[]).map(dbDiceRollToDiceRoll).reverse());
+        }
+
+        const { data: initiativeData } = await supabase
+          .from('initiative_entries')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true });
+
+        if (initiativeData) {
+          setEntries((initiativeData as DbInitiativeEntry[]).map(dbInitiativeEntryToInitiativeEntry));
         }
       } catch (error) {
         console.error('Error loading session data:', error);
       }
     },
-    [setMaps, setActiveMap, setCharacters, setNPCTemplates, setNPCInstances, setPlayers, setMessages, setDiceRolls]
+    [setMaps, setActiveMap, setCharacters, setNPCTemplates, setNPCInstances, setPlayers, setMessages, setDiceRolls, setEntries]
   );
 
-  /**
-   * Claim GM role
-   */
   const claimGM = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     if (!session || !currentUser) {
       return { success: false, error: 'Not in a session' };
     }
 
     try {
-      // Use conditional update to prevent race conditions
       const { data, error } = await supabase
         .from('sessions')
         .update({ current_gm_username: currentUser.username })
@@ -317,7 +292,6 @@ export const useSession = () => {
         return { success: false, error: 'Someone else claimed GM first' };
       }
 
-      // Update player record
       await supabase
         .from('session_players')
         .update({ is_gm: true })
@@ -336,9 +310,6 @@ export const useSession = () => {
     }
   }, [session, currentUser, updateSession, setCurrentUser]);
 
-  /**
-   * Release GM role
-   */
   const releaseGM = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     if (!session || !currentUser) {
       return { success: false, error: 'Not in a session' };
@@ -354,7 +325,6 @@ export const useSession = () => {
         return { success: false, error: error.message };
       }
 
-      // Update player record
       await supabase
         .from('session_players')
         .update({ is_gm: false })
@@ -373,19 +343,14 @@ export const useSession = () => {
     }
   }, [session, currentUser, updateSession, setCurrentUser]);
 
-  /**
-   * Leave session
-   */
   const leaveSession = useCallback(async () => {
     if (session && currentUser) {
-      // Remove player from session
       await supabase
         .from('session_players')
         .delete()
         .eq('session_id', session.id)
         .eq('username', currentUser.username);
 
-      // If GM, release the role
       if (currentUser.isGm) {
         await supabase
           .from('sessions')
@@ -393,7 +358,6 @@ export const useSession = () => {
           .eq('id', session.id);
       }
 
-      // Release any claimed characters
       await supabase
         .from('characters')
         .update({ is_claimed: false, claimed_by_username: null })
@@ -401,15 +365,12 @@ export const useSession = () => {
         .eq('claimed_by_username', currentUser.username);
     }
 
-    // Clear local state
     clearSession();
     clearMapState();
     clearChatState();
-  }, [session, currentUser, clearSession, clearMapState, clearChatState]);
+    clearInitiativeState();
+  }, [session, currentUser, clearSession, clearMapState, clearChatState, clearInitiativeState]);
 
-  /**
-   * Update notepad content
-   */
   const updateNotepad = useCallback(
     async (content: string) => {
       if (!session) return;
@@ -424,6 +385,34 @@ export const useSession = () => {
     [session, updateSession]
   );
 
+  const updateSessionSettings = useCallback(
+    async (settings: Partial<Pick<Session, 'allowPlayersRenameNpcs' | 'allowPlayersMoveNpcs'>>) => {
+      if (!session) return { success: false, error: 'Not in a session' };
+
+      try {
+        const dbUpdates: Record<string, unknown> = {};
+        if (settings.allowPlayersRenameNpcs !== undefined) {
+          dbUpdates.allow_players_rename_npcs = settings.allowPlayersRenameNpcs;
+        }
+        if (settings.allowPlayersMoveNpcs !== undefined) {
+          dbUpdates.allow_players_move_npcs = settings.allowPlayersMoveNpcs;
+        }
+
+        const { error } = await supabase.from('sessions').update(dbUpdates).eq('id', session.id);
+        if (error) return { success: false, error: error.message };
+
+        updateSession(settings);
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+    [session, updateSession]
+  );
+
   return {
     session,
     currentUser,
@@ -434,5 +423,6 @@ export const useSession = () => {
     releaseGM,
     leaveSession,
     updateNotepad,
+    updateSessionSettings,
   };
 };

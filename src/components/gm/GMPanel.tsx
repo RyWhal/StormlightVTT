@@ -5,15 +5,16 @@ import {
   Users,
   Skull,
   Eye,
-  Download,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { MapManager } from './MapManager';
 import { CharacterManager } from './CharacterManager';
 import { NPCManager } from './NPCManager';
 import { FogTools } from './FogTools';
-import { SessionExport } from './SessionExport';
+import { GMSettings } from './GMSettings';
+import { useMapStore } from '../../stores/mapStore';
 
-type GMTab = 'maps' | 'characters' | 'npcs' | 'fog' | 'export';
+type GMTab = 'maps' | 'characters' | 'npcs' | 'fog' | 'settings';
 
 interface GMPanelProps {
   onClose: () => void;
@@ -21,10 +22,17 @@ interface GMPanelProps {
 
 export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<GMTab>('maps');
+  const setFogToolMode = useMapStore((state) => state.setFogToolMode);
+
+  const handleTabChange = (tab: GMTab) => {
+    if (activeTab === 'fog' && tab !== 'fog') {
+      setFogToolMode(null);
+    }
+    setActiveTab(tab);
+  };
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-storm-700">
         <h2 className="font-semibold text-storm-100">GM Controls</h2>
         <button
@@ -35,47 +43,20 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b border-storm-700">
-        <GMTabButton
-          active={activeTab === 'maps'}
-          onClick={() => setActiveTab('maps')}
-          icon={<MapIcon className="w-4 h-4" />}
-          label="Maps"
-        />
-        <GMTabButton
-          active={activeTab === 'characters'}
-          onClick={() => setActiveTab('characters')}
-          icon={<Users className="w-4 h-4" />}
-          label="PCs"
-        />
-        <GMTabButton
-          active={activeTab === 'npcs'}
-          onClick={() => setActiveTab('npcs')}
-          icon={<Skull className="w-4 h-4" />}
-          label="NPCs"
-        />
-        <GMTabButton
-          active={activeTab === 'fog'}
-          onClick={() => setActiveTab('fog')}
-          icon={<Eye className="w-4 h-4" />}
-          label="Fog"
-        />
-        <GMTabButton
-          active={activeTab === 'export'}
-          onClick={() => setActiveTab('export')}
-          icon={<Download className="w-4 h-4" />}
-          label="Export"
-        />
+        <GMTabButton active={activeTab === 'maps'} onClick={() => handleTabChange('maps')} icon={<MapIcon className="w-4 h-4" />} label="Maps" />
+        <GMTabButton active={activeTab === 'characters'} onClick={() => handleTabChange('characters')} icon={<Users className="w-4 h-4" />} label="PCs" />
+        <GMTabButton active={activeTab === 'npcs'} onClick={() => handleTabChange('npcs')} icon={<Skull className="w-4 h-4" />} label="NPCs" />
+        <GMTabButton active={activeTab === 'fog'} onClick={() => handleTabChange('fog')} icon={<Eye className="w-4 h-4" />} label="Fog" />
+        <GMTabButton active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} icon={<SlidersHorizontal className="w-4 h-4" />} label="Settings" />
       </div>
 
-      {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'maps' && <MapManager />}
         {activeTab === 'characters' && <CharacterManager />}
         {activeTab === 'npcs' && <NPCManager />}
         {activeTab === 'fog' && <FogTools />}
-        {activeTab === 'export' && <SessionExport />}
+        {activeTab === 'settings' && <GMSettings />}
       </div>
     </div>
   );
@@ -88,12 +69,7 @@ interface GMTabButtonProps {
   label: string;
 }
 
-const GMTabButton: React.FC<GMTabButtonProps> = ({
-  active,
-  onClick,
-  icon,
-  label,
-}) => (
+const GMTabButton: React.FC<GMTabButtonProps> = ({ active, onClick, icon, label }) => (
   <button
     onClick={onClick}
     className={`

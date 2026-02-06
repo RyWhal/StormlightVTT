@@ -8,7 +8,7 @@ import type { RollVisibility, PlotDieResult, RollResults } from '../types';
 export const useChat = () => {
   const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
-  const { messages, diceRolls, addDiceRoll, resetUnread } = useChatStore();
+  const { messages, diceRolls, resetUnread } = useChatStore();
 
   /**
    * Send a chat message
@@ -87,20 +87,6 @@ export const useChat = () => {
         if (error) {
           return { success: false, error: error.message };
         }
-
-        // Optimistically add roll locally (in case realtime is slow)
-        addDiceRoll({
-          id: crypto.randomUUID(),
-          sessionId: session.id,
-          username: currentUser.username,
-          characterName: characterName || null,
-          rollExpression: expression,
-          rollResults: results,
-          visibility,
-          plotDiceResults,
-          createdAt: new Date().toISOString(),
-        });
-
         return { success: true, results };
       } catch (error) {
         return {
@@ -109,7 +95,7 @@ export const useChat = () => {
         };
       }
     },
-    [session, currentUser, addDiceRoll]
+    [session, currentUser]
   );
 
   /**

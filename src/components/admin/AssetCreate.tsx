@@ -258,7 +258,7 @@ export const AssetCreate: React.FC = () => {
                   <p className="text-xs text-storm-500 mt-1">
                     {assetType === 'map'
                       ? 'PNG, JPG, WEBP - Max 25MB, 5000x5000px'
-                      : 'PNG, JPG, WEBP, GIF - Max 500KB'}
+                      : 'PNG, JPG, WEBP, GIF - Max 2MB'}
                   </p>
                 </button>
               )}

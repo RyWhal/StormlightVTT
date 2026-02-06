@@ -18,13 +18,14 @@ import { DicePanel } from '../dice/DicePanel';
 import { NotepadPanel } from '../shared/NotepadPanel';
 import { GMPanel } from '../gm/GMPanel';
 import { InventoryPanel } from '../inventory/InventoryPanel';
+import { InitiativePanel } from '../initiative/InitiativePanel';
 import { Button } from '../shared/Button';
 import { useSessionStore, useIsGM } from '../../stores/sessionStore';
 import { useMapStore } from '../../stores/mapStore';
 import { useSession } from '../../hooks/useSession';
 import { useToast } from '../shared/Toast';
 
-type SideTab = 'chat' | 'dice' | 'notes' | 'inventory';
+type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory';
 
 export const PlaySession: React.FC = () => {
   const navigate = useNavigate();
@@ -189,6 +190,12 @@ export const PlaySession: React.FC = () => {
               label="Dice"
             />
             <TabButton
+              active={sideTab === 'initiative'}
+              onClick={() => setSideTab('initiative')}
+              icon={<Users className="w-4 h-4" />}
+              label="Initiative"
+            />
+            <TabButton
               active={sideTab === 'notes'}
               onClick={() => setSideTab('notes')}
               icon={<FileText className="w-4 h-4" />}
@@ -206,6 +213,7 @@ export const PlaySession: React.FC = () => {
           <div className="flex-1 overflow-hidden">
             {sideTab === 'chat' && <ChatPanel />}
             {sideTab === 'dice' && <DicePanel />}
+            {sideTab === 'initiative' && <InitiativePanel />}
             {sideTab === 'notes' && <NotepadPanel />}
             {sideTab === 'inventory' && <InventoryPanel />}
           </div>

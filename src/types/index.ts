@@ -18,6 +18,8 @@ export interface Session {
   activeMapId: string | null;
   currentGmUsername: string | null;
   notepadContent: string;
+  allowPlayersRenameNpcs: boolean;
+  allowPlayersMoveNpcs: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +30,7 @@ export interface SessionPlayer {
   username: string;
   characterId: string | null;
   isGm: boolean;
+  initiativeModifier: number;
   lastSeen: string;
 }
 
@@ -141,6 +144,27 @@ export interface ChatMessage {
 
 export type RollVisibility = 'public' | 'gm_only' | 'self';
 
+export type InitiativePhase = 'fast' | 'slow';
+export type InitiativeVisibility = 'public' | 'gm_only';
+
+export interface InitiativeEntry {
+  id: string;
+  sessionId: string;
+  sourceType: 'player' | 'npc';
+  sourceId: string | null;
+  sourceName: string;
+  rolledByUsername: string;
+  modifier: number;
+  rollValue: number | null;
+  total: number | null;
+  phase: InitiativePhase;
+  visibility: InitiativeVisibility;
+  isManualOverride: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Session export/import types
 export interface SessionExport {
   version: '1.0';
@@ -200,6 +224,8 @@ export interface DbSession {
   active_map_id: string | null;
   current_gm_username: string | null;
   notepad_content: string;
+  allow_players_rename_npcs: boolean;
+  allow_players_move_npcs: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -210,6 +236,7 @@ export interface DbSessionPlayer {
   username: string;
   character_id: string | null;
   is_gm: boolean;
+  initiative_modifier: number;
   last_seen: string;
 }
 
@@ -283,6 +310,24 @@ export interface DbDiceRoll {
   created_at: string;
 }
 
+export interface DbInitiativeEntry {
+  id: string;
+  session_id: string;
+  source_type: 'player' | 'npc';
+  source_id: string | null;
+  source_name: string;
+  rolled_by_username: string;
+  modifier: number;
+  roll_value: number | null;
+  total: number | null;
+  phase: InitiativePhase;
+  visibility: InitiativeVisibility;
+  is_manual_override: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbChatMessage {
   id: string;
   session_id: string;
@@ -301,6 +346,8 @@ export function dbSessionToSession(db: DbSession): Session {
     activeMapId: db.active_map_id,
     currentGmUsername: db.current_gm_username,
     notepadContent: db.notepad_content,
+    allowPlayersRenameNpcs: db.allow_players_rename_npcs ?? false,
+    allowPlayersMoveNpcs: db.allow_players_move_npcs ?? false,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
   };
@@ -386,6 +433,26 @@ export function dbDiceRollToDiceRoll(db: DbDiceRoll): DiceRoll {
   };
 }
 
+export function dbInitiativeEntryToInitiativeEntry(db: DbInitiativeEntry): InitiativeEntry {
+  return {
+    id: db.id,
+    sessionId: db.session_id,
+    sourceType: db.source_type,
+    sourceId: db.source_id,
+    sourceName: db.source_name,
+    rolledByUsername: db.rolled_by_username,
+    modifier: db.modifier ?? 0,
+    rollValue: db.roll_value,
+    total: db.total,
+    phase: db.phase,
+    visibility: db.visibility,
+    isManualOverride: db.is_manual_override ?? false,
+    sortOrder: db.sort_order ?? 0,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+  };
+}
+
 export function dbChatMessageToChatMessage(db: DbChatMessage): ChatMessage {
   return {
     id: db.id,
@@ -404,6 +471,7 @@ export function dbSessionPlayerToSessionPlayer(db: DbSessionPlayer): SessionPlay
     username: db.username,
     characterId: db.character_id,
     isGm: db.is_gm,
+    initiativeModifier: db.initiative_modifier ?? 0,
     lastSeen: db.last_seen,
   };
 }
