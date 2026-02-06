@@ -47,7 +47,6 @@ export const MapCanvas: React.FC = () => {
     zoomTo,
   } = useMapStore();
 
-  const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
   const { characters, moveCharacterPosition } = useCharacters();
@@ -167,10 +166,9 @@ export const MapCanvas: React.FC = () => {
 
   // Can user move this token?
   const canMoveToken = useCallback(
-    (type: 'character' | 'npc', ownerId?: string | null) => {
+    (_type: 'character' | 'npc') => {
       if (isGM) return true;
       if (!currentUser) return false;
-      if (type === 'character') return true;
       return true;
     },
     [isGM, currentUser]
