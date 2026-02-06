@@ -103,7 +103,7 @@ export const DrawingLayer: React.FC<DrawingLayerProps> = ({
   );
 
   return (
-    <Group>
+    <Group listening={false} globalCompositeOperation="source-over">
       {visibleDrawings.map((drawing) => (
         <Group key={drawing.id} opacity={getOpacityForRole(drawing.authorRole)}>
           {renderDrawing(drawing)}

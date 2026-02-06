@@ -589,7 +589,7 @@ export const MapCanvas: React.FC = () => {
         )}
 
         {/* Drawing layer */}
-        <Layer>
+        <Layer listening={false} hitGraphEnabled={false}>
           <DrawingLayer
             drawings={drawingData}
             isGM={isGM}
