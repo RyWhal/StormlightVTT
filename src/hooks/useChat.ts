@@ -120,7 +120,7 @@ export const useChat = () => {
         };
       }
     },
-    [session, currentUser, addDiceRoll]
+    [session, currentUser]
   );
 
   /**

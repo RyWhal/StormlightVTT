@@ -14,6 +14,7 @@ import { NPCManager } from './NPCManager';
 import { FogTools } from './FogTools';
 import { GMSettings } from './GMSettings';
 import { InitiativePanel } from '../initiative/InitiativePanel';
+import { SessionExport } from './SessionExport';
 import { useMapStore } from '../../stores/mapStore';
 
 type GMTab = 'maps' | 'characters' | 'npcs' | 'fog' | 'initiative' | 'settings';
@@ -27,6 +28,7 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
   const setFogToolMode = useMapStore((state) => state.setFogToolMode);
 
   const handleTabChange = (tab: GMTab) => {
+    // Prevent fog painting from remaining active when leaving the Fog tab
     if (activeTab === 'fog' && tab !== 'fog') {
       setFogToolMode(null);
     }
