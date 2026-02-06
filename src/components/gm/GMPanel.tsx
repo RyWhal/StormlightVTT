@@ -5,16 +5,18 @@ import {
   Users,
   Skull,
   Eye,
-  Download,
+  SlidersHorizontal,
+  ListOrdered,
 } from 'lucide-react';
 import { MapManager } from './MapManager';
 import { CharacterManager } from './CharacterManager';
 import { NPCManager } from './NPCManager';
 import { FogTools } from './FogTools';
-import { SessionExport } from './SessionExport';
+import { GMSettings } from './GMSettings';
+import { InitiativePanel } from '../initiative/InitiativePanel';
 import { useMapStore } from '../../stores/mapStore';
 
-type GMTab = 'maps' | 'characters' | 'npcs' | 'fog' | 'export';
+type GMTab = 'maps' | 'characters' | 'npcs' | 'fog' | 'initiative' | 'settings';
 
 interface GMPanelProps {
   onClose: () => void;
@@ -25,16 +27,16 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
   const setFogToolMode = useMapStore((state) => state.setFogToolMode);
 
   const handleTabChange = (tab: GMTab) => {
-    // Prevent fog painting from remaining active when leaving the Fog tab
+    // Prevent fog painting from remaining active when leaving the Fog tab.
     if (activeTab === 'fog' && tab !== 'fog') {
       setFogToolMode(null);
     }
+
     setActiveTab(tab);
   };
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-storm-700">
         <h2 className="font-semibold text-storm-100">GM Controls</h2>
         <button
@@ -46,7 +48,7 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-storm-700">
+      <div className="flex border-b border-storm-700 overflow-x-auto">
         <GMTabButton
           active={activeTab === 'maps'}
           onClick={() => handleTabChange('maps')}
@@ -72,20 +74,26 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
           label="Fog"
         />
         <GMTabButton
-          active={activeTab === 'export'}
-          onClick={() => handleTabChange('export')}
-          icon={<Download className="w-4 h-4" />}
-          label="Export"
+          active={activeTab === 'initiative'}
+          onClick={() => handleTabChange('initiative')}
+          icon={<ListOrdered className="w-4 h-4" />}
+          label="Initiative"
+        />
+        <GMTabButton
+          active={activeTab === 'settings'}
+          onClick={() => handleTabChange('settings')}
+          icon={<SlidersHorizontal className="w-4 h-4" />}
+          label="Settings"
         />
       </div>
 
-      {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'maps' && <MapManager />}
         {activeTab === 'characters' && <CharacterManager />}
         {activeTab === 'npcs' && <NPCManager />}
         {activeTab === 'fog' && <FogTools />}
-        {activeTab === 'export' && <SessionExport />}
+        {activeTab === 'initiative' && <InitiativePanel gmView />}
+        {activeTab === 'settings' && <GMSettings />}
       </div>
     </div>
   );
@@ -98,16 +106,11 @@ interface GMTabButtonProps {
   label: string;
 }
 
-const GMTabButton: React.FC<GMTabButtonProps> = ({
-  active,
-  onClick,
-  icon,
-  label,
-}) => (
+const GMTabButton: React.FC<GMTabButtonProps> = ({ active, onClick, icon, label }) => (
   <button
     onClick={onClick}
     className={`
-      flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium
+      flex-1 min-w-[72px] flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium
       transition-colors border-b-2
       ${
         active

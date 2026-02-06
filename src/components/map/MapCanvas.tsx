@@ -47,6 +47,7 @@ export const MapCanvas: React.FC = () => {
     zoomTo,
   } = useMapStore();
 
+  const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
   const { characters, moveCharacterPosition } = useCharacters();
@@ -169,9 +170,10 @@ export const MapCanvas: React.FC = () => {
     (type: 'character' | 'npc', ownerId?: string | null) => {
       if (isGM) return true;
       if (type === 'character' && ownerId === currentUser?.username) return true;
+      if (type === 'npc' && session?.allowPlayersMoveNpcs) return true;
       return false;
     },
-    [isGM, currentUser]
+    [isGM, currentUser, session?.allowPlayersMoveNpcs]
   );
 
   // Convert screen coordinates to map coordinates

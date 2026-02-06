@@ -198,6 +198,7 @@ export const useAdmin = () => {
         username: p.username,
         characterId: p.character_id,
         isGm: p.is_gm,
+        initiativeModifier: p.initiative_modifier ?? 0,
         lastSeen: p.last_seen,
       }));
     },
