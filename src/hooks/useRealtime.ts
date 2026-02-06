@@ -26,6 +26,7 @@ import {
   type DbInitiativeRollLog,
   type ChatMessage,
   type DiceRoll,
+  type Map,
 } from '../types';
 import { clearTokenBroadcastChannel, getTokenBroadcastChannel } from '../lib/tokenBroadcast';
 
@@ -35,6 +36,12 @@ const isMissingRelationError = (error: { code?: string; message?: string } | nul
 export const useRealtime = () => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const initiativeChannelRef = useRef<RealtimeChannel | null>(null);
+  const mapsRef = useRef<Map[]>([]);
+  const currentUserRef = useRef<{
+    username: string;
+    characterId: string | null;
+    isGm: boolean;
+  } | null>(null);
   const { session, currentUser, updateSession, setPlayers, addPlayer, removePlayer, setConnectionStatus } =
     useSessionStore();
   const {
@@ -56,6 +63,14 @@ export const useRealtime = () => {
   } = useMapStore();
   const { addMessage, addDiceRoll } = useChatStore();
   const { upsertEntry, removeEntry, addRollLog } = useInitiativeStore();
+
+  useEffect(() => {
+    mapsRef.current = maps;
+  }, [maps]);
+
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   useEffect(() => {
     if (!session?.id) {
@@ -88,7 +103,7 @@ export const useRealtime = () => {
         updateSession(updated);
 
         if (updated.activeMapId !== session.activeMapId) {
-          const activeMap = maps.find((m) => m.id === updated.activeMapId);
+          const activeMap = mapsRef.current.find((m) => m.id === updated.activeMapId);
           setActiveMap(activeMap || null);
         }
       }
@@ -280,11 +295,12 @@ export const useRealtime = () => {
       },
       (payload) => {
         const roll = dbDiceRollToDiceRoll(payload.new as DbDiceRoll);
+        const activeUser = currentUserRef.current;
         if (roll.visibility === 'public') {
           addDiceRoll(roll);
-        } else if (roll.visibility === 'gm_only' && currentUser?.isGm) {
+        } else if (roll.visibility === 'gm_only' && activeUser?.isGm) {
           addDiceRoll(roll);
-        } else if (roll.visibility === 'self' && roll.username === currentUser?.username) {
+        } else if (roll.visibility === 'self' && roll.username === activeUser?.username) {
           addDiceRoll(roll);
         }
       }
@@ -379,11 +395,12 @@ export const useRealtime = () => {
 
       if (rollPayload.sessionId !== sessionId) return;
       const roll = rollPayload.roll as DiceRoll;
+      const activeUser = currentUserRef.current;
       if (roll.visibility === 'public') {
         addDiceRoll(roll);
-      } else if (roll.visibility === 'gm_only' && currentUser?.isGm) {
+      } else if (roll.visibility === 'gm_only' && activeUser?.isGm) {
         addDiceRoll(roll);
-      } else if (roll.visibility === 'self' && roll.username === currentUser?.username) {
+      } else if (roll.visibility === 'self' && roll.username === activeUser?.username) {
         addDiceRoll(roll);
       }
     });
@@ -395,7 +412,7 @@ export const useRealtime = () => {
       };
 
       if (mapPayload.sessionId !== sessionId) return;
-      const nextMap = maps.find((map) => map.id === mapPayload.mapId);
+      const nextMap = mapsRef.current.find((map) => map.id === mapPayload.mapId);
       if (nextMap) {
         setActiveMap(nextMap);
       }
@@ -484,8 +501,6 @@ export const useRealtime = () => {
   }, [
     session?.id,
     currentUser?.username,
-    currentUser?.isGm,
-    maps,
     updateSession,
     setPlayers,
     addPlayer,
