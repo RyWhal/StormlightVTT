@@ -20,6 +20,7 @@ export const useInitiative = () => {
   const npcInstances = useMapStore((state) => state.npcInstances);
   const entries = useInitiativeStore((state) => state.entries);
   const rollLogs = useInitiativeStore((state) => state.rollLogs);
+  const setEntries = useInitiativeStore((state) => state.setEntries);
 
   const visibleEntries = useMemo(() => {
     if (currentUser?.isGm) return entries;
@@ -227,8 +228,11 @@ export const useInitiative = () => {
     if (!session || !currentUser?.isGm) return { success: false, error: 'GM only' };
     const { error } = await supabase.from('initiative_entries').delete().eq('session_id', session.id);
     if (error) return { success: false, error: error.message };
+
+    // Keep UI in sync even if realtime delivery lags or is unavailable.
+    setEntries([]);
     return { success: true };
-  }, [session, currentUser?.isGm]);
+  }, [session, currentUser?.isGm, setEntries]);
 
   const deleteEntry = useCallback(
     async (id: string) => {
