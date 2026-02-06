@@ -58,6 +58,11 @@ export const PlaySession: React.FC = () => {
   };
 
   const handleClaimGM = async () => {
+    const confirmed = confirm(
+      'You are about to assume GM permissions. Only do this if you are the GM. Proceed?'
+    );
+    if (!confirmed) return;
+
     const result = await claimGM();
     if (result.success) {
       showToast('You are now the GM!', 'success');
@@ -126,12 +131,12 @@ export const PlaySession: React.FC = () => {
               <Crown className="w-4 h-4" />
               GM
             </button>
-          ) : !session.currentGmUsername ? (
+          ) : (
             <Button variant="ghost" size="sm" onClick={handleClaimGM}>
               <Crown className="w-4 h-4 mr-1" />
-              Claim GM
+              Assume GM
             </Button>
-          ) : null}
+          )}
 
           {/* Settings */}
           {isGM && (

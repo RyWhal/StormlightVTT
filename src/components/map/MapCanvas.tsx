@@ -169,11 +169,11 @@ export const MapCanvas: React.FC = () => {
   const canMoveToken = useCallback(
     (type: 'character' | 'npc', ownerId?: string | null) => {
       if (isGM) return true;
-      if (type === 'character' && ownerId === currentUser?.username) return true;
-      if (type === 'npc' && session?.allowPlayersMoveNpcs) return true;
-      return false;
+      if (!currentUser) return false;
+      if (type === 'character') return true;
+      return true;
     },
-    [isGM, currentUser, session?.allowPlayersMoveNpcs]
+    [isGM, currentUser]
   );
 
   // Convert screen coordinates to map coordinates
