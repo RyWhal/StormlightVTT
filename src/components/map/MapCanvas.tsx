@@ -435,7 +435,7 @@ export const MapCanvas: React.FC = () => {
                 size="medium"
                 gridCellSize={gridCellSize}
                 isSelected={selectedTokenId === char.id && selectedTokenType === 'character'}
-                isDraggable={canMoveToken('character', char.claimedByUsername)}
+                isDraggable={canMoveToken('character')}
                 isHidden={false}
                 isGM={isGM}
                 onSelect={() => selectToken(char.id, 'character')}
