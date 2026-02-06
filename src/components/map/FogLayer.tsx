@@ -63,7 +63,7 @@ export const FogLayer: React.FC<FogLayerProps> = ({
           <Line
             key={`reveal-${idx}`}
             points={flatPoints}
-            stroke={isGM ? 'rgba(0, 100, 0, 0.3)' : 'transparent'}
+            stroke={'#000000'}
             strokeWidth={region.brushSize}
             lineCap="round"
             lineJoin="round"
