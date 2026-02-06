@@ -193,9 +193,14 @@ export const useSession = () => {
 
           const { data: sessionData } = await supabase
             .from('sessions')
-            .select('active_map_id')
+            .select('*')
             .eq('id', sessionId)
             .single();
+
+          if (sessionData) {
+            const mappedSession = dbSessionToSession(sessionData as DbSession);
+            setSession(mappedSession);
+          }
 
           if (sessionData?.active_map_id) {
             const activeMap = maps.find((m) => m.id === sessionData.active_map_id);
@@ -292,7 +297,19 @@ export const useSession = () => {
         console.error('Error loading session data:', error);
       }
     },
-    [setMaps, setActiveMap, setCharacters, setNPCTemplates, setNPCInstances, setPlayers, setMessages, setDiceRolls, setEntries, setRollLogs]
+    [
+      setMaps,
+      setActiveMap,
+      setCharacters,
+      setNPCTemplates,
+      setNPCInstances,
+      setPlayers,
+      setMessages,
+      setDiceRolls,
+      setEntries,
+      setRollLogs,
+      setSession,
+    ]
   );
 
   const claimGM = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
