@@ -242,14 +242,15 @@ export const useMapStore = create<MapState>()((set, get) => ({
     const { activeMap, stageWidth, stageHeight } = state;
     if (!activeMap || stageWidth === 0 || stageHeight === 0) return;
 
-    const padding = 40; // Padding around the map
-    const availableWidth = stageWidth - padding * 2;
-    const availableHeight = stageHeight - padding * 2;
+    // Keep a small, responsive edge margin so wide/tall maps can use more of the viewport
+    const padding = Math.max(16, Math.min(40, Math.round(Math.min(stageWidth, stageHeight) * 0.02)));
+    const availableWidth = Math.max(1, stageWidth - padding * 2);
+    const availableHeight = Math.max(1, stageHeight - padding * 2);
 
     // Calculate scale to fit map in view
     const scaleX = availableWidth / activeMap.width;
     const scaleY = availableHeight / activeMap.height;
-    const scale = Math.min(scaleX, scaleY, 2); // Cap at 2x zoom
+    const scale = Math.max(0.1, Math.min(scaleX, scaleY));
 
     // Center the map
     const scaledWidth = activeMap.width * scale;

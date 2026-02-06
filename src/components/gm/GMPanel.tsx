@@ -12,6 +12,7 @@ import { CharacterManager } from './CharacterManager';
 import { NPCManager } from './NPCManager';
 import { FogTools } from './FogTools';
 import { SessionExport } from './SessionExport';
+import { useMapStore } from '../../stores/mapStore';
 
 type GMTab = 'maps' | 'characters' | 'npcs' | 'fog' | 'export';
 
@@ -21,6 +22,15 @@ interface GMPanelProps {
 
 export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<GMTab>('maps');
+  const setFogToolMode = useMapStore((state) => state.setFogToolMode);
+
+  const handleTabChange = (tab: GMTab) => {
+    // Prevent fog painting from remaining active when leaving the Fog tab
+    if (activeTab === 'fog' && tab !== 'fog') {
+      setFogToolMode(null);
+    }
+    setActiveTab(tab);
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -39,31 +49,31 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
       <div className="flex border-b border-storm-700">
         <GMTabButton
           active={activeTab === 'maps'}
-          onClick={() => setActiveTab('maps')}
+          onClick={() => handleTabChange('maps')}
           icon={<MapIcon className="w-4 h-4" />}
           label="Maps"
         />
         <GMTabButton
           active={activeTab === 'characters'}
-          onClick={() => setActiveTab('characters')}
+          onClick={() => handleTabChange('characters')}
           icon={<Users className="w-4 h-4" />}
           label="PCs"
         />
         <GMTabButton
           active={activeTab === 'npcs'}
-          onClick={() => setActiveTab('npcs')}
+          onClick={() => handleTabChange('npcs')}
           icon={<Skull className="w-4 h-4" />}
           label="NPCs"
         />
         <GMTabButton
           active={activeTab === 'fog'}
-          onClick={() => setActiveTab('fog')}
+          onClick={() => handleTabChange('fog')}
           icon={<Eye className="w-4 h-4" />}
           label="Fog"
         />
         <GMTabButton
           active={activeTab === 'export'}
-          onClick={() => setActiveTab('export')}
+          onClick={() => handleTabChange('export')}
           icon={<Download className="w-4 h-4" />}
           label="Export"
         />

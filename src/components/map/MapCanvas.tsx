@@ -42,7 +42,6 @@ export const MapCanvas: React.FC = () => {
     setStageSize,
     selectToken,
     clearSelection,
-    addFogRegion,
     fitMapToView,
     panBy,
     zoomTo,
@@ -181,6 +180,18 @@ export const MapCanvas: React.FC = () => {
     [viewportX, viewportY, viewportScale]
   );
 
+  const clampToMapBounds = useCallback(
+    (point: { x: number; y: number }) => {
+      if (!activeMap) return point;
+
+      return {
+        x: Math.max(0, Math.min(activeMap.width, point.x)),
+        y: Math.max(0, Math.min(activeMap.height, point.y)),
+      };
+    },
+    [activeMap]
+  );
+
   // Fog painting handlers
   const handleFogMouseDown = useCallback(
     (_e: unknown) => {
@@ -190,7 +201,7 @@ export const MapCanvas: React.FC = () => {
       if (!stage) return;
 
       const pointer = stage.getPointerPosition();
-      const mapPos = screenToMap(pointer.x, pointer.y);
+      const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
 
       if (fogToolShape === 'rectangle') {
         setRectStart(mapPos);
@@ -200,7 +211,7 @@ export const MapCanvas: React.FC = () => {
         setCurrentFogStroke([mapPos]);
       }
     },
-    [fogToolMode, fogToolShape, isGM, activeMap, screenToMap]
+    [fogToolMode, fogToolShape, isGM, activeMap, screenToMap, clampToMapBounds]
   );
 
   const handleFogMouseMove = useCallback(
@@ -211,26 +222,35 @@ export const MapCanvas: React.FC = () => {
       if (!stage) return;
 
       const pointer = stage.getPointerPosition();
-      const mapPos = screenToMap(pointer.x, pointer.y);
+      const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
 
       if (fogToolShape === 'rectangle' && rectStart) {
         setRectEnd(mapPos);
       } else if (isPainting) {
-        setCurrentFogStroke((prev) => [...prev, mapPos]);
+        setCurrentFogStroke((prev) => {
+          const lastPoint = prev[prev.length - 1];
+          if (lastPoint && lastPoint.x === mapPos.x && lastPoint.y === mapPos.y) {
+            return prev;
+          }
+          return [...prev, mapPos];
+        });
       }
     },
-    [fogToolMode, fogToolShape, isGM, isPainting, rectStart, screenToMap]
+    [fogToolMode, fogToolShape, isGM, isPainting, rectStart, screenToMap, clampToMapBounds]
   );
 
   const handleFogMouseUp = useCallback(async () => {
     if (!fogToolMode || !isGM || !activeMap) return;
 
+    const isWithinMap = (point: { x: number; y: number }) =>
+      point.x >= 0 && point.y >= 0 && point.x <= activeMap.width && point.y <= activeMap.height;
+
     if (fogToolShape === 'rectangle' && rectStart && rectEnd) {
-      // Create rectangle fog region
-      const minX = Math.min(rectStart.x, rectEnd.x);
-      const minY = Math.min(rectStart.y, rectEnd.y);
-      const maxX = Math.max(rectStart.x, rectEnd.x);
-      const maxY = Math.max(rectStart.y, rectEnd.y);
+      // Create rectangle fog region constrained to map bounds
+      const minX = Math.max(0, Math.min(rectStart.x, rectEnd.x));
+      const minY = Math.max(0, Math.min(rectStart.y, rectEnd.y));
+      const maxX = Math.min(activeMap.width, Math.max(rectStart.x, rectEnd.x));
+      const maxY = Math.min(activeMap.height, Math.max(rectStart.y, rectEnd.y));
 
       // Only create if rectangle has some size
       if (maxX - minX > 5 && maxY - minY > 5) {
@@ -249,23 +269,25 @@ export const MapCanvas: React.FC = () => {
           brushSize: Math.max(maxX - minX, maxY - minY),
         };
 
-        addFogRegion(activeMap.id, newRegion);
         const newFogData = [...activeMap.fogData, newRegion];
         await updateFogData(activeMap.id, newFogData);
       }
 
       setRectStart(null);
       setRectEnd(null);
-    } else if (isPainting && currentFogStroke.length > 0) {
-      const newRegion: FogRegion = {
-        type: fogToolMode,
-        points: currentFogStroke,
-        brushSize: getFogBrushPixelSize(fogBrushSize),
-      };
+    } else if (isPainting && currentFogStroke.length > 1) {
+      const boundedStroke = currentFogStroke.filter(isWithinMap);
 
-      addFogRegion(activeMap.id, newRegion);
-      const newFogData = [...activeMap.fogData, newRegion];
-      await updateFogData(activeMap.id, newFogData);
+      if (boundedStroke.length > 1) {
+        const newRegion: FogRegion = {
+          type: fogToolMode,
+          points: boundedStroke,
+          brushSize: getFogBrushPixelSize(fogBrushSize),
+        };
+
+        const newFogData = [...activeMap.fogData, newRegion];
+        await updateFogData(activeMap.id, newFogData);
+      }
 
       setIsPainting(false);
       setCurrentFogStroke([]);
@@ -280,7 +302,6 @@ export const MapCanvas: React.FC = () => {
     isPainting,
     currentFogStroke,
     fogBrushSize,
-    addFogRegion,
     updateFogData,
   ]);
 
