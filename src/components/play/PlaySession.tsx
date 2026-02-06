@@ -401,10 +401,6 @@ export const PlaySession: React.FC = () => {
         <div className="flex-1 relative overflow-hidden">
           <MapCanvas />
 
-          <div className="absolute top-4 left-4">
-            <DrawingTools />
-          </div>
-
           {/* Map controls overlay */}
           <div
             className={`absolute bottom-4 left-4 flex items-center gap-2 ${scheme.overlayBg} backdrop-blur-sm rounded-lg px-3 py-2 border ${scheme.overlayBorder} pointer-events-none`}
@@ -580,6 +576,16 @@ const PlayerSettingsPanel: React.FC<PlayerSettingsPanelProps> = ({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
+        <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Drawing Tools</h3>
+        <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
+          Keep the map clear by accessing drawing tools here.
+        </p>
+        <div className="mt-3 max-h-56 overflow-y-auto pr-2">
+          <DrawingTools />
         </div>
       </div>
     </div>
