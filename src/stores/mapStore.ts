@@ -153,9 +153,13 @@ export const useMapStore = create<MapState>()((set, get) => ({
     set((state) => {
       const isActive = state.activeMap?.id === mapId;
       const hasDrawingUpdate = Object.prototype.hasOwnProperty.call(updates, 'drawingData');
+      const nextActiveMap =
+        isActive && state.activeMap
+          ? ({ ...state.activeMap, ...updates } as Map)
+          : state.activeMap;
       return {
         maps: state.maps.map((m) => (m.id === mapId ? { ...m, ...updates } : m)),
-        activeMap: isActive ? { ...state.activeMap, ...updates } : state.activeMap,
+        activeMap: nextActiveMap,
         drawingData:
           isActive && hasDrawingUpdate ? updates.drawingData ?? [] : state.drawingData,
       };
