@@ -49,6 +49,8 @@ export const useRealtime = () => {
     addNPCInstance,
     removeNPCInstance,
     moveNPCInstance,
+    setTokenLock,
+    clearTokenLock,
   } = useMapStore();
   const { addMessage, addDiceRoll } = useChatStore();
   const { upsertEntry, removeEntry, addRollLog } = useInitiativeStore();
@@ -296,6 +298,8 @@ export const useRealtime = () => {
 
     channelRef.current = channel;
     const tokenChannel = getTokenBroadcastChannel(sessionId);
+    const buildTokenKey = (type: 'character' | 'npc', id: string) => `${type}:${id}`;
+
     tokenChannel.on('broadcast', { event: 'token_move' }, ({ payload }) => {
       const movePayload = payload as {
         sessionId: string;
@@ -312,6 +316,30 @@ export const useRealtime = () => {
       } else {
         moveNPCInstance(movePayload.tokenId, movePayload.x, movePayload.y);
       }
+    });
+
+    tokenChannel.on('broadcast', { event: 'token_lock' }, ({ payload }) => {
+      const lockPayload = payload as {
+        sessionId: string;
+        tokenId: string;
+        tokenType: 'character' | 'npc';
+        username: string;
+      };
+
+      if (lockPayload.sessionId !== sessionId) return;
+      setTokenLock(buildTokenKey(lockPayload.tokenType, lockPayload.tokenId), lockPayload.username);
+    });
+
+    tokenChannel.on('broadcast', { event: 'token_unlock' }, ({ payload }) => {
+      const lockPayload = payload as {
+        sessionId: string;
+        tokenId: string;
+        tokenType: 'character' | 'npc';
+        username: string;
+      };
+
+      if (lockPayload.sessionId !== sessionId) return;
+      clearTokenLock(buildTokenKey(lockPayload.tokenType, lockPayload.tokenId));
     });
 
     const connectInitiativeChannel = async () => {
@@ -415,6 +443,8 @@ export const useRealtime = () => {
     addNPCInstance,
     removeNPCInstance,
     moveNPCInstance,
+    setTokenLock,
+    clearTokenLock,
     addMessage,
     addDiceRoll,
     upsertEntry,

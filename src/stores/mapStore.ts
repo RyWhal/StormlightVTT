@@ -24,6 +24,9 @@ interface MapState {
   selectedTokenId: string | null;
   selectedTokenType: 'character' | 'npc' | null;
 
+  // Token locks
+  tokenLocks: Record<string, string>;
+
   // Fog tool state (GM only)
   fogToolMode: 'reveal' | 'hide' | null;
   fogBrushSize: 'small' | 'medium' | 'large';
@@ -69,6 +72,10 @@ interface MapState {
   selectToken: (id: string | null, type: 'character' | 'npc' | null) => void;
   clearSelection: () => void;
 
+  // Actions - Token locks
+  setTokenLock: (tokenKey: string, username: string) => void;
+  clearTokenLock: (tokenKey: string) => void;
+
   // Actions - Fog tools
   setFogToolMode: (mode: 'reveal' | 'hide' | null) => void;
   setFogBrushSize: (size: 'small' | 'medium' | 'large') => void;
@@ -101,6 +108,7 @@ export const useMapStore = create<MapState>()((set, get) => ({
   stageHeight: 600,
   selectedTokenId: null,
   selectedTokenType: null,
+  tokenLocks: {},
   fogToolMode: null,
   fogBrushSize: 'medium',
   fogToolShape: 'brush',
@@ -307,6 +315,18 @@ export const useMapStore = create<MapState>()((set, get) => ({
 
   clearSelection: () => set({ selectedTokenId: null, selectedTokenType: null }),
 
+  setTokenLock: (tokenKey, username) =>
+    set((state) => ({
+      tokenLocks: { ...state.tokenLocks, [tokenKey]: username },
+    })),
+
+  clearTokenLock: (tokenKey) =>
+    set((state) => {
+      if (!state.tokenLocks[tokenKey]) return state;
+      const { [tokenKey]: _removed, ...rest } = state.tokenLocks;
+      return { tokenLocks: rest };
+    }),
+
   // Fog actions
   setFogToolMode: (mode) => set({ fogToolMode: mode }),
 
@@ -369,6 +389,7 @@ export const useMapStore = create<MapState>()((set, get) => ({
       viewportY: 0,
       selectedTokenId: null,
       selectedTokenType: null,
+      tokenLocks: {},
       fogToolMode: null,
       fogToolShape: 'brush',
     }),

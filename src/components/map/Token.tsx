@@ -17,6 +17,7 @@ interface TokenProps {
   isHidden: boolean;
   isGM: boolean;
   onSelect: () => void;
+  onDragStart?: () => void;
   onDragEnd: (x: number, y: number) => void;
 }
 
@@ -52,6 +53,7 @@ export const Token: React.FC<TokenProps> = ({
   isHidden,
   isGM,
   onSelect,
+  onDragStart,
   onDragEnd,
 }) => {
   const groupRef = useRef<any>(null);
@@ -71,6 +73,10 @@ export const Token: React.FC<TokenProps> = ({
     onDragEnd(node.x(), node.y());
   };
 
+  const handleDragStart = () => {
+    onDragStart?.();
+  };
+
   const opacity = isHidden ? 0.4 : 1;
 
   return (
@@ -79,6 +85,7 @@ export const Token: React.FC<TokenProps> = ({
       x={x}
       y={y}
       draggable={isDraggable}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={onSelect}
       onTap={onSelect}
