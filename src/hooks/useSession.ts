@@ -11,8 +11,6 @@ import {
   dbCharacterToCharacter,
   dbNPCTemplateToNPCTemplate,
   dbNPCInstanceToNPCInstance,
-  dbMapFolderToMapFolder,
-  dbTokenFolderToTokenFolder,
   dbHandoutToHandout,
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
@@ -24,8 +22,6 @@ import {
   type DbCharacter,
   type DbNPCTemplate,
   type DbNPCInstance,
-  type DbMapFolder,
-  type DbTokenFolder,
   type DbHandout,
   type DbSessionPlayer,
   type DbChatMessage,
@@ -53,10 +49,8 @@ export const useSession = () => {
   const {
     setMaps,
     setActiveMap,
-    setMapFolders,
     setCharacters,
     setNPCTemplates,
-    setTokenFolders,
     setNPCInstances,
     setHandouts,
     clearMapState,
@@ -194,18 +188,6 @@ export const useSession = () => {
   const loadSessionData = useCallback(
     async (sessionId: string) => {
       try {
-        const { data: mapFolderData, error: mapFolderError } = await supabase
-          .from('map_folders')
-          .select('*')
-          .eq('session_id', sessionId)
-          .order('sort_order', { ascending: true });
-
-        if (!mapFolderError) {
-          setMapFolders(
-            (mapFolderData as DbMapFolder[] | null | undefined)?.map(dbMapFolderToMapFolder) || []
-          );
-        }
-
         const { data: mapsData } = await supabase
           .from('maps')
           .select('*')
@@ -244,18 +226,6 @@ export const useSession = () => {
 
         if (templatesData) {
           setNPCTemplates((templatesData as DbNPCTemplate[]).map(dbNPCTemplateToNPCTemplate));
-        }
-
-        const { data: tokenFolderData, error: tokenFolderError } = await supabase
-          .from('token_folders')
-          .select('*')
-          .eq('session_id', sessionId)
-          .order('sort_order', { ascending: true });
-
-        if (!tokenFolderError) {
-          setTokenFolders(
-            (tokenFolderData as DbTokenFolder[] | null | undefined)?.map(dbTokenFolderToTokenFolder) || []
-          );
         }
 
         const { data: handoutData, error: handoutError } = await supabase
@@ -337,9 +307,6 @@ export const useSession = () => {
         if (isMissingRelationError(initiativeError) || isMissingRelationError(initiativeLogsError)) {
           console.warn('Initiative tables are not available yet; skipping initiative hydration.');
         }
-        if (isMissingRelationError(mapFolderError) || isMissingRelationError(tokenFolderError)) {
-          console.warn('Folder tables are not available yet; skipping folder hydration.');
-        }
         if (isMissingRelationError(handoutError)) {
           console.warn('Handout tables are not available yet; skipping handout hydration.');
         }
@@ -350,10 +317,8 @@ export const useSession = () => {
     [
       setMaps,
       setActiveMap,
-      setMapFolders,
       setCharacters,
       setNPCTemplates,
-      setTokenFolders,
       setNPCInstances,
       setHandouts,
       setPlayers,

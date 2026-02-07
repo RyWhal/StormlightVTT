@@ -42,7 +42,6 @@ export interface Map {
   width: number;
   height: number;
   sortOrder: number;
-  folderId: string | null;
   createdAt: string;
 
   // Grid
@@ -59,22 +58,6 @@ export interface Map {
   drawingData: DrawingRegion[];
 
   showPlayerTokens: boolean;
-}
-
-export interface MapFolder {
-  id: string;
-  sessionId: string;
-  name: string;
-  sortOrder: number;
-  createdAt: string;
-}
-
-export interface TokenFolder {
-  id: string;
-  sessionId: string;
-  name: string;
-  sortOrder: number;
-  createdAt: string;
 }
 
 export type HandoutKind = 'image' | 'text';
@@ -165,7 +148,6 @@ export interface NPCTemplate {
   tokenUrl: string | null;
   defaultSize: TokenSize;
   notes: string;
-  folderId: string | null;
   createdAt: string;
 }
 
@@ -338,7 +320,6 @@ export interface DbMap {
   width: number;
   height: number;
   sort_order: number;
-  folder_id: string | null;
   created_at: string;
   grid_enabled: boolean;
   grid_offset_x: number;
@@ -373,23 +354,6 @@ export interface DbNPCTemplate {
   token_url: string | null;
   default_size: TokenSize;
   notes: string;
-  folder_id: string | null;
-  created_at: string;
-}
-
-export interface DbMapFolder {
-  id: string;
-  session_id: string;
-  name: string;
-  sort_order: number;
-  created_at: string;
-}
-
-export interface DbTokenFolder {
-  id: string;
-  session_id: string;
-  name: string;
-  sort_order: number;
   created_at: string;
 }
 
@@ -498,7 +462,6 @@ export function dbMapToMap(db: DbMap): Map {
     width: db.width,
     height: db.height,
     sortOrder: db.sort_order,
-    folderId: db.folder_id ?? null,
     createdAt: db.created_at,
     gridEnabled: db.grid_enabled,
     gridOffsetX: db.grid_offset_x,
@@ -537,27 +500,6 @@ export function dbNPCTemplateToNPCTemplate(db: DbNPCTemplate): NPCTemplate {
     tokenUrl: db.token_url,
     defaultSize: db.default_size,
     notes: db.notes,
-    folderId: db.folder_id ?? null,
-    createdAt: db.created_at,
-  };
-}
-
-export function dbMapFolderToMapFolder(db: DbMapFolder): MapFolder {
-  return {
-    id: db.id,
-    sessionId: db.session_id,
-    name: db.name,
-    sortOrder: db.sort_order,
-    createdAt: db.created_at,
-  };
-}
-
-export function dbTokenFolderToTokenFolder(db: DbTokenFolder): TokenFolder {
-  return {
-    id: db.id,
-    sessionId: db.session_id,
-    name: db.name,
-    sortOrder: db.sort_order,
     createdAt: db.created_at,
   };
 }

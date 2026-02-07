@@ -10,8 +10,6 @@ import {
   dbMapToMap,
   dbCharacterToCharacter,
   dbNPCInstanceToNPCInstance,
-  dbMapFolderToMapFolder,
-  dbTokenFolderToTokenFolder,
   dbHandoutToHandout,
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
@@ -22,8 +20,6 @@ import {
   type DbMap,
   type DbCharacter,
   type DbNPCInstance,
-  type DbMapFolder,
-  type DbTokenFolder,
   type DbHandout,
   type DbSessionPlayer,
   type DbChatMessage,
@@ -56,16 +52,10 @@ export const useRealtime = () => {
     addMap,
     removeMap,
     setActiveMap,
-    addMapFolder,
-    updateMapFolder,
-    removeMapFolder,
     updateCharacter,
     addCharacter,
     removeCharacter,
     moveCharacter,
-    addTokenFolder,
-    updateTokenFolder,
-    removeTokenFolder,
     updateNPCInstance,
     addNPCInstance,
     removeNPCInstance,
@@ -163,44 +153,6 @@ export const useRealtime = () => {
         }
       );
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'map_folders',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          addMapFolder(dbMapFolderToMapFolder(payload.new as DbMapFolder));
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'map_folders',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          const updated = dbMapFolderToMapFolder(payload.new as DbMapFolder);
-          updateMapFolder(updated.id, updated);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'map_folders',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          removeMapFolder((payload.old as { id: string }).id);
-        }
-      );
 
     channel
       .on(
@@ -241,44 +193,6 @@ export const useRealtime = () => {
         }
       );
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'token_folders',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          addTokenFolder(dbTokenFolderToTokenFolder(payload.new as DbTokenFolder));
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'token_folders',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          const updated = dbTokenFolderToTokenFolder(payload.new as DbTokenFolder);
-          updateTokenFolder(updated.id, updated);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'token_folders',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        (payload) => {
-          removeTokenFolder((payload.old as { id: string }).id);
-        }
-      );
 
     channel
       .on(

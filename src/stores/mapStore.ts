@@ -1,11 +1,9 @@
 import { create } from 'zustand';
 import type {
   Map,
-  MapFolder,
   Character,
   NPCInstance,
   NPCTemplate,
-  TokenFolder,
   Handout,
   FogRegion,
   DrawingRegion,
@@ -17,14 +15,12 @@ interface MapState {
   // Maps
   maps: Map[];
   activeMap: Map | null;
-  mapFolders: MapFolder[];
 
   // Characters (player tokens)
   characters: Character[];
 
   // NPCs
   npcTemplates: NPCTemplate[];
-  tokenFolders: TokenFolder[];
   npcInstances: NPCInstance[];
 
   // Handouts
@@ -61,10 +57,6 @@ interface MapState {
   updateMap: (mapId: string, updates: Partial<Map>) => void;
   removeMap: (mapId: string) => void;
   setActiveMap: (map: Map | null) => void;
-  setMapFolders: (folders: MapFolder[]) => void;
-  addMapFolder: (folder: MapFolder) => void;
-  updateMapFolder: (folderId: string, updates: Partial<MapFolder>) => void;
-  removeMapFolder: (folderId: string) => void;
 
   // Actions - Characters
   setCharacters: (characters: Character[]) => void;
@@ -78,10 +70,6 @@ interface MapState {
   addNPCTemplate: (template: NPCTemplate) => void;
   updateNPCTemplate: (templateId: string, updates: Partial<NPCTemplate>) => void;
   removeNPCTemplate: (templateId: string) => void;
-  setTokenFolders: (folders: TokenFolder[]) => void;
-  addTokenFolder: (folder: TokenFolder) => void;
-  updateTokenFolder: (folderId: string, updates: Partial<TokenFolder>) => void;
-  removeTokenFolder: (folderId: string) => void;
 
   // Actions - NPC Instances
   setNPCInstances: (instances: NPCInstance[]) => void;
@@ -144,10 +132,8 @@ export const useMapStore = create<MapState>()((set, get) => ({
   // Initial state
   maps: [],
   activeMap: null,
-  mapFolders: [],
   characters: [],
   npcTemplates: [],
-  tokenFolders: [],
   npcInstances: [],
   handouts: [],
   viewportScale: 1,
@@ -205,25 +191,6 @@ export const useMapStore = create<MapState>()((set, get) => ({
     }
   },
 
-  setMapFolders: (folders) => set({ mapFolders: folders }),
-
-  addMapFolder: (folder) =>
-    set((state) => ({
-      mapFolders: [...state.mapFolders.filter((f) => f.id !== folder.id), folder],
-    })),
-
-  updateMapFolder: (folderId, updates) =>
-    set((state) => ({
-      mapFolders: state.mapFolders.map((folder) =>
-        folder.id === folderId ? { ...folder, ...updates } : folder
-      ),
-    })),
-
-  removeMapFolder: (folderId) =>
-    set((state) => ({
-      mapFolders: state.mapFolders.filter((folder) => folder.id !== folderId),
-    })),
-
   // Character actions
   setCharacters: (characters) => set({ characters }),
 
@@ -279,25 +246,6 @@ export const useMapStore = create<MapState>()((set, get) => ({
   removeNPCTemplate: (templateId) =>
     set((state) => ({
       npcTemplates: state.npcTemplates.filter((t) => t.id !== templateId),
-    })),
-
-  setTokenFolders: (folders) => set({ tokenFolders: folders }),
-
-  addTokenFolder: (folder) =>
-    set((state) => ({
-      tokenFolders: [...state.tokenFolders.filter((f) => f.id !== folder.id), folder],
-    })),
-
-  updateTokenFolder: (folderId, updates) =>
-    set((state) => ({
-      tokenFolders: state.tokenFolders.map((folder) =>
-        folder.id === folderId ? { ...folder, ...updates } : folder
-      ),
-    })),
-
-  removeTokenFolder: (folderId) =>
-    set((state) => ({
-      tokenFolders: state.tokenFolders.filter((folder) => folder.id !== folderId),
     })),
 
   // NPC Instance actions
@@ -567,10 +515,8 @@ export const useMapStore = create<MapState>()((set, get) => ({
     set({
       maps: [],
       activeMap: null,
-      mapFolders: [],
       characters: [],
       npcTemplates: [],
-      tokenFolders: [],
       npcInstances: [],
       handouts: [],
       viewportScale: 1,

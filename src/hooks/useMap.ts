@@ -181,7 +181,6 @@ export const useMap = () => {
           | 'fogEnabled'
           | 'fogDefaultState'
           | 'showPlayerTokens'
-          | 'folderId'
         >
       >
     ): Promise<{ success: boolean; error?: string }> => {
@@ -196,7 +195,6 @@ export const useMap = () => {
         if (settings.fogEnabled !== undefined) dbSettings.fog_enabled = settings.fogEnabled;
         if (settings.fogDefaultState !== undefined) dbSettings.fog_default_state = settings.fogDefaultState;
         if (settings.showPlayerTokens !== undefined) dbSettings.show_player_tokens = settings.showPlayerTokens;
-        if (settings.folderId !== undefined) dbSettings.folder_id = settings.folderId;
 
         const { error } = await supabase
           .from('maps')
