@@ -2,7 +2,13 @@ import { useCallback } from 'react';
 import { supabase, uploadFile, deleteFile, STORAGE_BUCKETS } from '../lib/supabase';
 import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
-import { dbCharacterToCharacter, type DbCharacter, type Character, type InventoryItem } from '../types';
+import {
+  dbCharacterToCharacter,
+  type DbCharacter,
+  type Character,
+  type InventoryItem,
+  type TokenSize,
+} from '../types';
 import { nanoid } from 'nanoid';
 import { broadcastTokenMove } from '../lib/tokenBroadcast';
 
@@ -91,6 +97,33 @@ export const useCharacters = () => {
         }
 
         updateCharacter(characterId, updates);
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+    [updateCharacter]
+  );
+
+  /**
+   * Update character size
+   */
+  const updateCharacterSize = useCallback(
+    async (characterId: string, size: TokenSize): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const { error } = await supabase
+          .from('characters')
+          .update({ size })
+          .eq('id', characterId);
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        updateCharacter(characterId, { size });
         return { success: true };
       } catch (error) {
         return {
@@ -352,6 +385,7 @@ export const useCharacters = () => {
     myCharacter,
     createCharacter,
     updateCharacterDetails,
+    updateCharacterSize,
     updateCharacterToken,
     claimCharacter,
     releaseCharacter,

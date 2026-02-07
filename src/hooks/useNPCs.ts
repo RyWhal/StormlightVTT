@@ -247,7 +247,25 @@ export const useNPCs = () => {
           return { success: false, error: error.message };
         }
 
+        let initiativeErrorMessage: string | null = null;
+        if (updates.displayName !== undefined) {
+          const { error: initiativeError } = await supabase
+            .from('initiative_entries')
+            .update({ source_name: updates.displayName })
+            .eq('source_type', 'npc')
+            .eq('source_id', instanceId);
+
+          if (initiativeError) {
+            initiativeErrorMessage = initiativeError.message;
+          }
+        }
+
         updateNPCInstance(instanceId, updates);
+
+        if (initiativeErrorMessage) {
+          return { success: false, error: initiativeErrorMessage };
+        }
+
         return { success: true };
       } catch (error) {
         return {

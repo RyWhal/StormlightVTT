@@ -1,14 +1,28 @@
 // types/index.ts - TypeScript type definitions for Stormlight VTT
 
-export type TokenSize = 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargantuan';
+export type TokenSize =
+  | 'minuscule'
+  | 'tiny'
+  | 'small'
+  | 'medium'
+  | 'large'
+  | 'giant'
+  | 'huge'
+  | 'massive'
+  | 'gargantuan'
+  | 'colossal';
 
 export const TOKEN_SIZE_MULTIPLIERS: Record<TokenSize, number> = {
+  minuscule: 0.25, // Quarter of a grid square
   tiny: 0.5,      // Half a grid square
   small: 1,       // 1x1 squares
   medium: 1,      // 1x1 squares
   large: 2,       // 2x2 squares
+  giant: 2.5,     // 2.5x2.5 squares
   huge: 3,        // 3x3 squares
+  massive: 3.5,   // 3.5x3.5 squares
   gargantuan: 4,  // 4x4 squares
+  colossal: 5,    // 5x5 squares
 };
 
 export interface Session {
@@ -126,6 +140,7 @@ export interface Character {
   sessionId: string;
   name: string;
   tokenUrl: string | null;
+  size: TokenSize | null;
   positionX: number;
   positionY: number;
   isClaimed: boolean;
@@ -277,6 +292,7 @@ export interface SessionExport {
   characters: Array<{
     name: string;
     tokenBase64: string | null;
+    size: TokenSize;
     inventory: InventoryItem[];
     notes: string;
   }>;
@@ -338,6 +354,7 @@ export interface DbCharacter {
   session_id: string;
   name: string;
   token_url: string | null;
+  size: TokenSize | null;
   position_x: number;
   position_y: number;
   is_claimed: boolean;
@@ -482,6 +499,7 @@ export function dbCharacterToCharacter(db: DbCharacter): Character {
     sessionId: db.session_id,
     name: db.name,
     tokenUrl: db.token_url,
+    size: db.size,
     positionX: db.position_x,
     positionY: db.position_y,
     isClaimed: db.is_claimed,

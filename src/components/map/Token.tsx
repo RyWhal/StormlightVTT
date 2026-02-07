@@ -19,6 +19,8 @@ interface TokenProps {
   onSelect: () => void;
   onDragStart?: () => void;
   onDragEnd: (x: number, y: number) => void;
+  showResizeControls?: boolean;
+  onResize?: (direction: 'increase' | 'decrease') => void;
 }
 
 // Color palette for tokens without images
@@ -55,6 +57,8 @@ export const Token: React.FC<TokenProps> = ({
   onSelect,
   onDragStart,
   onDragEnd,
+  showResizeControls,
+  onResize,
 }) => {
   const groupRef = useRef<any>(null);
   const [image] = useImage(imageUrl || '');
@@ -78,6 +82,13 @@ export const Token: React.FC<TokenProps> = ({
   };
 
   const opacity = isHidden ? 0.4 : 1;
+  const showControls = Boolean(showResizeControls && onResize && isSelected);
+  const controlSize = Math.max(14, Math.min(20, pixelSize * 0.2));
+
+  const handleResize = (direction: 'increase' | 'decrease') => (e: any) => {
+    e.cancelBubble = true;
+    onResize?.(direction);
+  };
 
   return (
     <Group
@@ -171,6 +182,63 @@ export const Token: React.FC<TokenProps> = ({
         ellipsis
         wrap="none"
       />
+
+      {showControls && (
+        <Group>
+          <Group
+            x={pixelSize - controlSize}
+            y={-controlSize * 0.6}
+            onClick={handleResize('increase')}
+            onTap={handleResize('increase')}
+          >
+            <Circle
+              x={controlSize / 2}
+              y={controlSize / 2}
+              radius={controlSize / 2}
+              fill="#1f2937"
+              stroke="#3b82f6"
+              strokeWidth={1}
+            />
+            <Text
+              x={0}
+              y={controlSize * 0.1}
+              width={controlSize}
+              height={controlSize}
+              text="+"
+              fontSize={controlSize * 0.8}
+              fill="#e5e7eb"
+              align="center"
+              verticalAlign="middle"
+            />
+          </Group>
+          <Group
+            x={pixelSize - controlSize}
+            y={pixelSize - controlSize * 0.4}
+            onClick={handleResize('decrease')}
+            onTap={handleResize('decrease')}
+          >
+            <Circle
+              x={controlSize / 2}
+              y={controlSize / 2}
+              radius={controlSize / 2}
+              fill="#1f2937"
+              stroke="#3b82f6"
+              strokeWidth={1}
+            />
+            <Text
+              x={0}
+              y={controlSize * 0.1}
+              width={controlSize}
+              height={controlSize}
+              text="-"
+              fontSize={controlSize * 0.8}
+              fill="#e5e7eb"
+              align="center"
+              verticalAlign="middle"
+            />
+          </Group>
+        </Group>
+      )}
 
       {/* Hidden indicator for GM */}
       {isHidden && isGM && (
