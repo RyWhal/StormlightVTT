@@ -57,6 +57,8 @@ export const Token: React.FC<TokenProps> = ({
   onSelect,
   onDragStart,
   onDragEnd,
+  showResizeControls,
+  onResize,
 }) => {
   const groupRef = useRef<any>(null);
   const [image] = useImage(imageUrl || '');
