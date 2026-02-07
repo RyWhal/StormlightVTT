@@ -651,7 +651,7 @@ export const MapCanvas: React.FC = () => {
 
         {/* Fog of war layer */}
         {activeMap.fogEnabled && (
-          <Layer>
+          <Layer listening={false} hitGraphEnabled={false}>
             <FogLayer
               width={activeMap.width}
               height={activeMap.height}
@@ -667,7 +667,7 @@ export const MapCanvas: React.FC = () => {
 
         {/* Rectangle selection preview for fog */}
         {fogToolMode && fogToolShape === 'rectangle' && rectStart && rectEnd && (
-          <Layer>
+          <Layer listening={false} hitGraphEnabled={false}>
             <Rect
               x={Math.min(rectStart.x, rectEnd.x)}
               y={Math.min(rectStart.y, rectEnd.y)}
