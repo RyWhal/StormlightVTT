@@ -22,9 +22,18 @@ import { GridOverlay } from './GridOverlay';
 import { FogLayer } from './FogLayer';
 import { DrawingLayer } from './DrawingLayer';
 import { HandoutViewer } from './HandoutViewer';
-import type { FogRegion, DrawingRegion, DrawingShape } from '../../types';
+import type { FogRegion, DrawingRegion, DrawingShape, TokenSize } from '../../types';
 import { isDrawingColor } from '../../types';
 import { nanoid } from 'nanoid';
+
+const TOKEN_SIZE_ORDER: TokenSize[] = [
+  'tiny',
+  'small',
+  'medium',
+  'large',
+  'huge',
+  'gargantuan',
+];
 
 export const MapCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,7 +74,7 @@ export const MapCanvas: React.FC = () => {
   const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
   const { characters, moveCharacterPosition } = useCharacters();
-  const { currentMapNPCs, moveNPCPosition } = useNPCs();
+  const { currentMapNPCs, moveNPCPosition, updateNPCInstanceDetails } = useNPCs();
   const { updateFogData, updateDrawingData } = useMap();
 
   const [mapImage] = useImage(activeMap?.imageUrl || '');
@@ -238,6 +247,56 @@ export const MapCanvas: React.FC = () => {
       return true;
     },
     [isGM, currentUser, tokenLocks, buildTokenKey]
+  );
+
+  const handleNPCSelect = useCallback(
+    async (npcId: string) => {
+      const npc = currentMapNPCs.find((entry) => entry.id === npcId);
+      if (!npc) return;
+
+      const isAlreadySelected = selectedTokenId === npcId && selectedTokenType === 'npc';
+      selectToken(npcId, 'npc');
+
+      const canRename = isGM || session?.allowPlayersRenameNpcs;
+      if (!isAlreadySelected || !canRename) return;
+
+      const nextName = prompt('Rename NPC', npc.displayName || 'NPC');
+      if (nextName === null) return;
+      const trimmed = nextName.trim();
+      if (!trimmed || trimmed === npc.displayName) return;
+
+      await updateNPCInstanceDetails(npcId, { displayName: trimmed });
+    },
+    [
+      currentMapNPCs,
+      selectedTokenId,
+      selectedTokenType,
+      selectToken,
+      isGM,
+      session?.allowPlayersRenameNpcs,
+      updateNPCInstanceDetails,
+    ]
+  );
+
+  const handleNPCResize = useCallback(
+    async (npcId: string, direction: 'increase' | 'decrease') => {
+      const npc = currentMapNPCs.find((entry) => entry.id === npcId);
+      if (!npc) return;
+      const canResize = isGM || session?.allowPlayersMoveNpcs;
+      if (!canResize) return;
+
+      const currentSize = npc.size || 'medium';
+      const currentIndex = TOKEN_SIZE_ORDER.indexOf(currentSize);
+      if (currentIndex < 0) return;
+      const nextIndex =
+        direction === 'increase'
+          ? Math.min(TOKEN_SIZE_ORDER.length - 1, currentIndex + 1)
+          : Math.max(0, currentIndex - 1);
+
+      if (nextIndex === currentIndex) return;
+      await updateNPCInstanceDetails(npcId, { size: TOKEN_SIZE_ORDER[nextIndex] });
+    },
+    [currentMapNPCs, isGM, session?.allowPlayersMoveNpcs, updateNPCInstanceDetails]
   );
 
   // Convert screen coordinates to map coordinates
@@ -622,7 +681,9 @@ export const MapCanvas: React.FC = () => {
                     isDraggable={canMoveToken('npc', npc.id)}
                     isHidden={!npc.isVisible}
                     isGM={isGM}
-                    onSelect={() => selectToken(npc.id, 'npc')}
+                    showResizeControls={isGM || session?.allowPlayersMoveNpcs}
+                    onResize={(direction) => handleNPCResize(npc.id, direction)}
+                    onSelect={() => handleNPCSelect(npc.id)}
                     onDragStart={() => handleTokenDragStart(npc.id, 'npc')}
                     onDragEnd={(x, y) => handleTokenDragEnd(npc.id, 'npc', x, y)}
                   />

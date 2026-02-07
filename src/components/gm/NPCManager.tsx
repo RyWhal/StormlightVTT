@@ -32,6 +32,7 @@ export const NPCManager: React.FC = () => {
     addNPCToMap,
     toggleNPCVisibility,
     removeNPCFromMap,
+    updateNPCInstanceDetails,
   } = useNPCs();
 
   const [isCreating, setIsCreating] = useState(false);
@@ -128,6 +129,15 @@ export const NPCManager: React.FC = () => {
       showToast('NPC removed from map', 'success');
     } else {
       showToast(result.error || 'Failed to remove NPC', 'error');
+    }
+  };
+
+  const handleRenameNPC = async (instanceId: string, displayName: string) => {
+    const trimmed = displayName.trim();
+    if (!trimmed) return;
+    const result = await updateNPCInstanceDetails(instanceId, { displayName: trimmed });
+    if (!result.success) {
+      showToast(result.error || 'Failed to rename NPC', 'error');
     }
   };
 
@@ -350,11 +360,19 @@ export const NPCManager: React.FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-sm truncate ${npc.isVisible ? 'text-storm-200' : 'text-storm-400'}`}
-                  >
-                    {npc.displayName || 'NPC'}
-                  </p>
+                  <input
+                    type="text"
+                    defaultValue={npc.displayName || 'NPC'}
+                    className={`w-full bg-transparent text-sm truncate focus:outline-none ${
+                      npc.isVisible ? 'text-storm-200' : 'text-storm-400'
+                    }`}
+                    onBlur={(e) => handleRenameNPC(npc.id, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur();
+                      }
+                    }}
+                  />
                 </div>
                 <Button
                   variant="ghost"

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useInitiative } from '../../hooks/useInitiative';
+import { useNPCs } from '../../hooks/useNPCs';
 import { useSessionStore } from '../../stores/sessionStore';
 import { useToast } from '../shared/Toast';
 import type { InitiativePhase, InitiativeVisibility } from '../../types';
@@ -26,6 +27,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
     deleteEntry,
     clearTracker,
   } = useInitiative();
+  const { updateNPCInstanceDetails } = useNPCs();
 
   const myModifier = useMemo(() => {
     if (!currentUser) return 0;
@@ -68,6 +70,15 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
     const result = await clearTracker();
     if (result.success) showToast('Initiative tracker cleared', 'success');
     else showToast(result.error || 'Failed to clear tracker', 'error');
+  };
+
+  const handleRenameNpc = async (npcId: string, displayName: string) => {
+    const trimmed = displayName.trim();
+    if (!trimmed) return;
+    const result = await updateNPCInstanceDetails(npcId, { displayName: trimmed });
+    if (!result.success) {
+      showToast(result.error || 'Failed to rename NPC', 'error');
+    }
   };
 
   return (
@@ -222,6 +233,19 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
 
                 {isGM && (
                   <div className="mt-2 flex items-center gap-2">
+                    {entry.sourceType === 'npc' && entry.sourceId && (
+                      <input
+                        type="text"
+                        defaultValue={entry.sourceName}
+                        className="w-32 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                        onBlur={(e) => handleRenameNpc(entry.sourceId as string, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.currentTarget.blur();
+                          }
+                        }}
+                      />
+                    )}
                     <input
                       type="number"
                       defaultValue={entry.total ?? 0}
