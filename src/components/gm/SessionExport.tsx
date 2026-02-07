@@ -102,6 +102,7 @@ export const SessionExport: React.FC = () => {
           return {
             name: char.name,
             tokenBase64,
+            size: (char.size || 'medium') as TokenSize,
             inventory: char.inventory,
             notes: char.notes,
           };

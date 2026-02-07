@@ -140,7 +140,18 @@ export const AssetCreate: React.FC = () => {
 
   const tokenCategories = ['monster', 'npc', 'hero', 'animal', 'environmental', 'other'];
   const mapCategories = ['dungeon', 'wilderness', 'urban', 'interior', 'other'];
-  const tokenSizes = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
+  const tokenSizes = [
+    'minuscule',
+    'tiny',
+    'small',
+    'medium',
+    'large',
+    'giant',
+    'huge',
+    'massive',
+    'gargantuan',
+    'colossal',
+  ];
 
   return (
     <div className="min-h-screen bg-storm-950 p-6">
