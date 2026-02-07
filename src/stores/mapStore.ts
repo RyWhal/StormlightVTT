@@ -4,6 +4,7 @@ import type {
   Character,
   NPCInstance,
   NPCTemplate,
+  Handout,
   FogRegion,
   DrawingRegion,
   DrawingColor,
@@ -21,6 +22,9 @@ interface MapState {
   // NPCs
   npcTemplates: NPCTemplate[];
   npcInstances: NPCInstance[];
+
+  // Handouts
+  handouts: Handout[];
 
   // Viewport state
   viewportScale: number;
@@ -108,6 +112,12 @@ interface MapState {
   updateDrawingRegion: (mapId: string, regionId: string, updates: Partial<DrawingRegion>) => void;
   removeDrawingRegion: (mapId: string, regionId: string) => void;
 
+  // Actions - Handouts
+  setHandouts: (handouts: Handout[]) => void;
+  addHandout: (handout: Handout) => void;
+  updateHandout: (handoutId: string, updates: Partial<Handout>) => void;
+  removeHandout: (handoutId: string) => void;
+
   // Clear all state
   clearMapState: () => void;
 }
@@ -125,6 +135,7 @@ export const useMapStore = create<MapState>()((set, get) => ({
   characters: [],
   npcTemplates: [],
   npcInstances: [],
+  handouts: [],
   viewportScale: 1,
   viewportX: 0,
   viewportY: 0,
@@ -481,6 +492,25 @@ export const useMapStore = create<MapState>()((set, get) => ({
     }));
   },
 
+  setHandouts: (handouts) => set({ handouts }),
+
+  addHandout: (handout) =>
+    set((state) => ({
+      handouts: [...state.handouts.filter((h) => h.id !== handout.id), handout],
+    })),
+
+  updateHandout: (handoutId, updates) =>
+    set((state) => ({
+      handouts: state.handouts.map((handout) =>
+        handout.id === handoutId ? { ...handout, ...updates } : handout
+      ),
+    })),
+
+  removeHandout: (handoutId) =>
+    set((state) => ({
+      handouts: state.handouts.filter((handout) => handout.id !== handoutId),
+    })),
+
   clearMapState: () =>
     set({
       maps: [],
@@ -488,6 +518,7 @@ export const useMapStore = create<MapState>()((set, get) => ({
       characters: [],
       npcTemplates: [],
       npcInstances: [],
+      handouts: [],
       viewportScale: 1,
       viewportX: 0,
       viewportY: 0,

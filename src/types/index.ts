@@ -60,6 +60,19 @@ export interface Map {
   showPlayerTokens: boolean;
 }
 
+export type HandoutKind = 'image' | 'text';
+
+export interface Handout {
+  id: string;
+  sessionId: string;
+  title: string;
+  kind: HandoutKind;
+  imageUrl: string | null;
+  body: string | null;
+  sortOrder: number;
+  createdAt: string;
+}
+
 export interface FogRegion {
   type: 'reveal' | 'hide';
   points: { x: number; y: number }[];
@@ -344,6 +357,17 @@ export interface DbNPCTemplate {
   created_at: string;
 }
 
+export interface DbHandout {
+  id: string;
+  session_id: string;
+  title: string;
+  kind: HandoutKind;
+  image_url: string | null;
+  body: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface DbNPCInstance {
   id: string;
   map_id: string;
@@ -476,6 +500,19 @@ export function dbNPCTemplateToNPCTemplate(db: DbNPCTemplate): NPCTemplate {
     tokenUrl: db.token_url,
     defaultSize: db.default_size,
     notes: db.notes,
+    createdAt: db.created_at,
+  };
+}
+
+export function dbHandoutToHandout(db: DbHandout): Handout {
+  return {
+    id: db.id,
+    sessionId: db.session_id,
+    title: db.title,
+    kind: db.kind,
+    imageUrl: db.image_url,
+    body: db.body,
+    sortOrder: db.sort_order,
     createdAt: db.created_at,
   };
 }

@@ -11,6 +11,7 @@ import {
   dbCharacterToCharacter,
   dbNPCTemplateToNPCTemplate,
   dbNPCInstanceToNPCInstance,
+  dbHandoutToHandout,
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
@@ -21,6 +22,7 @@ import {
   type DbCharacter,
   type DbNPCTemplate,
   type DbNPCInstance,
+  type DbHandout,
   type DbSessionPlayer,
   type DbChatMessage,
   type DbDiceRoll,
@@ -50,6 +52,7 @@ export const useSession = () => {
     setCharacters,
     setNPCTemplates,
     setNPCInstances,
+    setHandouts,
     clearMapState,
   } = useMapStore();
 
@@ -225,6 +228,18 @@ export const useSession = () => {
           setNPCTemplates((templatesData as DbNPCTemplate[]).map(dbNPCTemplateToNPCTemplate));
         }
 
+        const { data: handoutData, error: handoutError } = await supabase
+          .from('handouts')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('sort_order', { ascending: true });
+
+        if (!handoutError) {
+          setHandouts(
+            (handoutData as DbHandout[] | null | undefined)?.map(dbHandoutToHandout) || []
+          );
+        }
+
         const { data: instancesData } = await supabase
           .from('npc_instances')
           .select('*')
@@ -292,11 +307,26 @@ export const useSession = () => {
         if (isMissingRelationError(initiativeError) || isMissingRelationError(initiativeLogsError)) {
           console.warn('Initiative tables are not available yet; skipping initiative hydration.');
         }
+        if (isMissingRelationError(handoutError)) {
+          console.warn('Handout tables are not available yet; skipping handout hydration.');
+        }
       } catch (error) {
         console.error('Error loading session data:', error);
       }
     },
-    [setMaps, setActiveMap, setCharacters, setNPCTemplates, setNPCInstances, setPlayers, setMessages, setDiceRolls, setEntries, setRollLogs]
+    [
+      setMaps,
+      setActiveMap,
+      setCharacters,
+      setNPCTemplates,
+      setNPCInstances,
+      setHandouts,
+      setPlayers,
+      setMessages,
+      setDiceRolls,
+      setEntries,
+      setRollLogs,
+    ]
   );
 
   const claimGM = useCallback(async (): Promise<{ success: boolean; error?: string }> => {

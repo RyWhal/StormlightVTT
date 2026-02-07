@@ -21,6 +21,7 @@ import { Token } from './Token';
 import { GridOverlay } from './GridOverlay';
 import { FogLayer } from './FogLayer';
 import { DrawingLayer } from './DrawingLayer';
+import { HandoutViewer } from './HandoutViewer';
 import type { FogRegion, DrawingRegion, DrawingShape } from '../../types';
 import { isDrawingColor } from '../../types';
 import { nanoid } from 'nanoid';
@@ -74,6 +75,7 @@ export const MapCanvas: React.FC = () => {
   const [rectEnd, setRectEnd] = useState<{ x: number; y: number } | null>(null);
   const [currentDrawing, setCurrentDrawing] = useState<DrawingRegion | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'map' | 'handouts'>('map');
 
   const syncStageSize = useCallback(() => {
     if (!containerRef.current) return;
@@ -511,179 +513,202 @@ export const MapCanvas: React.FC = () => {
   const handlePanLeft = () => panBy(panStep, 0);
   const handlePanRight = () => panBy(-panStep, 0);
 
-  if (!activeMap) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-storm-950">
-        <div className="text-center">
-          <p className="text-storm-400 text-lg mb-2">No map loaded</p>
-          {isGM ? (
-            <p className="text-storm-500 text-sm">
-              Upload a map from the GM panel to get started
-            </p>
-          ) : (
-            <p className="text-storm-500 text-sm">
-              Waiting for GM to load a map...
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const gridCellSize = activeMap.gridCellSize;
+  const isMapTab = activeTab === 'map';
+  const gridCellSize = activeMap?.gridCellSize ?? 0;
   const zoomPercent = Math.round(viewportScale * 100);
 
   return (
     <div
       ref={containerRef}
       className="w-full h-full bg-storm-950 overflow-hidden relative"
-      style={{ cursor: fogToolMode || drawingTool ? 'crosshair' : 'default' }}
+      style={{ cursor: isMapTab && (fogToolMode || drawingTool) ? 'crosshair' : 'default' }}
     >
-      <Stage
-        ref={stageRef}
-        width={Math.max(1, stageWidth)}
-        height={Math.max(1, stageHeight)}
-        scaleX={viewportScale}
-        scaleY={viewportScale}
-        x={viewportX}
-        y={viewportY}
-        draggable={!fogToolMode && !drawingTool}
-        onWheel={handleWheel}
-        onDragEnd={handleDragEnd}
-        onClick={handleStageClick}
-        onMouseDown={
-          fogToolMode ? handleFogMouseDown : drawingTool ? handleDrawingMouseDown : undefined
-        }
-        onMouseMove={
-          fogToolMode ? handleFogMouseMove : drawingTool ? handleDrawingMouseMove : undefined
-        }
-        onMouseUp={
-          fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
-        }
-        onMouseLeave={
-          fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
-        }
-      >
-        {/* Map image layer */}
-        <Layer>
-          <KonvaImage
-            image={mapImage}
-            width={activeMap.width}
-            height={activeMap.height}
-            name="background"
-          />
-        </Layer>
-
-        {/* Grid overlay */}
-        {activeMap.gridEnabled && (
-          <Layer>
-            <GridOverlay
-              width={activeMap.width}
-              height={activeMap.height}
-              cellSize={gridCellSize}
-              offsetX={activeMap.gridOffsetX}
-              offsetY={activeMap.gridOffsetY}
-              color={activeMap.gridColor}
-            />
-          </Layer>
-        )}
-
-        {/* Drawing layer */}
-        <Layer listening={false} hitGraphEnabled={false}>
-          <DrawingLayer
-            drawings={drawingData}
-            isGM={isGM}
-            currentDrawing={isDrawing ? currentDrawing : null}
-          />
-        </Layer>
-
-        {/* NPC tokens (below player tokens) */}
-        <Layer>
-          {currentMapNPCs
-            .filter((npc) => npc.isVisible || isGM)
-            .map((npc) => (
-              <Token
-                key={npc.id}
-                id={npc.id}
-                type="npc"
-                name={npc.displayName || 'NPC'}
-                imageUrl={npc.tokenUrl}
-                x={npc.positionX}
-                y={npc.positionY}
-                size={npc.size || 'medium'}
-                gridCellSize={gridCellSize}
-                isSelected={selectedTokenId === npc.id && selectedTokenType === 'npc'}
-                isDraggable={canMoveToken('npc', npc.id)}
-                isHidden={!npc.isVisible}
-                isGM={isGM}
-                onSelect={() => selectToken(npc.id, 'npc')}
-                onDragStart={() => handleTokenDragStart(npc.id, 'npc')}
-                onDragEnd={(x, y) => handleTokenDragEnd(npc.id, 'npc', x, y)}
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-lg border border-storm-700 bg-storm-900/90 backdrop-blur-sm p-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('map')}
+          className={`px-3 py-1.5 text-sm rounded-md transition ${
+            isMapTab ? 'bg-storm-700 text-storm-100' : 'text-storm-300 hover:text-storm-100'
+          }`}
+        >
+          Map
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('handouts')}
+          className={`px-3 py-1.5 text-sm rounded-md transition ${
+            !isMapTab ? 'bg-storm-700 text-storm-100' : 'text-storm-300 hover:text-storm-100'
+          }`}
+        >
+          Handouts
+        </button>
+      </div>
+      {isMapTab ? (
+        activeMap ? (
+          <Stage
+            ref={stageRef}
+            width={Math.max(1, stageWidth)}
+            height={Math.max(1, stageHeight)}
+            scaleX={viewportScale}
+            scaleY={viewportScale}
+            x={viewportX}
+            y={viewportY}
+            draggable={!fogToolMode && !drawingTool}
+            onWheel={handleWheel}
+            onDragEnd={handleDragEnd}
+            onClick={handleStageClick}
+            onMouseDown={
+              fogToolMode ? handleFogMouseDown : drawingTool ? handleDrawingMouseDown : undefined
+            }
+            onMouseMove={
+              fogToolMode ? handleFogMouseMove : drawingTool ? handleDrawingMouseMove : undefined
+            }
+            onMouseUp={
+              fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+            }
+            onMouseLeave={
+              fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+            }
+          >
+            {/* Map image layer */}
+            <Layer>
+              <KonvaImage
+                image={mapImage}
+                width={activeMap.width}
+                height={activeMap.height}
+                name="background"
               />
-            ))}
-        </Layer>
+            </Layer>
 
-        {/* Player character tokens */}
-        {activeMap.showPlayerTokens && (
-          <Layer>
-            {characters.map((char) => (
-              <Token
-                key={char.id}
-                id={char.id}
-                type="character"
-                name={char.name}
-                imageUrl={char.tokenUrl}
-                x={char.positionX}
-                y={char.positionY}
-                size="medium"
-                gridCellSize={gridCellSize}
-                isSelected={selectedTokenId === char.id && selectedTokenType === 'character'}
-                isDraggable={canMoveToken('character', char.id)}
-                isHidden={false}
+            {/* Grid overlay */}
+            {activeMap.gridEnabled && (
+              <Layer>
+                <GridOverlay
+                  width={activeMap.width}
+                  height={activeMap.height}
+                  cellSize={gridCellSize}
+                  offsetX={activeMap.gridOffsetX}
+                  offsetY={activeMap.gridOffsetY}
+                  color={activeMap.gridColor}
+                />
+              </Layer>
+            )}
+
+            {/* Drawing layer */}
+            <Layer listening={false} hitGraphEnabled={false}>
+              <DrawingLayer
+                drawings={drawingData}
                 isGM={isGM}
-                onSelect={() => selectToken(char.id, 'character')}
-                onDragStart={() => handleTokenDragStart(char.id, 'character')}
-                onDragEnd={(x, y) => handleTokenDragEnd(char.id, 'character', x, y)}
+                currentDrawing={isDrawing ? currentDrawing : null}
               />
-            ))}
-          </Layer>
-        )}
+            </Layer>
 
-        {/* Fog of war layer */}
-        {activeMap.fogEnabled && (
-          <Layer listening={false} hitGraphEnabled={false}>
-            <FogLayer
-              width={activeMap.width}
-              height={activeMap.height}
-              fogData={activeMap.fogData}
-              defaultState={activeMap.fogDefaultState}
-              isGM={isGM}
-              currentStroke={isPainting ? currentFogStroke : []}
-              currentBrushSize={getFogBrushPixelSize(fogBrushSize)}
-              currentMode={fogToolMode}
-            />
-          </Layer>
-        )}
+            {/* NPC tokens (below player tokens) */}
+            <Layer>
+              {currentMapNPCs
+                .filter((npc) => npc.isVisible || isGM)
+                .map((npc) => (
+                  <Token
+                    key={npc.id}
+                    id={npc.id}
+                    type="npc"
+                    name={npc.displayName || 'NPC'}
+                    imageUrl={npc.tokenUrl}
+                    x={npc.positionX}
+                    y={npc.positionY}
+                    size={npc.size || 'medium'}
+                    gridCellSize={gridCellSize}
+                    isSelected={selectedTokenId === npc.id && selectedTokenType === 'npc'}
+                    isDraggable={canMoveToken('npc', npc.id)}
+                    isHidden={!npc.isVisible}
+                    isGM={isGM}
+                    onSelect={() => selectToken(npc.id, 'npc')}
+                    onDragStart={() => handleTokenDragStart(npc.id, 'npc')}
+                    onDragEnd={(x, y) => handleTokenDragEnd(npc.id, 'npc', x, y)}
+                  />
+                ))}
+            </Layer>
 
-        {/* Rectangle selection preview for fog */}
-        {fogToolMode && fogToolShape === 'rectangle' && rectStart && rectEnd && (
-          <Layer listening={false} hitGraphEnabled={false}>
-            <Rect
-              x={Math.min(rectStart.x, rectEnd.x)}
-              y={Math.min(rectStart.y, rectEnd.y)}
-              width={Math.abs(rectEnd.x - rectStart.x)}
-              height={Math.abs(rectEnd.y - rectStart.y)}
-              stroke={fogToolMode === 'reveal' ? '#00ff00' : '#ff0000'}
-              strokeWidth={2 / viewportScale}
-              dash={[10 / viewportScale, 5 / viewportScale]}
-              fill={fogToolMode === 'reveal' ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)'}
-            />
-          </Layer>
-        )}
-      </Stage>
+            {/* Player character tokens */}
+            {activeMap.showPlayerTokens && (
+              <Layer>
+                {characters.map((char) => (
+                  <Token
+                    key={char.id}
+                    id={char.id}
+                    type="character"
+                    name={char.name}
+                    imageUrl={char.tokenUrl}
+                    x={char.positionX}
+                    y={char.positionY}
+                    size="medium"
+                    gridCellSize={gridCellSize}
+                    isSelected={selectedTokenId === char.id && selectedTokenType === 'character'}
+                    isDraggable={canMoveToken('character', char.id)}
+                    isHidden={false}
+                    isGM={isGM}
+                    onSelect={() => selectToken(char.id, 'character')}
+                    onDragStart={() => handleTokenDragStart(char.id, 'character')}
+                    onDragEnd={(x, y) => handleTokenDragEnd(char.id, 'character', x, y)}
+                  />
+                ))}
+              </Layer>
+            )}
+
+            {/* Fog of war layer */}
+            {activeMap.fogEnabled && (
+              <Layer listening={false} hitGraphEnabled={false}>
+                <FogLayer
+                  width={activeMap.width}
+                  height={activeMap.height}
+                  fogData={activeMap.fogData}
+                  defaultState={activeMap.fogDefaultState}
+                  isGM={isGM}
+                  currentStroke={isPainting ? currentFogStroke : []}
+                  currentBrushSize={getFogBrushPixelSize(fogBrushSize)}
+                  currentMode={fogToolMode}
+                />
+              </Layer>
+            )}
+
+            {/* Rectangle selection preview for fog */}
+            {fogToolMode && fogToolShape === 'rectangle' && rectStart && rectEnd && (
+              <Layer listening={false} hitGraphEnabled={false}>
+                <Rect
+                  x={Math.min(rectStart.x, rectEnd.x)}
+                  y={Math.min(rectStart.y, rectEnd.y)}
+                  width={Math.abs(rectEnd.x - rectStart.x)}
+                  height={Math.abs(rectEnd.y - rectStart.y)}
+                  stroke={fogToolMode === 'reveal' ? '#00ff00' : '#ff0000'}
+                  strokeWidth={2 / viewportScale}
+                  dash={[10 / viewportScale, 5 / viewportScale]}
+                  fill={fogToolMode === 'reveal' ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)'}
+                />
+              </Layer>
+            )}
+          </Stage>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-storm-400 text-lg mb-2">No map loaded</p>
+              {isGM ? (
+                <p className="text-storm-500 text-sm">
+                  Upload a map from the GM panel to get started
+                </p>
+              ) : (
+                <p className="text-storm-500 text-sm">
+                  Waiting for GM to load a map...
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      ) : (
+        <HandoutViewer />
+      )}
 
       {/* Fog tool indicator */}
-      {fogToolMode && (
+      {fogToolMode && isMapTab && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-storm-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-storm-600">
           <span className="text-storm-100">
             Fog Tool: <span className="font-semibold capitalize">{fogToolMode}</span>
@@ -694,7 +719,7 @@ export const MapCanvas: React.FC = () => {
       )}
 
       {/* Drawing tool indicator */}
-      {drawingTool && (
+      {drawingTool && isMapTab && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-storm-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-storm-600">
           <span className="text-storm-100">
             Drawing Tool: <span className="font-semibold capitalize">{drawingTool}</span>
@@ -703,7 +728,8 @@ export const MapCanvas: React.FC = () => {
       )}
 
       {/* Map controls overlay - Bottom left */}
-      <div className="absolute bottom-4 left-4 flex flex-col gap-2">
+      {isMapTab && activeMap && (
+        <div className="absolute bottom-4 left-4 flex flex-col gap-2">
         {/* Zoom controls */}
         <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
           <div className="flex items-center gap-2 mb-2">
@@ -786,14 +812,17 @@ export const MapCanvas: React.FC = () => {
             <div />
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Map info overlay - Bottom right */}
-      <div className="absolute bottom-4 right-4 bg-storm-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-storm-700">
-        <span className="text-sm text-storm-300">
-          {activeMap.name} ({activeMap.width}x{activeMap.height})
-        </span>
-      </div>
+      {isMapTab && activeMap && (
+        <div className="absolute bottom-4 right-4 bg-storm-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-storm-700">
+          <span className="text-sm text-storm-300">
+            {activeMap.name} ({activeMap.width}x{activeMap.height})
+          </span>
+        </div>
+      )}
     </div>
   );
 };

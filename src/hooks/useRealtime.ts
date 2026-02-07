@@ -10,6 +10,7 @@ import {
   dbMapToMap,
   dbCharacterToCharacter,
   dbNPCInstanceToNPCInstance,
+  dbHandoutToHandout,
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
@@ -19,6 +20,7 @@ import {
   type DbMap,
   type DbCharacter,
   type DbNPCInstance,
+  type DbHandout,
   type DbSessionPlayer,
   type DbChatMessage,
   type DbDiceRoll,
@@ -58,6 +60,9 @@ export const useRealtime = () => {
     addNPCInstance,
     removeNPCInstance,
     moveNPCInstance,
+    addHandout,
+    updateHandout,
+    removeHandout,
     setTokenLock,
     clearTokenLock,
   } = useMapStore();
@@ -148,6 +153,7 @@ export const useRealtime = () => {
         }
       );
 
+
     channel
       .on(
         'postgres_changes',
@@ -184,6 +190,46 @@ export const useRealtime = () => {
         },
         (payload) => {
           removeCharacter((payload.old as { id: string }).id);
+        }
+      );
+
+
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'handouts',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          addHandout(dbHandoutToHandout(payload.new as DbHandout));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'handouts',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const updated = dbHandoutToHandout(payload.new as DbHandout);
+          updateHandout(updated.id, updated);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'handouts',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          removeHandout((payload.old as { id: string }).id);
         }
       );
 
@@ -517,6 +563,9 @@ export const useRealtime = () => {
     addNPCInstance,
     removeNPCInstance,
     moveNPCInstance,
+    addHandout,
+    updateHandout,
+    removeHandout,
     setTokenLock,
     clearTokenLock,
     addMessage,

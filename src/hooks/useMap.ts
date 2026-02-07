@@ -169,7 +169,20 @@ export const useMap = () => {
   const updateMapSettings = useCallback(
     async (
       mapId: string,
-      settings: Partial<Pick<Map, 'name' | 'gridEnabled' | 'gridOffsetX' | 'gridOffsetY' | 'gridCellSize' | 'gridColor' | 'fogEnabled' | 'fogDefaultState' | 'showPlayerTokens'>>
+      settings: Partial<
+        Pick<
+          Map,
+          | 'name'
+          | 'gridEnabled'
+          | 'gridOffsetX'
+          | 'gridOffsetY'
+          | 'gridCellSize'
+          | 'gridColor'
+          | 'fogEnabled'
+          | 'fogDefaultState'
+          | 'showPlayerTokens'
+        >
+      >
     ): Promise<{ success: boolean; error?: string }> => {
       try {
         const dbSettings: Record<string, unknown> = {};
