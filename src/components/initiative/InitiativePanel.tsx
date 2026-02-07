@@ -232,61 +232,65 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                 </div>
 
                 {isGM && (
-                  <div className="mt-2 flex items-center gap-2">
-                    {entry.sourceType === 'npc' && entry.sourceId && (
+                  <div className="mt-2 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      {entry.sourceType === 'npc' && entry.sourceId && (
+                        <input
+                          type="text"
+                          defaultValue={entry.sourceName}
+                          className="w-32 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                          onBlur={(e) => handleRenameNpc(entry.sourceId as string, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.currentTarget.blur();
+                            }
+                          }}
+                        />
+                      )}
                       <input
-                        type="text"
-                        defaultValue={entry.sourceName}
-                        className="w-32 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
-                        onBlur={(e) => handleRenameNpc(entry.sourceId as string, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.currentTarget.blur();
+                        type="number"
+                        defaultValue={entry.total ?? 0}
+                        className="w-20 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                        onBlur={async (e) => {
+                          const total = parseInt(e.target.value, 10);
+                          if (!Number.isNaN(total)) {
+                            await updateEntry(entry.id, { total });
                           }
                         }}
                       />
-                    )}
-                    <input
-                      type="number"
-                      defaultValue={entry.total ?? 0}
-                      className="w-20 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
-                      onBlur={async (e) => {
-                        const total = parseInt(e.target.value, 10);
-                        if (!Number.isNaN(total)) {
-                          await updateEntry(entry.id, { total });
-                        }
-                      }}
-                    />
-                    <select
-                      defaultValue={entry.phase}
-                      className="px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
-                      onChange={async (e) => {
-                        await updateEntry(entry.id, { phase: e.target.value as InitiativePhase });
-                      }}
-                    >
-                      <option value="fast">Fast</option>
-                      <option value="slow">Slow</option>
-                    </select>
-                    <select
-                      defaultValue={entry.visibility}
-                      className="px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
-                      onChange={async (e) => {
-                        await updateEntry(entry.id, {
-                          visibility: e.target.value as InitiativeVisibility,
-                        });
-                      }}
-                    >
-                      <option value="public">Public</option>
-                      <option value="gm_only">GM only</option>
-                    </select>
-                    <button
-                      className="ml-auto p-1 text-storm-400 hover:text-red-400"
-                      onClick={async () => {
-                        await deleteEntry(entry.id);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        defaultValue={entry.phase}
+                        className="px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                        onChange={async (e) => {
+                          await updateEntry(entry.id, { phase: e.target.value as InitiativePhase });
+                        }}
+                      >
+                        <option value="fast">Fast</option>
+                        <option value="slow">Slow</option>
+                      </select>
+                      <select
+                        defaultValue={entry.visibility}
+                        className="px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                        onChange={async (e) => {
+                          await updateEntry(entry.id, {
+                            visibility: e.target.value as InitiativeVisibility,
+                          });
+                        }}
+                      >
+                        <option value="public">Public</option>
+                        <option value="gm_only">GM only</option>
+                      </select>
+                      <button
+                        className="ml-auto p-1 text-storm-400 hover:text-red-400"
+                        onClick={async () => {
+                          await deleteEntry(entry.id);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
