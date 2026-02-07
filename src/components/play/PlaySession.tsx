@@ -28,6 +28,7 @@ import { Button } from '../shared/Button';
 import { useSessionStore, useIsGM } from '../../stores/sessionStore';
 import { useMapStore } from '../../stores/mapStore';
 import { useSession } from '../../hooks/useSession';
+import { useMap } from '../../hooks/useMap';
 import { useToast } from '../shared/Toast';
 
 type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'draw' | 'settings';
@@ -237,8 +238,10 @@ export const PlaySession: React.FC = () => {
   const connectionStatus = useSessionStore((state) => state.connectionStatus);
   const players = useSessionStore((state) => state.players);
   const activeMap = useMapStore((state) => state.activeMap);
+  const drawingData = useMapStore((state) => state.drawingData);
   const isGM = useIsGM();
   const { leaveSession, claimGM, releaseGM } = useSession();
+  const { updateDrawingData } = useMap();
 
   const [sideTab, setSideTab] = useState<SideTab>('chat');
   const [showGMPanel, setShowGMPanel] = useState(false);
@@ -295,6 +298,20 @@ export const PlaySession: React.FC = () => {
       showToast('GM role released', 'info');
     } else {
       showToast(result.error || 'Failed to release GM', 'error');
+    }
+  };
+
+  const handleClearPlayerDrawings = async () => {
+    if (!activeMap) return;
+    const confirmed = confirm('Clear all player drawings on this map?');
+    if (!confirmed) return;
+
+    const remainingDrawings = drawingData.filter((drawing) => drawing.authorRole !== 'player');
+    const result = await updateDrawingData(activeMap.id, remainingDrawings);
+    if (result.success) {
+      showToast('Player drawings cleared', 'success');
+    } else {
+      showToast(result.error || 'Failed to clear drawings', 'error');
     }
   };
 
@@ -491,6 +508,18 @@ export const PlaySession: React.FC = () => {
                     <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
                       Use these tools to annotate the map without cluttering the canvas.
                     </p>
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <span className={scheme.settingsInputMuted}>
+                        Player drawings: {drawingData.filter((drawing) => drawing.authorRole === 'player').length}
+                      </span>
+                      <button
+                        onClick={handleClearPlayerDrawings}
+                        className="px-2 py-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors"
+                        disabled={!activeMap || drawingData.every((drawing) => drawing.authorRole !== 'player')}
+                      >
+                        Clear all
+                      </button>
+                    </div>
                     <div className="mt-3 max-h-72 overflow-y-auto pr-2">
                       <DrawingTools />
                     </div>

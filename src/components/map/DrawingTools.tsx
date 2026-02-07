@@ -20,12 +20,21 @@ const TOOL_DEFINITIONS = [
   { tool: 'eraser' as const, label: 'Eraser', icon: <Eraser className="w-4 h-4" /> },
 ];
 
+const STROKE_SIZES = [
+  { label: 'Fine', value: 2 },
+  { label: 'Small', value: 4 },
+  { label: 'Medium', value: 8 },
+  { label: 'Large', value: 12 },
+];
+
 export const DrawingTools: React.FC = () => {
   const isGM = useIsGM();
   const drawingTool = useMapStore((state) => state.drawingTool);
   const drawingColor = useMapStore((state) => state.drawingColor);
+  const drawingStrokeWidth = useMapStore((state) => state.drawingStrokeWidth);
   const setDrawingTool = useMapStore((state) => state.setDrawingTool);
   const setDrawingColor = useMapStore((state) => state.setDrawingColor);
+  const setDrawingStrokeWidth = useMapStore((state) => state.setDrawingStrokeWidth);
   const setFogToolMode = useMapStore((state) => state.setFogToolMode);
 
   const handleToolSelect = (tool: typeof drawingTool) => {
@@ -77,6 +86,25 @@ export const DrawingTools: React.FC = () => {
               title={label}
             >
               <span className="sr-only">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs uppercase tracking-wide text-storm-400 mb-2">Stroke</p>
+        <div className="flex flex-wrap gap-2">
+          {STROKE_SIZES.map(({ label, value }) => (
+            <button
+              key={label}
+              onClick={() => setDrawingStrokeWidth(value)}
+              className={`px-2 py-1 rounded border text-xs transition-colors ${
+                drawingStrokeWidth === value
+                  ? 'bg-storm-700 border-storm-400 text-storm-100'
+                  : 'border-storm-700 text-storm-300 hover:text-storm-100 hover:border-storm-500'
+              }`}
+            >
+              {label}
             </button>
           ))}
         </div>
