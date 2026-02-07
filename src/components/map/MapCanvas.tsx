@@ -20,7 +20,10 @@ import { broadcastTokenLock, broadcastTokenUnlock } from '../../lib/tokenBroadca
 import { Token } from './Token';
 import { GridOverlay } from './GridOverlay';
 import { FogLayer } from './FogLayer';
-import type { FogRegion } from '../../types';
+import { DrawingLayer } from './DrawingLayer';
+import type { FogRegion, DrawingRegion, DrawingShape } from '../../types';
+import { isDrawingColor } from '../../types';
+import { nanoid } from 'nanoid';
 
 export const MapCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,6 +41,12 @@ export const MapCanvas: React.FC = () => {
     fogToolMode,
     fogBrushSize,
     fogToolShape,
+    drawingData,
+    drawingTool,
+    drawingColor,
+    drawingStrokeWidth,
+    addDrawingRegion,
+    removeDrawingRegion,
     setViewportScale,
     setViewportPosition,
     setStageSize,
@@ -56,13 +65,15 @@ export const MapCanvas: React.FC = () => {
   const isGM = useIsGM();
   const { characters, moveCharacterPosition } = useCharacters();
   const { currentMapNPCs, moveNPCPosition } = useNPCs();
-  const { updateFogData } = useMap();
+  const { updateFogData, updateDrawingData } = useMap();
 
   const [mapImage] = useImage(activeMap?.imageUrl || '');
   const [currentFogStroke, setCurrentFogStroke] = useState<{ x: number; y: number }[]>([]);
   const [isPainting, setIsPainting] = useState(false);
   const [rectStart, setRectStart] = useState<{ x: number; y: number } | null>(null);
   const [rectEnd, setRectEnd] = useState<{ x: number; y: number } | null>(null);
+  const [currentDrawing, setCurrentDrawing] = useState<DrawingRegion | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const syncStageSize = useCallback(() => {
     if (!containerRef.current) return;
@@ -102,6 +113,11 @@ export const MapCanvas: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [activeMap?.id, mapImage, stageWidth, stageHeight, fitMapToView]);
+
+  useEffect(() => {
+    setCurrentDrawing(null);
+    setIsDrawing(false);
+  }, [activeMap?.id]);
 
   // Handle wheel zoom
   const handleWheel = useCallback(
@@ -244,6 +260,127 @@ export const MapCanvas: React.FC = () => {
     },
     [activeMap]
   );
+
+  const createDrawingRegion = useCallback(
+    (shape: DrawingShape, startPoint: { x: number; y: number }): DrawingRegion | null => {
+      if (!isDrawingColor(drawingColor)) return null;
+      return {
+        id: nanoid(),
+        authorRole: isGM ? 'gm' : 'player',
+        shape,
+        points: shape === 'free' ? [startPoint] : [startPoint, startPoint],
+        strokeWidth: drawingStrokeWidth,
+        color: drawingColor,
+        filled: false,
+        createdAt: new Date().toISOString(),
+      };
+    },
+    [drawingColor, drawingStrokeWidth, isGM]
+  );
+
+  const getDrawingBounds = useCallback((region: DrawingRegion) => {
+    const xs = region.points.map((point) => point.x);
+    const ys = region.points.map((point) => point.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    return { minX, maxX, minY, maxY };
+  }, []);
+
+  const handleDrawingMouseDown = useCallback(() => {
+    if (!drawingTool || !activeMap) return;
+
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
+
+    if (drawingTool === 'eraser') {
+      const reversed = [...drawingData].reverse();
+      const erased = reversed.find((region) => {
+        const { minX, maxX, minY, maxY } = getDrawingBounds(region);
+        return mapPos.x >= minX && mapPos.x <= maxX && mapPos.y >= minY && mapPos.y <= maxY;
+      });
+
+      if (erased) {
+        const newDrawingData = drawingData.filter((region) => region.id !== erased.id);
+        removeDrawingRegion(activeMap.id, erased.id);
+        void updateDrawingData(activeMap.id, newDrawingData);
+      }
+      return;
+    }
+
+    const newRegion = createDrawingRegion(drawingTool, mapPos);
+    if (!newRegion) return;
+
+    setIsDrawing(true);
+    setCurrentDrawing(newRegion);
+  }, [
+    drawingTool,
+    activeMap,
+    drawingData,
+    clampToMapBounds,
+    screenToMap,
+    createDrawingRegion,
+    getDrawingBounds,
+    removeDrawingRegion,
+    updateDrawingData,
+  ]);
+
+  const handleDrawingMouseMove = useCallback(() => {
+    if (!isDrawing || !currentDrawing) return;
+
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
+
+    setCurrentDrawing((prev) => {
+      if (!prev) return prev;
+      if (prev.shape === 'free') {
+        const lastPoint = prev.points[prev.points.length - 1];
+        if (lastPoint && lastPoint.x === mapPos.x && lastPoint.y === mapPos.y) {
+          return prev;
+        }
+        return { ...prev, points: [...prev.points, mapPos] };
+      }
+
+      const nextPoints = [...prev.points];
+      nextPoints[nextPoints.length - 1] = mapPos;
+      return { ...prev, points: nextPoints };
+    });
+  }, [isDrawing, currentDrawing, clampToMapBounds, screenToMap]);
+
+  const handleDrawingMouseUp = useCallback(() => {
+    if (!isDrawing || !currentDrawing || !activeMap) return;
+
+    const start = currentDrawing.points[0];
+    const end = currentDrawing.points[currentDrawing.points.length - 1];
+    const delta = start && end ? Math.hypot(end.x - start.x, end.y - start.y) : 0;
+    const hasEnoughPoints =
+      currentDrawing.shape === 'free'
+        ? currentDrawing.points.length > 1
+        : delta > 5;
+
+    if (hasEnoughPoints) {
+      const newDrawingData = [...drawingData, currentDrawing];
+      addDrawingRegion(activeMap.id, currentDrawing);
+      void updateDrawingData(activeMap.id, newDrawingData);
+    }
+
+    setIsDrawing(false);
+    setCurrentDrawing(null);
+  }, [
+    isDrawing,
+    currentDrawing,
+    activeMap,
+    drawingData,
+    addDrawingRegion,
+    updateDrawingData,
+  ]);
 
   // Fog painting handlers
   const handleFogMouseDown = useCallback(
@@ -400,7 +537,7 @@ export const MapCanvas: React.FC = () => {
     <div
       ref={containerRef}
       className="w-full h-full bg-storm-950 overflow-hidden relative"
-      style={{ cursor: fogToolMode ? 'crosshair' : 'default' }}
+      style={{ cursor: fogToolMode || drawingTool ? 'crosshair' : 'default' }}
     >
       <Stage
         ref={stageRef}
@@ -410,14 +547,22 @@ export const MapCanvas: React.FC = () => {
         scaleY={viewportScale}
         x={viewportX}
         y={viewportY}
-        draggable={!fogToolMode}
+        draggable={!fogToolMode && !drawingTool}
         onWheel={handleWheel}
         onDragEnd={handleDragEnd}
         onClick={handleStageClick}
-        onMouseDown={fogToolMode ? handleFogMouseDown : undefined}
-        onMouseMove={fogToolMode ? handleFogMouseMove : undefined}
-        onMouseUp={fogToolMode ? handleFogMouseUp : undefined}
-        onMouseLeave={fogToolMode ? handleFogMouseUp : undefined}
+        onMouseDown={
+          fogToolMode ? handleFogMouseDown : drawingTool ? handleDrawingMouseDown : undefined
+        }
+        onMouseMove={
+          fogToolMode ? handleFogMouseMove : drawingTool ? handleDrawingMouseMove : undefined
+        }
+        onMouseUp={
+          fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+        }
+        onMouseLeave={
+          fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+        }
       >
         {/* Map image layer */}
         <Layer>
@@ -442,6 +587,15 @@ export const MapCanvas: React.FC = () => {
             />
           </Layer>
         )}
+
+        {/* Drawing layer */}
+        <Layer listening={false} hitGraphEnabled={false}>
+          <DrawingLayer
+            drawings={drawingData}
+            isGM={isGM}
+            currentDrawing={isDrawing ? currentDrawing : null}
+          />
+        </Layer>
 
         {/* NPC tokens (below player tokens) */}
         <Layer>
@@ -497,7 +651,7 @@ export const MapCanvas: React.FC = () => {
 
         {/* Fog of war layer */}
         {activeMap.fogEnabled && (
-          <Layer>
+          <Layer listening={false} hitGraphEnabled={false}>
             <FogLayer
               width={activeMap.width}
               height={activeMap.height}
@@ -513,7 +667,7 @@ export const MapCanvas: React.FC = () => {
 
         {/* Rectangle selection preview for fog */}
         {fogToolMode && fogToolShape === 'rectangle' && rectStart && rectEnd && (
-          <Layer>
+          <Layer listening={false} hitGraphEnabled={false}>
             <Rect
               x={Math.min(rectStart.x, rectEnd.x)}
               y={Math.min(rectStart.y, rectEnd.y)}
@@ -535,6 +689,15 @@ export const MapCanvas: React.FC = () => {
             Fog Tool: <span className="font-semibold capitalize">{fogToolMode}</span>
             {' - '}
             <span className="capitalize">{fogToolShape}</span>
+          </span>
+        </div>
+      )}
+
+      {/* Drawing tool indicator */}
+      {drawingTool && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-storm-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-storm-600">
+          <span className="text-storm-100">
+            Drawing Tool: <span className="font-semibold capitalize">{drawingTool}</span>
           </span>
         </div>
       )}

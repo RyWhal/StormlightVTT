@@ -14,21 +14,24 @@ import {
   ChevronLeft,
   ChevronRight,
   Palette,
+  PencilLine,
 } from 'lucide-react';
 import { MapCanvas } from '../map/MapCanvas';
 import { ChatPanel } from '../chat/ChatPanel';
 import { DicePanel } from '../dice/DicePanel';
 import { NotepadPanel } from '../shared/NotepadPanel';
 import { GMPanel } from '../gm/GMPanel';
+import { DrawingTools } from '../map/DrawingTools';
 import { InventoryPanel } from '../inventory/InventoryPanel';
 import { InitiativePanel } from '../initiative/InitiativePanel';
 import { Button } from '../shared/Button';
 import { useSessionStore, useIsGM } from '../../stores/sessionStore';
 import { useMapStore } from '../../stores/mapStore';
 import { useSession } from '../../hooks/useSession';
+import { useMap } from '../../hooks/useMap';
 import { useToast } from '../shared/Toast';
 
-type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'settings';
+type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'draw' | 'settings';
 type ColorScheme =
   | 'storm'
   | 'dawn'
@@ -235,8 +238,10 @@ export const PlaySession: React.FC = () => {
   const connectionStatus = useSessionStore((state) => state.connectionStatus);
   const players = useSessionStore((state) => state.players);
   const activeMap = useMapStore((state) => state.activeMap);
+  const drawingData = useMapStore((state) => state.drawingData);
   const isGM = useIsGM();
   const { leaveSession, claimGM, releaseGM } = useSession();
+  const { updateDrawingData } = useMap();
 
   const [sideTab, setSideTab] = useState<SideTab>('chat');
   const [showGMPanel, setShowGMPanel] = useState(false);
@@ -293,6 +298,20 @@ export const PlaySession: React.FC = () => {
       showToast('GM role released', 'info');
     } else {
       showToast(result.error || 'Failed to release GM', 'error');
+    }
+  };
+
+  const handleClearPlayerDrawings = async () => {
+    if (!activeMap) return;
+    const confirmed = confirm('Clear all player drawings on this map?');
+    if (!confirmed) return;
+
+    const remainingDrawings = drawingData.filter((drawing) => drawing.authorRole !== 'player');
+    const result = await updateDrawingData(activeMap.id, remainingDrawings);
+    if (result.success) {
+      showToast('Player drawings cleared', 'success');
+    } else {
+      showToast(result.error || 'Failed to clear drawings', 'error');
     }
   };
 
@@ -414,7 +433,7 @@ export const PlaySession: React.FC = () => {
         {!isPlayerPanelCollapsed && (
           <div className={`w-96 flex-shrink-0 border-l ${scheme.sidePanelBorder} ${scheme.sidePanelBg} flex flex-col`}>
             {/* Tabs */}
-            <div className={`flex border-b ${scheme.sidePanelBorder}`}>
+            <div className={`flex border-b ${scheme.sidePanelBorder} overflow-x-auto`}>
               <TabButton
                 active={sideTab === 'chat'}
                 onClick={() => setSideTab('chat')}
@@ -458,6 +477,14 @@ export const PlaySession: React.FC = () => {
                 inactiveClassName={scheme.tabInactive}
               />
               <TabButton
+                active={sideTab === 'draw'}
+                onClick={() => setSideTab('draw')}
+                icon={<PencilLine className="w-4 h-4" />}
+                label="Draw"
+                activeClassName={scheme.tabActive}
+                inactiveClassName={scheme.tabInactive}
+              />
+              <TabButton
                 active={sideTab === 'settings'}
                 onClick={() => setSideTab('settings')}
                 icon={<Palette className="w-4 h-4" />}
@@ -474,6 +501,31 @@ export const PlaySession: React.FC = () => {
               {!isGM && sideTab === 'initiative' && <InitiativePanel />}
               {sideTab === 'notes' && <NotepadPanel />}
               {sideTab === 'inventory' && <InventoryPanel />}
+              {sideTab === 'draw' && (
+                <div className={`h-full overflow-y-auto p-4 ${scheme.settingsPanelBg}`}>
+                  <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
+                    <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Drawing Tools</h3>
+                    <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
+                      Use these tools to annotate the map without cluttering the canvas.
+                    </p>
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <span className={scheme.settingsInputMuted}>
+                        Player drawings: {drawingData.filter((drawing) => drawing.authorRole === 'player').length}
+                      </span>
+                      <button
+                        onClick={handleClearPlayerDrawings}
+                        className="px-2 py-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors"
+                        disabled={!activeMap || drawingData.every((drawing) => drawing.authorRole !== 'player')}
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                    <div className="mt-3 max-h-72 overflow-y-auto pr-2">
+                      <DrawingTools />
+                    </div>
+                  </div>
+                </div>
+              )}
               {sideTab === 'settings' && (
                 <PlayerSettingsPanel
                   colorScheme={colorScheme}
@@ -511,7 +563,7 @@ const TabButton: React.FC<TabButtonProps> = ({
   <button
     onClick={onClick}
     className={`
-      flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium
+      flex-1 min-w-[84px] flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium
       transition-colors border-b-2
       ${active ? activeClassName : inactiveClassName}
     `}
@@ -577,6 +629,7 @@ const PlayerSettingsPanel: React.FC<PlayerSettingsPanelProps> = ({
           </select>
         </div>
       </div>
+
     </div>
   </div>
 );
