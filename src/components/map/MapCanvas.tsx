@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState, useCallback, useMemo } from 'react';
 import { Stage, Layer, Image as KonvaImage, Rect } from 'react-konva';
 import useImage from 'use-image';
 import {
@@ -575,6 +575,14 @@ export const MapCanvas: React.FC = () => {
   const isMapTab = activeTab === 'map';
   const gridCellSize = activeMap?.gridCellSize ?? 0;
   const zoomPercent = Math.round(viewportScale * 100);
+  const selectedNpc = useMemo(() => {
+    if (selectedTokenType !== 'npc' || !selectedTokenId) return null;
+    return currentMapNPCs.find((npc) => npc.id === selectedTokenId) ?? null;
+  }, [currentMapNPCs, selectedTokenId, selectedTokenType]);
+  const canResizeNpc = Boolean(isGM || session?.allowPlayersMoveNpcs);
+  const selectedNpcSizeIndex = selectedNpc
+    ? TOKEN_SIZE_ORDER.indexOf(selectedNpc.size || 'medium')
+    : -1;
 
   return (
     <div
@@ -791,88 +799,113 @@ export const MapCanvas: React.FC = () => {
       {/* Map controls overlay - Bottom left */}
       {isMapTab && activeMap && (
         <div className="absolute bottom-4 left-4 flex flex-col gap-2">
-        {/* Zoom controls */}
-        <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
-          <div className="flex items-center gap-2 mb-2">
-            <button
-              onClick={handleZoomOut}
-              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
+          {/* Zoom controls */}
+          <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                onClick={handleZoomOut}
+                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                title="Zoom Out"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
 
-            {/* Zoom slider */}
-            <input
-              type="range"
-              min="10"
-              max="500"
-              value={zoomPercent}
-              onChange={(e) => zoomTo(parseInt(e.target.value) / 100)}
-              className="w-24 h-1.5 bg-storm-700 rounded-lg appearance-none cursor-pointer accent-storm-400"
-            />
+              {/* Zoom slider */}
+              <input
+                type="range"
+                min="10"
+                max="500"
+                value={zoomPercent}
+                onChange={(e) => zoomTo(parseInt(e.target.value) / 100)}
+                className="w-24 h-1.5 bg-storm-700 rounded-lg appearance-none cursor-pointer accent-storm-400"
+              />
 
-            <button
-              onClick={handleZoomIn}
-              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-storm-400 font-mono">{zoomPercent}%</span>
-            <button
-              onClick={handleFitToView}
-              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
-              title="Fit to View"
-            >
-              <Maximize className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Pan controls */}
-        <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
-          <div className="grid grid-cols-3 gap-0.5 w-fit">
-            <div />
-            <button
-              onClick={handlePanUp}
-              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
-              title="Pan Up"
-            >
-              <ChevronUp className="w-4 h-4" />
-            </button>
-            <div />
-            <button
-              onClick={handlePanLeft}
-              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
-              title="Pan Left"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div className="p-1.5 flex items-center justify-center text-storm-500">
-              <Move className="w-3 h-3" />
+              <button
+                onClick={handleZoomIn}
+                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                title="Zoom In"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
             </div>
-            <button
-              onClick={handlePanRight}
-              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
-              title="Pan Right"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <div />
-            <button
-              onClick={handlePanDown}
-              className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
-              title="Pan Down"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </button>
-            <div />
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-storm-400 font-mono">{zoomPercent}%</span>
+              <button
+                onClick={handleFitToView}
+                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                title="Fit to View"
+              >
+                <Maximize className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
+
+          {/* Pan controls */}
+          <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
+            <div className="grid grid-cols-3 gap-0.5 w-fit">
+              <div />
+              <button
+                onClick={handlePanUp}
+                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                title="Pan Up"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+              <div />
+              <button
+                onClick={handlePanLeft}
+                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                title="Pan Left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="p-1.5 flex items-center justify-center text-storm-500">
+                <Move className="w-3 h-3" />
+              </div>
+              <button
+                onClick={handlePanRight}
+                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                title="Pan Right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <div />
+              <button
+                onClick={handlePanDown}
+                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                title="Pan Down"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              <div />
+            </div>
+          </div>
+          {selectedNpc && canResizeNpc && selectedNpcSizeIndex >= 0 && (
+            <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
+              <div className="text-xs text-storm-400 mb-2">
+                NPC Size:{' '}
+                <span className="text-storm-200">{selectedNpc.displayName || 'NPC'}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max={TOKEN_SIZE_ORDER.length - 1}
+                value={selectedNpcSizeIndex}
+                onChange={(e) => {
+                  const nextIndex = parseInt(e.target.value, 10);
+                  const nextSize = TOKEN_SIZE_ORDER[nextIndex];
+                  if (nextSize) {
+                    void updateNPCInstanceDetails(selectedNpc.id, { size: nextSize });
+                  }
+                }}
+                className="w-40 h-1.5 bg-storm-700 rounded-lg appearance-none cursor-pointer accent-storm-400"
+              />
+              <div className="mt-1 text-xs text-storm-500 capitalize">
+                {TOKEN_SIZE_ORDER[selectedNpcSizeIndex]}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
