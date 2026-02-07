@@ -38,7 +38,8 @@ export const useNPCs = () => {
       defaultSize: TokenSize,
       tokenFile?: File,
       notes?: string,
-      existingTokenUrl?: string // For using global asset URLs
+      existingTokenUrl?: string, // For using global asset URLs
+      folderId?: string | null
     ): Promise<{ success: boolean; template?: NPCTemplate; error?: string }> => {
       if (!session) {
         return { success: false, error: 'Not in a session' };
@@ -69,6 +70,7 @@ export const useNPCs = () => {
             default_size: defaultSize,
             token_url: tokenUrl,
             notes: notes || '',
+            folder_id: folderId ?? null,
           })
           .select()
           .single();
@@ -97,13 +99,14 @@ export const useNPCs = () => {
   const updateNPCTemplateDetails = useCallback(
     async (
       templateId: string,
-      updates: Partial<Pick<NPCTemplate, 'name' | 'defaultSize' | 'notes'>>
+      updates: Partial<Pick<NPCTemplate, 'name' | 'defaultSize' | 'notes' | 'folderId'>>
     ): Promise<{ success: boolean; error?: string }> => {
       try {
         const dbUpdates: Record<string, unknown> = {};
         if (updates.name !== undefined) dbUpdates.name = updates.name;
         if (updates.defaultSize !== undefined) dbUpdates.default_size = updates.defaultSize;
         if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+        if (updates.folderId !== undefined) dbUpdates.folder_id = updates.folderId;
 
         const { error } = await supabase
           .from('npc_templates')

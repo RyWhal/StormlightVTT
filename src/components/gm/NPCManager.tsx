@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   Plus,
   Skull,
@@ -8,8 +8,11 @@ import {
   EyeOff,
   MapPin,
   Library,
+  FolderPlus,
+  Pencil,
 } from 'lucide-react';
 import { useNPCs } from '../../hooks/useNPCs';
+import { useFolders } from '../../hooks/useFolders';
 import { useMapStore } from '../../stores/mapStore';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
@@ -24,10 +27,13 @@ const SIZE_OPTIONS: TokenSize[] = ['tiny', 'small', 'medium', 'large', 'huge', '
 export const NPCManager: React.FC = () => {
   const { showToast } = useToast();
   const activeMap = useMapStore((state) => state.activeMap);
+  const tokenFolders = useMapStore((state) => state.tokenFolders);
+  const { createFolder, renameFolder, deleteFolder } = useFolders('token');
   const {
     npcTemplates,
     currentMapNPCs,
     createNPCTemplate,
+    updateNPCTemplateDetails,
     deleteNPCTemplate,
     addNPCToMap,
     toggleNPCVisibility,
@@ -42,6 +48,8 @@ export const NPCManager: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAssetBrowser, setShowAssetBrowser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,7 +82,8 @@ export const NPCManager: React.FC = () => {
       newSize,
       newTokenFile || undefined,
       undefined,
-      selectedGlobalAsset?.imageUrl
+      selectedGlobalAsset?.imageUrl,
+      selectedFolderId
     );
     setIsSubmitting(false);
 
@@ -85,6 +94,7 @@ export const NPCManager: React.FC = () => {
       setNewSize('medium');
       setNewTokenFile(null);
       setSelectedGlobalAsset(null);
+      setSelectedFolderId(null);
     } else {
       showToast(result.error || 'Failed to create NPC template', 'error');
     }
@@ -131,8 +141,92 @@ export const NPCManager: React.FC = () => {
     }
   };
 
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    const result = await createFolder(newFolderName.trim());
+    if (result.success) {
+      showToast('Folder created', 'success');
+      setNewFolderName('');
+    } else {
+      showToast(result.error || 'Failed to create folder', 'error');
+    }
+  };
+
+  const handleRenameFolder = async (folderId: string, currentName: string) => {
+    const name = prompt('Folder name:', currentName);
+    if (!name || name.trim() === currentName) return;
+    const result = await renameFolder(folderId, name.trim());
+    if (result.success) {
+      showToast('Folder renamed', 'success');
+    } else {
+      showToast(result.error || 'Failed to rename folder', 'error');
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!confirm('Delete this folder? Tokens inside will become unsorted.')) return;
+    const result = await deleteFolder(folderId);
+    if (result.success) {
+      showToast('Folder deleted', 'success');
+    } else {
+      showToast(result.error || 'Failed to delete folder', 'error');
+    }
+  };
+
+  const templatesByFolder = useMemo(() => {
+    const grouped: Record<string, typeof npcTemplates> = {};
+    npcTemplates.forEach((template) => {
+      const key = template.folderId ?? 'unassigned';
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(template);
+    });
+    return grouped;
+  }, [npcTemplates]);
+
   return (
     <div className="h-full overflow-y-auto p-4">
+      <div className="mb-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="New folder name"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+          />
+          <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
+            <FolderPlus className="w-4 h-4 mr-1" />
+            Add
+          </Button>
+        </div>
+        {tokenFolders.length > 0 && (
+          <div className="space-y-1">
+            {tokenFolders.map((folder) => (
+              <div
+                key={folder.id}
+                className="flex items-center justify-between rounded bg-storm-800/50 border border-storm-700 px-2 py-1"
+              >
+                <span className="text-xs text-storm-300 truncate">{folder.name}</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRenameFolder(folder.id, folder.name)}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteFolder(folder.id)}
+                  >
+                    <Trash2 className="w-3 h-3 text-red-400" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* NPC Templates Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
@@ -159,6 +253,22 @@ export const NPCManager: React.FC = () => {
                 onChange={(e) => setNewName(e.target.value)}
                 autoFocus
               />
+
+              <div>
+                <label className="text-xs text-storm-400 block mb-1">Folder</label>
+                <select
+                  value={selectedFolderId ?? ''}
+                  onChange={(e) => setSelectedFolderId(e.target.value || null)}
+                  className="w-full px-2 py-1.5 bg-storm-700 border border-storm-600 rounded text-sm text-storm-200"
+                >
+                  <option value="">Unsorted</option>
+                  {tokenFolders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div>
                 <label className="text-xs text-storm-400 block mb-1">Size</label>
@@ -237,6 +347,7 @@ export const NPCManager: React.FC = () => {
                     setNewName('');
                     setNewTokenFile(null);
                     setSelectedGlobalAsset(null);
+                    setSelectedFolderId(null);
                   }}
                   className="flex-1"
                 >
@@ -263,51 +374,83 @@ export const NPCManager: React.FC = () => {
             No NPC templates yet
           </p>
         ) : (
-          <div className="space-y-2">
-            {npcTemplates.map((template) => (
-              <div
-                key={template.id}
-                className="flex items-center gap-2 p-2 bg-storm-800/50 rounded border border-storm-700"
-              >
-                <div className="w-8 h-8 rounded bg-storm-700 overflow-hidden flex-shrink-0">
-                  {template.tokenUrl ? (
-                    <img
-                      src={template.tokenUrl}
-                      alt={template.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Skull className="w-4 h-4 text-storm-400" />
+          <div className="space-y-4">
+            {[
+              { id: 'unassigned', name: 'Unsorted' },
+              ...tokenFolders.map((folder) => ({ id: folder.id, name: folder.name })),
+            ].map((folder) => {
+              const folderTemplates = templatesByFolder[folder.id] || [];
+              if (folderTemplates.length === 0) return null;
+              return (
+                <div key={folder.id} className="space-y-2">
+                  <div className="text-xs uppercase tracking-wide text-storm-500">{folder.name}</div>
+                  {folderTemplates.map((template) => (
+                    <div
+                      key={template.id}
+                      className="flex items-center gap-2 p-2 bg-storm-800/50 rounded border border-storm-700"
+                    >
+                      <div className="w-8 h-8 rounded bg-storm-700 overflow-hidden flex-shrink-0">
+                        {template.tokenUrl ? (
+                          <img
+                            src={template.tokenUrl}
+                            alt={template.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Skull className="w-4 h-4 text-storm-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-storm-200 truncate">
+                          {template.name}
+                        </p>
+                        <p className="text-xs text-storm-500 capitalize">
+                          {template.defaultSize}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAddToMap(template.id)}
+                        disabled={!activeMap}
+                        title="Add to map"
+                      >
+                        <MapPin className="w-4 h-4" />
+                      </Button>
+                      <select
+                        value={template.folderId ?? ''}
+                        onChange={async (event) => {
+                          const folderId = event.target.value || null;
+                          const result = await updateNPCTemplateDetails(template.id, {
+                            folderId,
+                          });
+                          if (!result.success) {
+                            showToast(result.error || 'Failed to move NPC', 'error');
+                          }
+                        }}
+                        className="bg-storm-900/70 border border-storm-600 rounded px-1 py-0.5 text-xs text-storm-200"
+                      >
+                        <option value="">Unsorted</option>
+                        {tokenFolders.map((folder) => (
+                          <option key={folder.id} value={folder.id}>
+                            {folder.name}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTemplate(template.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </Button>
                     </div>
-                  )}
+                  ))}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-storm-200 truncate">
-                    {template.name}
-                  </p>
-                  <p className="text-xs text-storm-500 capitalize">
-                    {template.defaultSize}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleAddToMap(template.id)}
-                  disabled={!activeMap}
-                  title="Add to map"
-                >
-                  <MapPin className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteTemplate(template.id)}
-                >
-                  <Trash2 className="w-4 h-4 text-red-400" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

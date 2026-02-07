@@ -10,6 +10,9 @@ import {
   dbMapToMap,
   dbCharacterToCharacter,
   dbNPCInstanceToNPCInstance,
+  dbMapFolderToMapFolder,
+  dbTokenFolderToTokenFolder,
+  dbHandoutToHandout,
   dbSessionPlayerToSessionPlayer,
   dbChatMessageToChatMessage,
   dbDiceRollToDiceRoll,
@@ -19,6 +22,9 @@ import {
   type DbMap,
   type DbCharacter,
   type DbNPCInstance,
+  type DbMapFolder,
+  type DbTokenFolder,
+  type DbHandout,
   type DbSessionPlayer,
   type DbChatMessage,
   type DbDiceRoll,
@@ -50,14 +56,23 @@ export const useRealtime = () => {
     addMap,
     removeMap,
     setActiveMap,
+    addMapFolder,
+    updateMapFolder,
+    removeMapFolder,
     updateCharacter,
     addCharacter,
     removeCharacter,
     moveCharacter,
+    addTokenFolder,
+    updateTokenFolder,
+    removeTokenFolder,
     updateNPCInstance,
     addNPCInstance,
     removeNPCInstance,
     moveNPCInstance,
+    addHandout,
+    updateHandout,
+    removeHandout,
     setTokenLock,
     clearTokenLock,
   } = useMapStore();
@@ -154,6 +169,45 @@ export const useRealtime = () => {
         {
           event: 'INSERT',
           schema: 'public',
+          table: 'map_folders',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          addMapFolder(dbMapFolderToMapFolder(payload.new as DbMapFolder));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'map_folders',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const updated = dbMapFolderToMapFolder(payload.new as DbMapFolder);
+          updateMapFolder(updated.id, updated);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'map_folders',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          removeMapFolder((payload.old as { id: string }).id);
+        }
+      );
+
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
           table: 'characters',
           filter: `session_id=eq.${sessionId}`,
         },
@@ -184,6 +238,84 @@ export const useRealtime = () => {
         },
         (payload) => {
           removeCharacter((payload.old as { id: string }).id);
+        }
+      );
+
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'token_folders',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          addTokenFolder(dbTokenFolderToTokenFolder(payload.new as DbTokenFolder));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'token_folders',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const updated = dbTokenFolderToTokenFolder(payload.new as DbTokenFolder);
+          updateTokenFolder(updated.id, updated);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'token_folders',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          removeTokenFolder((payload.old as { id: string }).id);
+        }
+      );
+
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'handouts',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          addHandout(dbHandoutToHandout(payload.new as DbHandout));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'handouts',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const updated = dbHandoutToHandout(payload.new as DbHandout);
+          updateHandout(updated.id, updated);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'handouts',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          removeHandout((payload.old as { id: string }).id);
         }
       );
 
@@ -509,14 +641,23 @@ export const useRealtime = () => {
     addMap,
     removeMap,
     setActiveMap,
+    addMapFolder,
+    updateMapFolder,
+    removeMapFolder,
     updateCharacter,
     addCharacter,
     removeCharacter,
     moveCharacter,
+    addTokenFolder,
+    updateTokenFolder,
+    removeTokenFolder,
     updateNPCInstance,
     addNPCInstance,
     removeNPCInstance,
     moveNPCInstance,
+    addHandout,
+    updateHandout,
+    removeHandout,
     setTokenLock,
     clearTokenLock,
     addMessage,

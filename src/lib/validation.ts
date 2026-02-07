@@ -77,6 +77,31 @@ export const validateTokenUpload = (file: File): ValidationResult => {
 };
 
 /**
+ * Validate handout image upload
+ * Max size: 10MB
+ * Allowed formats: PNG, JPG, WEBP
+ */
+export const validateHandoutUpload = (file: File): ValidationResult => {
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: 'Invalid file type. Allowed: PNG, JPG, WEBP',
+    };
+  }
+
+  const maxSize = 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return {
+      valid: false,
+      error: 'Handout image must be under 10MB',
+    };
+  }
+
+  return { valid: true };
+};
+
+/**
  * Get image dimensions from file
  */
 export const getImageDimensions = (

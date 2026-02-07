@@ -169,7 +169,21 @@ export const useMap = () => {
   const updateMapSettings = useCallback(
     async (
       mapId: string,
-      settings: Partial<Pick<Map, 'name' | 'gridEnabled' | 'gridOffsetX' | 'gridOffsetY' | 'gridCellSize' | 'gridColor' | 'fogEnabled' | 'fogDefaultState' | 'showPlayerTokens'>>
+      settings: Partial<
+        Pick<
+          Map,
+          | 'name'
+          | 'gridEnabled'
+          | 'gridOffsetX'
+          | 'gridOffsetY'
+          | 'gridCellSize'
+          | 'gridColor'
+          | 'fogEnabled'
+          | 'fogDefaultState'
+          | 'showPlayerTokens'
+          | 'folderId'
+        >
+      >
     ): Promise<{ success: boolean; error?: string }> => {
       try {
         const dbSettings: Record<string, unknown> = {};
@@ -182,6 +196,7 @@ export const useMap = () => {
         if (settings.fogEnabled !== undefined) dbSettings.fog_enabled = settings.fogEnabled;
         if (settings.fogDefaultState !== undefined) dbSettings.fog_default_state = settings.fogDefaultState;
         if (settings.showPlayerTokens !== undefined) dbSettings.show_player_tokens = settings.showPlayerTokens;
+        if (settings.folderId !== undefined) dbSettings.folder_id = settings.folderId;
 
         const { error } = await supabase
           .from('maps')

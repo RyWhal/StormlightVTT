@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   Upload,
   Trash2,
@@ -6,8 +6,12 @@ import {
   Check,
   Image,
   Library,
+  FolderPlus,
+  Pencil,
 } from 'lucide-react';
 import { useMap } from '../../hooks/useMap';
+import { useFolders } from '../../hooks/useFolders';
+import { useMapStore } from '../../stores/mapStore';
 import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { useToast } from '../shared/Toast';
@@ -19,11 +23,14 @@ export const MapManager: React.FC = () => {
   const { showToast } = useToast();
   const { maps, activeMap, uploadMap, addMapFromGlobalAsset, setMapActive, updateMapSettings, deleteMap } =
     useMap();
+  const mapFolders = useMapStore((state) => state.mapFolders);
+  const { createFolder, renameFolder, deleteFolder } = useFolders('map');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [editingMapId, setEditingMapId] = useState<string | null>(null);
   const [showAssetBrowser, setShowAssetBrowser] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -101,8 +108,93 @@ export const MapManager: React.FC = () => {
     }
   };
 
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    const result = await createFolder(newFolderName.trim());
+    if (result.success) {
+      showToast('Folder created', 'success');
+      setNewFolderName('');
+    } else {
+      showToast(result.error || 'Failed to create folder', 'error');
+    }
+  };
+
+  const handleRenameFolder = async (folderId: string, currentName: string) => {
+    const name = prompt('Folder name:', currentName);
+    if (!name || name.trim() === currentName) return;
+    const result = await renameFolder(folderId, name.trim());
+    if (result.success) {
+      showToast('Folder renamed', 'success');
+    } else {
+      showToast(result.error || 'Failed to rename folder', 'error');
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!confirm('Delete this folder? Maps inside will become unsorted.')) return;
+    const result = await deleteFolder(folderId);
+    if (result.success) {
+      showToast('Folder deleted', 'success');
+    } else {
+      showToast(result.error || 'Failed to delete folder', 'error');
+    }
+  };
+
+  const mapsByFolder = useMemo(() => {
+    const grouped: Record<string, typeof maps> = {};
+    maps.forEach((map) => {
+      const key = map.folderId ?? 'unassigned';
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(map);
+    });
+    return grouped;
+  }, [maps]);
+
   return (
     <div className="h-full overflow-y-auto p-4">
+      {/* Folder controls */}
+      <div className="mb-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="New folder name"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+          />
+          <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
+            <FolderPlus className="w-4 h-4 mr-1" />
+            Add
+          </Button>
+        </div>
+        {mapFolders.length > 0 && (
+          <div className="space-y-1">
+            {mapFolders.map((folder) => (
+              <div
+                key={folder.id}
+                className="flex items-center justify-between rounded bg-storm-800/50 border border-storm-700 px-2 py-1"
+              >
+                <span className="text-xs text-storm-300 truncate">{folder.name}</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRenameFolder(folder.id, folder.name)}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteFolder(folder.id)}
+                  >
+                    <Trash2 className="w-3 h-3 text-red-400" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Upload and library buttons */}
       <div className="mb-4 space-y-2">
         <input
@@ -143,81 +235,94 @@ export const MapManager: React.FC = () => {
           <p className="text-sm text-storm-500">Upload a map to get started</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {maps.map((map) => {
-            const isActive = activeMap?.id === map.id;
-            const isEditing = editingMapId === map.id;
-
+        <div className="space-y-4">
+          {[
+            { id: 'unassigned', name: 'Unsorted' },
+            ...mapFolders.map((folder) => ({ id: folder.id, name: folder.name })),
+          ].map((folder) => {
+            const folderMaps = mapsByFolder[folder.id] || [];
+            if (folderMaps.length === 0) return null;
             return (
-              <div
-                key={map.id}
-                className={`
-                  rounded-lg border transition-colors
-                  ${isActive ? 'bg-storm-700/50 border-storm-500' : 'bg-storm-800/50 border-storm-700'}
-                `}
-              >
-                <div className="flex items-center gap-3 p-3">
-                  {/* Thumbnail */}
-                  <div className="w-12 h-12 rounded bg-storm-700 overflow-hidden flex-shrink-0">
-                    <img
-                      src={map.imageUrl}
-                      alt={map.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+              <div key={folder.id} className="space-y-2">
+                <div className="text-xs uppercase tracking-wide text-storm-500">{folder.name}</div>
+                {folderMaps.map((map) => {
+                  const isActive = activeMap?.id === map.id;
+                  const isEditing = editingMapId === map.id;
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-storm-200 truncate">
-                      {map.name}
-                    </h4>
-                    <p className="text-xs text-storm-400">
-                      {map.width}x{map.height}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1">
-                    {isActive ? (
-                      <span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">
-                        Active
-                      </span>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSetActive(map.id)}
-                      >
-                        <Check className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setEditingMapId(isEditing ? null : map.id)
-                      }
+                  return (
+                    <div
+                      key={map.id}
+                      className={`
+                        rounded-lg border transition-colors
+                        ${isActive ? 'bg-storm-700/50 border-storm-500' : 'bg-storm-800/50 border-storm-700'}
+                      `}
                     >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(map.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </Button>
-                  </div>
-                </div>
+                      <div className="flex items-center gap-3 p-3">
+                        {/* Thumbnail */}
+                        <div className="w-12 h-12 rounded bg-storm-700 overflow-hidden flex-shrink-0">
+                          <img
+                            src={map.imageUrl}
+                            alt={map.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
 
-                {/* Settings panel */}
-                {isEditing && (
-                  <MapSettings
-                    map={map}
-                    onUpdate={updateMapSettings}
-                    onClose={() => setEditingMapId(null)}
-                  />
-                )}
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-storm-200 truncate">
+                            {map.name}
+                          </h4>
+                          <p className="text-xs text-storm-400">
+                            {map.width}x{map.height}
+                          </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
+                          {isActive ? (
+                            <span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">
+                              Active
+                            </span>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSetActive(map.id)}
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setEditingMapId(isEditing ? null : map.id)
+                            }
+                          >
+                            <Settings className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(map.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Settings panel */}
+                      {isEditing && (
+                        <MapSettings
+                          map={map}
+                          folders={mapFolders}
+                          onUpdate={updateMapSettings}
+                          onClose={() => setEditingMapId(null)}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -247,10 +352,12 @@ interface MapSettingsData {
   fogEnabled: boolean;
   fogDefaultState: 'fogged' | 'revealed';
   showPlayerTokens: boolean;
+  folderId: string | null;
 }
 
 interface MapSettingsProps {
   map: MapSettingsData;
+  folders: Array<{ id: string; name: string }>;
   onUpdate: (
     mapId: string,
     settings: Partial<MapSettingsData>
@@ -258,7 +365,7 @@ interface MapSettingsProps {
   onClose: () => void;
 }
 
-const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => {
+const MapSettings: React.FC<MapSettingsProps> = ({ map, folders, onUpdate, onClose }) => {
   const { showToast } = useToast();
   const [settings, setSettings] = useState({
     name: map.name,
@@ -270,6 +377,7 @@ const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => 
     fogEnabled: map.fogEnabled,
     fogDefaultState: map.fogDefaultState,
     showPlayerTokens: map.showPlayerTokens,
+    folderId: map.folderId,
   });
 
   const handleSave = async () => {
@@ -289,6 +397,27 @@ const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => 
         value={settings.name}
         onChange={(e) => setSettings((s) => ({ ...s, name: e.target.value }))}
       />
+
+      <div>
+        <label className="text-xs text-storm-400">Folder</label>
+        <select
+          value={settings.folderId ?? ''}
+          onChange={(e) =>
+            setSettings((s) => ({
+              ...s,
+              folderId: e.target.value ? e.target.value : null,
+            }))
+          }
+          className="w-full mt-1 px-2 py-1 bg-storm-800 border border-storm-600 rounded text-sm text-storm-200"
+        >
+          <option value="">Unsorted</option>
+          {folders.map((folder) => (
+            <option key={folder.id} value={folder.id}>
+              {folder.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="space-y-2">
         <label className="flex items-center gap-2 text-sm text-storm-300">
