@@ -19,6 +19,12 @@ export const SessionJoin: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { joinSession } = useSession();
+  const testSessionCode = import.meta.env.VITE_TEST_SESSION_CODE;
+  const testSessionName = import.meta.env.VITE_TEST_SESSION_NAME ?? 'Test Session';
+  const testSessionGmUsername = import.meta.env.VITE_TEST_SESSION_GM_USERNAME ?? 'Test GM';
+  const normalizedTestSessionCode = testSessionCode
+    ? normalizeSessionCode(testSessionCode)
+    : null;
 
   const [sessionCode, setSessionCode] = useState('');
   const [username, setUsername] = useState('');
@@ -31,6 +37,11 @@ export const SessionJoin: React.FC = () => {
     const normalizedCode = normalizeSessionCode(sessionCode);
     if (!isValidSessionCodeFormat(normalizedCode)) {
       setExistingPlayers([]);
+      return;
+    }
+    if (normalizedTestSessionCode && normalizedCode === normalizedTestSessionCode) {
+      setExistingPlayers([{ username: testSessionGmUsername, isGm: true }]);
+      setIsLoadingPlayers(false);
       return;
     }
 
@@ -161,6 +172,30 @@ export const SessionJoin: React.FC = () => {
               onChange={(e) => setUsername(e.target.value)}
               error={errors.username}
             />
+
+            {normalizedTestSessionCode ? (
+              <div className="rounded-lg border border-storm-700 bg-storm-900/60 p-3 text-sm text-storm-300">
+                <p className="font-medium text-storm-200">{testSessionName}</p>
+                <p className="mt-1 font-mono text-storm-400">
+                  Code: {normalizedTestSessionCode}
+                </p>
+                <p className="mt-1 text-storm-400">
+                  GM username: {testSessionGmUsername}
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={() => {
+                    setSessionCode(normalizedTestSessionCode);
+                    setUsername(testSessionGmUsername);
+                  }}
+                >
+                  Use Test Session
+                </Button>
+              </div>
+            ) : null}
 
             {isLoadingPlayers ? (
               <div className="text-sm text-storm-400">Loading existing players…</div>
