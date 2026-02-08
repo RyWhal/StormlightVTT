@@ -5,6 +5,7 @@ import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { useChatStore } from '../stores/chatStore';
 import { useInitiativeStore } from '../stores/initiativeStore';
+import { useSession } from './useSession';
 import {
   dbSessionToSession,
   dbMapToMap,
@@ -38,12 +39,14 @@ const isMissingRelationError = (error: { code?: string; message?: string } | nul
 export const useRealtime = () => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const initiativeChannelRef = useRef<RealtimeChannel | null>(null);
+  const shouldResyncRef = useRef(false);
   const mapsRef = useRef<Map[]>([]);
   const currentUserRef = useRef<{
     username: string;
     characterId: string | null;
     isGm: boolean;
   } | null>(null);
+  const { loadSessionData } = useSession();
   const { session, currentUser, updateSession, setPlayers, addPlayer, removePlayer, setConnectionStatus } =
     useSessionStore();
   const {
@@ -86,6 +89,7 @@ export const useRealtime = () => {
     setConnectionStatus('connecting');
 
     const sessionId = session.id;
+    shouldResyncRef.current = false;
     let cancelled = false;
 
     const channel = supabase.channel(`session:${sessionId}`, {
@@ -355,8 +359,13 @@ export const useRealtime = () => {
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setConnectionStatus('connected');
+        if (shouldResyncRef.current) {
+          shouldResyncRef.current = false;
+          void loadSessionData(sessionId);
+        }
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
         setConnectionStatus('reconnecting');
+        shouldResyncRef.current = true;
       }
     });
 
@@ -574,6 +583,7 @@ export const useRealtime = () => {
     removeEntry,
     addRollLog,
     setConnectionStatus,
+    loadSessionData,
   ]);
 
   return {
