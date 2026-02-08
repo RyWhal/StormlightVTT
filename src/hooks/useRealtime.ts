@@ -5,6 +5,7 @@ import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { useChatStore } from '../stores/chatStore';
 import { useInitiativeStore } from '../stores/initiativeStore';
+import { useSession } from './useSession';
 import {
   dbSessionToSession,
   dbMapToMap,
@@ -38,16 +39,20 @@ const isMissingRelationError = (error: { code?: string; message?: string } | nul
 export const useRealtime = () => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const initiativeChannelRef = useRef<RealtimeChannel | null>(null);
+  const shouldResyncRef = useRef(false);
   const mapsRef = useRef<Map[]>([]);
   const currentUserRef = useRef<{
     username: string;
     characterId: string | null;
     isGm: boolean;
   } | null>(null);
+  const { loadSessionData } = useSession();
   const { session, currentUser, updateSession, setPlayers, addPlayer, removePlayer, setConnectionStatus } =
     useSessionStore();
   const {
     maps,
+    setCharacters,
+    setNPCInstances,
     updateMap,
     addMap,
     removeMap,
@@ -66,8 +71,8 @@ export const useRealtime = () => {
     setTokenLock,
     clearTokenLock,
   } = useMapStore();
-  const { addMessage, addDiceRoll } = useChatStore();
-  const { upsertEntry, removeEntry, addRollLog } = useInitiativeStore();
+  const { addMessage, addDiceRoll, setMessages, setDiceRolls } = useChatStore();
+  const { upsertEntry, removeEntry, addRollLog, setEntries, setRollLogs } = useInitiativeStore();
 
   useEffect(() => {
     mapsRef.current = maps;
@@ -86,6 +91,7 @@ export const useRealtime = () => {
     setConnectionStatus('connecting');
 
     const sessionId = session.id;
+    shouldResyncRef.current = false;
     let cancelled = false;
 
     const channel = supabase.channel(`session:${sessionId}`, {
@@ -352,11 +358,91 @@ export const useRealtime = () => {
       }
     );
 
+    const resyncSessionState = async () => {
+      if (currentUserRef.current?.isGm) {
+        await loadSessionData(sessionId);
+        return;
+      }
+
+      const mapIds = mapsRef.current.map((map) => map.id);
+      const [
+        playersResult,
+        charactersResult,
+        npcInstancesResult,
+        messagesResult,
+        rollsResult,
+        initiativeResult,
+        initiativeLogsResult,
+      ] = await Promise.all([
+        supabase.from('session_players').select('*').eq('session_id', sessionId),
+        supabase.from('characters').select('*').eq('session_id', sessionId),
+        mapIds.length > 0
+          ? supabase.from('npc_instances').select('*').in('map_id', mapIds)
+          : Promise.resolve({ data: [] as DbNPCInstance[] | null, error: null }),
+        supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: false })
+          .limit(100),
+        supabase
+          .from('dice_rolls')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('initiative_entries')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('initiative_roll_logs')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: false })
+          .limit(200),
+      ]);
+
+      if (cancelled) return;
+
+      if (playersResult.data) {
+        setPlayers((playersResult.data as DbSessionPlayer[]).map(dbSessionPlayerToSessionPlayer));
+      }
+      if (charactersResult.data) {
+        setCharacters((charactersResult.data as DbCharacter[]).map(dbCharacterToCharacter));
+      }
+      if (npcInstancesResult.data) {
+        setNPCInstances((npcInstancesResult.data as DbNPCInstance[]).map(dbNPCInstanceToNPCInstance));
+      }
+      if (messagesResult.data) {
+        setMessages((messagesResult.data as DbChatMessage[]).map(dbChatMessageToChatMessage).reverse());
+      }
+      if (rollsResult.data) {
+        setDiceRolls((rollsResult.data as DbDiceRoll[]).map(dbDiceRollToDiceRoll).reverse());
+      }
+      if (!isMissingRelationError(initiativeResult.error) && initiativeResult.data) {
+        setEntries(
+          (initiativeResult.data as DbInitiativeEntry[]).map(dbInitiativeEntryToInitiativeEntry)
+        );
+      }
+      if (!isMissingRelationError(initiativeLogsResult.error) && initiativeLogsResult.data) {
+        setRollLogs(
+          (initiativeLogsResult.data as DbInitiativeRollLog[]).map(dbInitiativeRollLogToInitiativeRollLog)
+        );
+      }
+    };
+
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         setConnectionStatus('connected');
+        if (shouldResyncRef.current) {
+          shouldResyncRef.current = false;
+          void resyncSessionState();
+        }
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
         setConnectionStatus('reconnecting');
+        shouldResyncRef.current = true;
       }
     });
 
@@ -551,6 +637,8 @@ export const useRealtime = () => {
     setPlayers,
     addPlayer,
     removePlayer,
+    setCharacters,
+    setNPCInstances,
     updateMap,
     addMap,
     removeMap,
@@ -573,7 +661,12 @@ export const useRealtime = () => {
     upsertEntry,
     removeEntry,
     addRollLog,
+    setMessages,
+    setDiceRolls,
+    setEntries,
+    setRollLogs,
     setConnectionStatus,
+    loadSessionData,
   ]);
 
   return {
