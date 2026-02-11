@@ -119,18 +119,6 @@ export const Token: React.FC<TokenProps> = ({
         />
       )}
 
-      {/* Optional status ring */}
-      {statusRingColor && (
-        <Ring
-          x={radius}
-          y={radius}
-          innerRadius={Math.max(2, radius - 6)}
-          outerRadius={radius + 1}
-          fill={statusRingColor}
-          opacity={0.75}
-        />
-      )}
-
       {isSpotlighted && (
         <Ring
           x={radius}
@@ -196,6 +184,20 @@ export const Token: React.FC<TokenProps> = ({
             verticalAlign="middle"
           />
         </Group>
+      )}
+
+      {/* Optional status ring */}
+      {statusRingColor && (
+        <Ring
+          x={radius}
+          y={radius}
+          innerRadius={radius + 2}
+          outerRadius={radius + 8}
+          fill={statusRingColor}
+          stroke={statusRingColor}
+          strokeWidth={1}
+          opacity={0.9}
+        />
       )}
 
       {/* Name label */}

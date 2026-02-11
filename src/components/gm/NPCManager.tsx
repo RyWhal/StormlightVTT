@@ -20,7 +20,16 @@ import { GlobalAssetBrowser } from './GlobalAssetBrowser';
 import type { GlobalAsset } from '../../hooks/useGlobalAssets';
 
 const SIZE_OPTIONS: TokenSize[] = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
-const STATUS_RING_COLORS = ['none', '#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899'] as const;
+const STATUS_RING_COLORS = [
+  { label: 'None', value: null },
+  { label: 'Red', value: '#ef4444' },
+  { label: 'Orange', value: '#f59e0b' },
+  { label: 'Yellow', value: '#eab308' },
+  { label: 'Green', value: '#22c55e' },
+  { label: 'Blue', value: '#3b82f6' },
+  { label: 'Purple', value: '#8b5cf6' },
+  { label: 'Pink', value: '#ec4899' },
+] as const;
 
 export const NPCManager: React.FC = () => {
   const { showToast } = useToast();
@@ -403,24 +412,37 @@ export const NPCManager: React.FC = () => {
                     <EyeOff className="w-4 h-4 text-storm-400" />
                   )}
                 </Button>
-                <select
-                  value={npc.statusRingColor || 'none'}
+                <div
+                  className="flex items-center gap-1"
                   onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    void updateNPCInstanceDetails(npc.id, {
-                      statusRingColor: value === 'none' ? null : value,
-                    });
-                  }}
-                  className="bg-storm-900 border border-storm-600 rounded px-1 py-0.5 text-xs text-storm-300"
                   title="Status ring color"
                 >
-                  {STATUS_RING_COLORS.map((color) => (
-                    <option key={color} value={color}>
-                      {color === 'none' ? 'No ring' : color}
-                    </option>
-                  ))}
-                </select>
+                  {STATUS_RING_COLORS.map((color) => {
+                    const isActive = (npc.statusRingColor || null) === color.value;
+                    return (
+                      <button
+                        key={color.label}
+                        type="button"
+                        onClick={() => {
+                          void updateNPCInstanceDetails(npc.id, {
+                            statusRingColor: color.value,
+                          });
+                        }}
+                        className={`w-4 h-4 rounded-full border transition ${
+                          isActive
+                            ? 'border-storm-100 ring-1 ring-storm-100'
+                            : 'border-storm-500 hover:border-storm-200'
+                        }`}
+                        style={{ backgroundColor: color.value || 'transparent' }}
+                        aria-label={color.label}
+                      >
+                        {!color.value && (
+                          <span className="block w-full h-full rounded-full bg-storm-900 border border-storm-600" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
