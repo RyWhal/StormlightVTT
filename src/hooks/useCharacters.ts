@@ -46,6 +46,7 @@ export const useCharacters = () => {
             session_id: session.id,
             name,
             token_url: tokenUrl,
+            size: 'medium',
           })
           .select()
           .single();
@@ -74,12 +75,16 @@ export const useCharacters = () => {
   const updateCharacterDetails = useCallback(
     async (
       characterId: string,
-      updates: Partial<Pick<Character, 'name' | 'notes'>>
+      updates: Partial<Pick<Character, 'name' | 'notes' | 'size' | 'statusRingColor'>>
     ): Promise<{ success: boolean; error?: string }> => {
       try {
         const dbUpdates: Record<string, unknown> = {};
         if (updates.name !== undefined) dbUpdates.name = updates.name;
         if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+        if (updates.size !== undefined) dbUpdates.size = updates.size;
+        if (updates.statusRingColor !== undefined) {
+          dbUpdates.status_ring_color = updates.statusRingColor;
+        }
 
         const { error } = await supabase
           .from('characters')

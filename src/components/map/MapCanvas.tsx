@@ -73,7 +73,7 @@ export const MapCanvas: React.FC = () => {
   const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
   const isGM = useIsGM();
-  const { characters, moveCharacterPosition } = useCharacters();
+  const { characters, moveCharacterPosition, updateCharacterDetails } = useCharacters();
   const { currentMapNPCs, moveNPCPosition, updateNPCInstanceDetails } = useNPCs();
   const { updateFogData, updateDrawingData } = useMap();
 
@@ -85,6 +85,8 @@ export const MapCanvas: React.FC = () => {
   const [currentDrawing, setCurrentDrawing] = useState<DrawingRegion | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [activeTab, setActiveTab] = useState<'map' | 'handouts'>('map');
+  const [selectedTokenKeys, setSelectedTokenKeys] = useState<string[]>([]);
+  const [groupDragStartPositions, setGroupDragStartPositions] = useState<Record<string, { x: number; y: number }>>({});
 
   const syncStageSize = useCallback(() => {
     if (!containerRef.current) return;
@@ -179,6 +181,7 @@ export const MapCanvas: React.FC = () => {
     (e: any) => {
       if (e.target === stageRef.current || e.target.attrs?.name === 'background') {
         clearSelection();
+        setSelectedTokenKeys([]);
       }
     },
     [clearSelection]
@@ -189,11 +192,35 @@ export const MapCanvas: React.FC = () => {
     []
   );
 
+  useEffect(() => {
+    if (!selectedTokenId || !selectedTokenType) return;
+    const key = buildTokenKey(selectedTokenType, selectedTokenId);
+    setSelectedTokenKeys((prev) => (prev.includes(key) ? prev : [key]));
+  }, [selectedTokenId, selectedTokenType, buildTokenKey]);
+
+
   const handleTokenDragStart = useCallback(
     async (id: string, type: 'character' | 'npc') => {
       if (!session || !currentUser) return;
       const tokenKey = buildTokenKey(type, id);
       setTokenLock(tokenKey, currentUser.username);
+      const draggedKey = buildTokenKey(type, id);
+      if (selectedTokenKeys.includes(draggedKey) && selectedTokenKeys.length > 1) {
+        const positions: Record<string, { x: number; y: number }> = {};
+        selectedTokenKeys.forEach((key) => {
+          const [tokenType, tokenId] = key.split(':') as ['character' | 'npc', string];
+          if (tokenType === 'character') {
+            const token = characters.find((char) => char.id === tokenId);
+            if (token) positions[key] = { x: token.positionX, y: token.positionY };
+          } else {
+            const token = currentMapNPCs.find((npc) => npc.id === tokenId);
+            if (token) positions[key] = { x: token.positionX, y: token.positionY };
+          }
+        });
+        setGroupDragStartPositions(positions);
+      } else {
+        setGroupDragStartPositions({});
+      }
       await broadcastTokenLock({
         sessionId: session.id,
         tokenId: id,
@@ -201,7 +228,7 @@ export const MapCanvas: React.FC = () => {
         username: currentUser.username,
       });
     },
-    [session, currentUser, buildTokenKey, setTokenLock]
+    [session, currentUser, buildTokenKey, setTokenLock, selectedTokenKeys, characters, currentMapNPCs]
   );
 
   // Handle token movement
@@ -210,13 +237,35 @@ export const MapCanvas: React.FC = () => {
       if (!session || !currentUser) return;
       const tokenKey = buildTokenKey(type, id);
 
+      const draggedKey = buildTokenKey(type, id);
+      const multiDrag = selectedTokenKeys.includes(draggedKey) && selectedTokenKeys.length > 1;
+
       try {
-        if (type === 'character') {
+        if (multiDrag) {
+          const start = groupDragStartPositions[draggedKey];
+          if (start) {
+            const deltaX = x - start.x;
+            const deltaY = y - start.y;
+            await Promise.all(
+              selectedTokenKeys.map((key) => {
+                const [tokenType, tokenId] = key.split(':') as ['character' | 'npc', string];
+                const origin = groupDragStartPositions[key];
+                if (!origin) return Promise.resolve({ success: true });
+                const nextX = origin.x + deltaX;
+                const nextY = origin.y + deltaY;
+                return tokenType === 'character'
+                  ? moveCharacterPosition(tokenId, nextX, nextY)
+                  : moveNPCPosition(tokenId, nextX, nextY);
+              })
+            );
+          }
+        } else if (type === 'character') {
           await moveCharacterPosition(id, x, y);
         } else {
           await moveNPCPosition(id, x, y);
         }
       } finally {
+        setGroupDragStartPositions({});
         clearTokenLock(tokenKey);
         await broadcastTokenUnlock({
           sessionId: session.id,
@@ -232,6 +281,8 @@ export const MapCanvas: React.FC = () => {
       buildTokenKey,
       moveCharacterPosition,
       moveNPCPosition,
+      selectedTokenKeys,
+      groupDragStartPositions,
       clearTokenLock,
     ]
   );
@@ -250,9 +301,19 @@ export const MapCanvas: React.FC = () => {
   );
 
   const handleNPCSelect = useCallback(
-    async (npcId: string) => {
+    async (npcId: string, event?: any) => {
       const npc = currentMapNPCs.find((entry) => entry.id === npcId);
       if (!npc) return;
+
+      const tokenKey = buildTokenKey('npc', npcId);
+      const isAdditive = Boolean(event?.evt?.shiftKey || event?.evt?.ctrlKey || event?.evt?.metaKey);
+      if (isAdditive) {
+        setSelectedTokenKeys((prev) =>
+          prev.includes(tokenKey) ? prev.filter((key) => key !== tokenKey) : [...prev, tokenKey]
+        );
+      } else {
+        setSelectedTokenKeys([tokenKey]);
+      }
 
       const isAlreadySelected = selectedTokenId === npcId && selectedTokenType === 'npc';
       selectToken(npcId, 'npc');
@@ -269,6 +330,7 @@ export const MapCanvas: React.FC = () => {
     },
     [
       currentMapNPCs,
+      buildTokenKey,
       selectedTokenId,
       selectedTokenType,
       selectToken,
@@ -276,6 +338,41 @@ export const MapCanvas: React.FC = () => {
       session?.allowPlayersRenameNpcs,
       updateNPCInstanceDetails,
     ]
+  );
+
+  const handleCharacterResize = useCallback(
+    async (characterId: string, direction: 'increase' | 'decrease') => {
+      const character = characters.find((entry) => entry.id === characterId);
+      if (!character) return;
+
+      const currentSize = character.size || 'medium';
+      const currentIndex = TOKEN_SIZE_ORDER.indexOf(currentSize);
+      if (currentIndex < 0) return;
+      const nextIndex =
+        direction === 'increase'
+          ? Math.min(TOKEN_SIZE_ORDER.length - 1, currentIndex + 1)
+          : Math.max(0, currentIndex - 1);
+      if (nextIndex === currentIndex) return;
+
+      await updateCharacterDetails(characterId, { size: TOKEN_SIZE_ORDER[nextIndex] });
+    },
+    [characters, updateCharacterDetails]
+  );
+
+  const handleCharacterSelect = useCallback(
+    (characterId: string, event?: any) => {
+      const tokenKey = buildTokenKey('character', characterId);
+      const isAdditive = Boolean(event?.evt?.shiftKey || event?.evt?.ctrlKey || event?.evt?.metaKey);
+      if (isAdditive) {
+        setSelectedTokenKeys((prev) =>
+          prev.includes(tokenKey) ? prev.filter((key) => key !== tokenKey) : [...prev, tokenKey]
+        );
+      } else {
+        setSelectedTokenKeys([tokenKey]);
+      }
+      selectToken(characterId, 'character');
+    },
+    [buildTokenKey, selectToken]
   );
 
   const handleNPCResize = useCallback(
@@ -685,13 +782,14 @@ export const MapCanvas: React.FC = () => {
                     y={npc.positionY}
                     size={npc.size || 'medium'}
                     gridCellSize={gridCellSize}
-                    isSelected={selectedTokenId === npc.id && selectedTokenType === 'npc'}
+                    isSelected={selectedTokenKeys.includes(buildTokenKey('npc', npc.id))}
                     isDraggable={canMoveToken('npc', npc.id)}
                     isHidden={!npc.isVisible}
                     isGM={isGM}
+                    statusRingColor={npc.statusRingColor}
                     showResizeControls={isGM || session?.allowPlayersMoveNpcs}
                     onResize={(direction) => handleNPCResize(npc.id, direction)}
-                    onSelect={() => handleNPCSelect(npc.id)}
+                    onSelect={(event) => handleNPCSelect(npc.id, event)}
                     onDragStart={() => handleTokenDragStart(npc.id, 'npc')}
                     onDragEnd={(x, y) => handleTokenDragEnd(npc.id, 'npc', x, y)}
                   />
@@ -710,13 +808,16 @@ export const MapCanvas: React.FC = () => {
                     imageUrl={char.tokenUrl}
                     x={char.positionX}
                     y={char.positionY}
-                    size="medium"
+                    size={char.size || 'medium'}
                     gridCellSize={gridCellSize}
-                    isSelected={selectedTokenId === char.id && selectedTokenType === 'character'}
+                    isSelected={selectedTokenKeys.includes(buildTokenKey('character', char.id))}
                     isDraggable={canMoveToken('character', char.id)}
                     isHidden={false}
                     isGM={isGM}
-                    onSelect={() => selectToken(char.id, 'character')}
+                    statusRingColor={char.statusRingColor}
+                    showResizeControls={isGM}
+                    onResize={(direction) => handleCharacterResize(char.id, direction)}
+                    onSelect={(event) => handleCharacterSelect(char.id, event)}
                     onDragStart={() => handleTokenDragStart(char.id, 'character')}
                     onDragEnd={(x, y) => handleTokenDragEnd(char.id, 'character', x, y)}
                   />

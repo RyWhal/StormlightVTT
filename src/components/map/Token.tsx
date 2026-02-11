@@ -16,7 +16,9 @@ interface TokenProps {
   isDraggable: boolean;
   isHidden: boolean;
   isGM: boolean;
-  onSelect: () => void;
+  statusRingColor?: string | null;
+  isSpotlighted?: boolean;
+  onSelect: (event: any) => void;
   onDragStart?: () => void;
   onDragEnd: (x: number, y: number) => void;
   showResizeControls?: boolean;
@@ -55,6 +57,8 @@ export const Token: React.FC<TokenProps> = ({
   isHidden,
   isGM,
   onSelect,
+  statusRingColor,
+  isSpotlighted,
   onDragStart,
   onDragEnd,
   showResizeControls,
@@ -111,6 +115,30 @@ export const Token: React.FC<TokenProps> = ({
           outerRadius={radius + 4}
           fill="rgba(59, 130, 246, 0.5)"
           stroke="#3b82f6"
+          strokeWidth={2}
+        />
+      )}
+
+      {/* Optional status ring */}
+      {statusRingColor && (
+        <Ring
+          x={radius}
+          y={radius}
+          innerRadius={Math.max(2, radius - 6)}
+          outerRadius={radius + 1}
+          fill={statusRingColor}
+          opacity={0.75}
+        />
+      )}
+
+      {isSpotlighted && (
+        <Ring
+          x={radius}
+          y={radius}
+          innerRadius={radius + 4}
+          outerRadius={radius + 10}
+          fill="rgba(251, 191, 36, 0.35)"
+          stroke="#f59e0b"
           strokeWidth={2}
         />
       )}
@@ -172,9 +200,9 @@ export const Token: React.FC<TokenProps> = ({
 
       {/* Name label */}
       <Text
-        x={0}
+        x={-(Math.max(pixelSize, gridCellSize * 1.8) - pixelSize) / 2}
         y={pixelSize + 4}
-        width={pixelSize}
+        width={Math.max(pixelSize, gridCellSize * 1.8)}
         text={name}
         fontSize={12}
         fill="#e5e7eb"

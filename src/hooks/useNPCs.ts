@@ -229,7 +229,7 @@ export const useNPCs = () => {
   const updateNPCInstanceDetails = useCallback(
     async (
       instanceId: string,
-      updates: Partial<Pick<NPCInstance, 'displayName' | 'size' | 'isVisible' | 'notes'>>
+      updates: Partial<Pick<NPCInstance, 'displayName' | 'size' | 'isVisible' | 'notes' | 'statusRingColor'>>
     ): Promise<{ success: boolean; error?: string }> => {
       try {
         const dbUpdates: Record<string, unknown> = {};
@@ -237,6 +237,7 @@ export const useNPCs = () => {
         if (updates.size !== undefined) dbUpdates.size = updates.size;
         if (updates.isVisible !== undefined) dbUpdates.is_visible = updates.isVisible;
         if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+        if (updates.statusRingColor !== undefined) dbUpdates.status_ring_color = updates.statusRingColor;
 
         const { error } = await supabase
           .from('npc_instances')

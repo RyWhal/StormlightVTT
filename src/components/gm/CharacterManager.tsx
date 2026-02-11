@@ -5,6 +5,9 @@ import { Button } from '../shared/Button';
 import { Input } from '../shared/Input';
 import { useToast } from '../shared/Toast';
 import { validateTokenUpload } from '../../lib/validation';
+import { useMapStore } from '../../stores/mapStore';
+
+const STATUS_RING_COLORS = ['none', '#ef4444', '#f59e0b', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899'] as const;
 
 export const CharacterManager: React.FC = () => {
   const { showToast } = useToast();
@@ -12,9 +15,20 @@ export const CharacterManager: React.FC = () => {
     characters,
     createCharacter,
     updateCharacterToken,
+    updateCharacterDetails,
     deleteCharacter,
     releaseCharacter,
   } = useCharacters();
+  const activeMap = useMapStore((state) => state.activeMap);
+  const viewportScale = useMapStore((state) => state.viewportScale);
+  const stageWidth = useMapStore((state) => state.stageWidth);
+  const stageHeight = useMapStore((state) => state.stageHeight);
+  const selectToken = useMapStore((state) => state.selectToken);
+  const setViewportPosition = useMapStore((state) => state.setViewportPosition);
+
+  const focusToken = (x: number, y: number) => {
+    setViewportPosition(stageWidth / 2 - x * viewportScale, stageHeight / 2 - y * viewportScale);
+  };
 
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState('');
@@ -171,7 +185,12 @@ export const CharacterManager: React.FC = () => {
           {characters.map((char) => (
             <div
               key={char.id}
-              className="bg-storm-800/50 rounded-lg border border-storm-700 p-3"
+              className="bg-storm-800/50 rounded-lg border border-storm-700 p-3 cursor-pointer hover:border-storm-500"
+              onClick={() => {
+                if (!activeMap) return;
+                selectToken(char.id, 'character');
+                focusToken(char.positionX, char.positionY);
+              }}
             >
               <div className="flex items-center gap-3">
                 {/* Token */}
@@ -221,6 +240,24 @@ export const CharacterManager: React.FC = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1">
+                  <select
+                    value={char.statusRingColor || 'none'}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      void updateCharacterDetails(char.id, {
+                        statusRingColor: value === 'none' ? null : value,
+                      });
+                    }}
+                    className="bg-storm-900 border border-storm-600 rounded px-1 py-0.5 text-xs text-storm-300"
+                    title="Status ring color"
+                  >
+                    {STATUS_RING_COLORS.map((color) => (
+                      <option key={color} value={color}>
+                        {color === 'none' ? 'No ring' : color}
+                      </option>
+                    ))}
+                  </select>
                   {char.isClaimed && (
                     <Button
                       variant="ghost"
