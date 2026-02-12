@@ -151,9 +151,6 @@ export const PlaySession: React.FC = () => {
 
         <section className="relative flex-1 overflow-hidden">
           <MapCanvas />
-          <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-xs text-slate-300 backdrop-blur-sm">
-            {activeMap ? `${activeMap.width} × ${activeMap.height}` : 'No map selected'}
-          </div>
         </section>
 
         {!isPlayerPanelCollapsed && (

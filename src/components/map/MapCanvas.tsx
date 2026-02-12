@@ -1010,9 +1010,9 @@ export const MapCanvas: React.FC = () => {
         </div>
       )}
 
-      {/* Map info overlay - Bottom right */}
+      {/* Map info overlay - Top right */}
       {isMapTab && activeMap && (
-        <div className="absolute bottom-4 right-4 bg-slate-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-700">
+        <div className="absolute top-4 right-4 bg-slate-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-700 pointer-events-none">
           <span className="text-sm text-slate-300">
             {activeMap.name} ({activeMap.width}x{activeMap.height})
           </span>
