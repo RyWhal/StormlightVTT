@@ -6,7 +6,7 @@ import { Card } from '../shared/Card';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
-  const githubReadmeUrl = 'https://github.com/StormlightVTT/StormlightVTT/blob/main/README.md';
+  const githubReadmeUrl = 'https://github.com/RyWhal/TempestVTT/blob/main/README.md';
 
   return (
     <main className="tempest-shell flex items-center justify-center px-4 py-10">
