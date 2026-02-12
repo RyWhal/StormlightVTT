@@ -20,10 +20,25 @@ import { GlobalAssetBrowser } from './GlobalAssetBrowser';
 import type { GlobalAsset } from '../../hooks/useGlobalAssets';
 
 const SIZE_OPTIONS: TokenSize[] = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
+const STATUS_RING_COLORS = [
+  { label: 'None', value: null },
+  { label: 'Red', value: '#ef4444' },
+  { label: 'Orange', value: '#f59e0b' },
+  { label: 'Yellow', value: '#eab308' },
+  { label: 'Green', value: '#22c55e' },
+  { label: 'Blue', value: '#3b82f6' },
+  { label: 'Purple', value: '#8b5cf6' },
+  { label: 'Pink', value: '#ec4899' },
+] as const;
 
 export const NPCManager: React.FC = () => {
   const { showToast } = useToast();
   const activeMap = useMapStore((state) => state.activeMap);
+  const viewportScale = useMapStore((state) => state.viewportScale);
+  const stageWidth = useMapStore((state) => state.stageWidth);
+  const stageHeight = useMapStore((state) => state.stageHeight);
+  const selectToken = useMapStore((state) => state.selectToken);
+  const setViewportPosition = useMapStore((state) => state.setViewportPosition);
   const {
     npcTemplates,
     currentMapNPCs,
@@ -139,6 +154,10 @@ export const NPCManager: React.FC = () => {
     if (!result.success) {
       showToast(result.error || 'Failed to rename NPC', 'error');
     }
+  };
+
+  const focusToken = (x: number, y: number) => {
+    setViewportPosition(stageWidth / 2 - x * viewportScale, stageHeight / 2 - y * viewportScale);
   };
 
   return (
@@ -342,9 +361,13 @@ export const NPCManager: React.FC = () => {
               <div
                 key={npc.id}
                 className={`
-                  flex items-center gap-2 p-2 rounded border
+                  flex items-center gap-2 p-2 rounded border cursor-pointer
                   ${npc.isVisible ? 'bg-storm-800/50 border-storm-700' : 'bg-storm-800/30 border-storm-700/50'}
                 `}
+                onClick={() => {
+                  selectToken(npc.id, 'npc');
+                  focusToken(npc.positionX, npc.positionY);
+                }}
               >
                 <div className="w-8 h-8 rounded bg-storm-700 overflow-hidden flex-shrink-0">
                   {npc.tokenUrl ? (
@@ -377,7 +400,10 @@ export const NPCManager: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleToggleVisibility(npc.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleToggleVisibility(npc.id);
+                  }}
                   title={npc.isVisible ? 'Hide from players' : 'Show to players'}
                 >
                   {npc.isVisible ? (
@@ -386,10 +412,34 @@ export const NPCManager: React.FC = () => {
                     <EyeOff className="w-4 h-4 text-storm-400" />
                   )}
                 </Button>
+                <select
+                  value={npc.statusRingColor || 'none'}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const selected = STATUS_RING_COLORS.find((color) =>
+                      (color.value ?? 'none') === value
+                    );
+                    void updateNPCInstanceDetails(npc.id, {
+                      statusRingColor: selected?.value ?? null,
+                    });
+                  }}
+                  className="bg-storm-900 border border-storm-600 rounded px-1 py-0.5 text-xs text-storm-300 max-w-[84px]"
+                  title="Status ring color"
+                >
+                  {STATUS_RING_COLORS.map((color) => (
+                    <option key={color.label} value={color.value ?? 'none'}>
+                      {color.label}
+                    </option>
+                  ))}
+                </select>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleRemoveFromMap(npc.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleRemoveFromMap(npc.id);
+                  }}
                 >
                   <Trash2 className="w-4 h-4 text-red-400" />
                 </Button>

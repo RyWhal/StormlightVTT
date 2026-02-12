@@ -126,6 +126,8 @@ export interface Character {
   sessionId: string;
   name: string;
   tokenUrl: string | null;
+  size: TokenSize;
+  statusRingColor: string | null;
   positionX: number;
   positionY: number;
   isClaimed: boolean;
@@ -158,6 +160,7 @@ export interface NPCInstance {
   displayName: string | null;
   tokenUrl: string | null;
   size: TokenSize | null;
+  statusRingColor: string | null;
   positionX: number;
   positionY: number;
   isVisible: boolean;
@@ -338,6 +341,8 @@ export interface DbCharacter {
   session_id: string;
   name: string;
   token_url: string | null;
+  size: TokenSize | null;
+  status_ring_color: string | null;
   position_x: number;
   position_y: number;
   is_claimed: boolean;
@@ -375,6 +380,7 @@ export interface DbNPCInstance {
   display_name: string | null;
   token_url: string | null;
   size: TokenSize | null;
+  status_ring_color: string | null;
   position_x: number;
   position_y: number;
   is_visible: boolean;
@@ -482,6 +488,8 @@ export function dbCharacterToCharacter(db: DbCharacter): Character {
     sessionId: db.session_id,
     name: db.name,
     tokenUrl: db.token_url,
+    size: db.size || 'medium',
+    statusRingColor: db.status_ring_color,
     positionX: db.position_x,
     positionY: db.position_y,
     isClaimed: db.is_claimed,
@@ -525,6 +533,7 @@ export function dbNPCInstanceToNPCInstance(db: DbNPCInstance): NPCInstance {
     displayName: db.display_name,
     tokenUrl: db.token_url,
     size: db.size,
+    statusRingColor: db.status_ring_color,
     positionX: db.position_x,
     positionY: db.position_y,
     isVisible: db.is_visible,
