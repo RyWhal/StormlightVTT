@@ -2,6 +2,11 @@
 
 TempestVTT is a TypeScript-based virtual tabletop (VTT) for tabletop RPG sessions. Built lovingly with assistance from OpenAI's Codex and Claude Code. 
 
+
+## Documentation
+
+- [Full product, setup, and deployment guide](./SETUP.md)
+
 ## Tech stack
 
 - **Frontend:** React + TypeScript + Vite + Tailwind CSS.
