@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users } from 'lucide-react';
+import { BookOpen, Plus, Users } from 'lucide-react';
 import { Button } from '../shared/Button';
 import { Card } from '../shared/Card';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
+  const githubReadmeUrl = 'https://github.com/StormlightVTT/StormlightVTT/blob/main/README.md';
 
   return (
     <main className="tempest-shell flex items-center justify-center px-4 py-10">
@@ -29,6 +30,15 @@ export const Home: React.FC = () => {
               <Users className="mr-2 h-4 w-4" />
               Join with code
             </Button>
+            <a
+              href={githubReadmeUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800"
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              View README on GitHub
+            </a>
           </div>
         </Card>
       </div>
