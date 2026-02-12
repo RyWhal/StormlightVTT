@@ -84,16 +84,16 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
       {!gmView && (
-        <div className="bg-storm-800/50 rounded-lg p-3 space-y-3">
-          <h3 className="font-semibold text-storm-100">Your Initiative</h3>
+        <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
+          <h3 className="font-semibold text-slate-100">Your Initiative</h3>
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-sm text-storm-300">
+            <label className="text-sm text-slate-300">
               Modifier
               <input
                 type="number"
                 value={modifierInput}
                 onChange={(e) => setModifierInput(e.target.value)}
-                className="w-full mt-1 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100"
+                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
               />
             </label>
             <div className="flex items-end">
@@ -104,24 +104,24 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-sm text-storm-300">
+            <label className="text-sm text-slate-300">
               Phase
               <select
                 value={phase}
                 onChange={(e) => setPhase(e.target.value as InitiativePhase)}
-                className="w-full mt-1 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100"
+                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
               >
                 <option value="fast">Fast</option>
                 <option value="slow">Slow</option>
               </select>
             </label>
 
-            <label className="text-sm text-storm-300">
+            <label className="text-sm text-slate-300">
               Visibility
               <select
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as InitiativeVisibility)}
-                className="w-full mt-1 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100"
+                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
               >
                 <option value="public">Public</option>
                 <option value="gm_only">GM only</option>
@@ -136,35 +136,35 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
       )}
 
       {isGM && (
-        <div className="bg-storm-800/50 rounded-lg p-3 space-y-3">
-          <h3 className="font-semibold text-storm-100">GM: Roll NPC Initiative</h3>
+        <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
+          <h3 className="font-semibold text-slate-100">GM: Roll NPC Initiative</h3>
           <div className="grid grid-cols-3 gap-2">
-            <label className="text-sm text-storm-300">
+            <label className="text-sm text-slate-300">
               Modifier
               <input
                 type="number"
                 value={npcModifier}
                 onChange={(e) => setNpcModifier(e.target.value)}
-                className="w-full mt-1 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100"
+                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
               />
             </label>
-            <label className="text-sm text-storm-300">
+            <label className="text-sm text-slate-300">
               Phase
               <select
                 value={phase}
                 onChange={(e) => setPhase(e.target.value as InitiativePhase)}
-                className="w-full mt-1 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100"
+                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
               >
                 <option value="fast">Fast</option>
                 <option value="slow">Slow</option>
               </select>
             </label>
-            <label className="text-sm text-storm-300">
+            <label className="text-sm text-slate-300">
               Visibility
               <select
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value as InitiativeVisibility)}
-                className="w-full mt-1 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100"
+                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
               >
                 <option value="public">Public</option>
                 <option value="gm_only">GM only</option>
@@ -172,12 +172,12 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
             </label>
           </div>
 
-          <div className="max-h-28 overflow-y-auto space-y-1 border border-storm-700 rounded p-2">
+          <div className="max-h-28 overflow-y-auto space-y-1 border border-slate-700 rounded p-2">
             {currentMapNpcs.length === 0 ? (
-              <p className="text-xs text-storm-500">No NPCs on current map</p>
+              <p className="text-xs text-slate-500">No NPCs on current map</p>
             ) : (
               currentMapNpcs.map((npc) => (
-                <label key={npc.id} className="flex items-center gap-2 text-sm text-storm-300">
+                <label key={npc.id} className="flex items-center gap-2 text-sm text-slate-300">
                   <input
                     type="checkbox"
                     checked={selectedNpcIds.includes(npc.id)}
@@ -204,27 +204,27 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
         </div>
       )}
 
-      <div className="bg-storm-800/50 rounded-lg p-3 space-y-2">
-        <h3 className="font-semibold text-storm-100">
+      <div className="bg-slate-800/50 rounded-lg p-3 space-y-2">
+        <h3 className="font-semibold text-slate-100">
           {isGM ? 'Initiative Tracker (GM)' : 'Initiative Order'}
         </h3>
         {entries.length === 0 ? (
-          <p className="text-sm text-storm-500">No initiative entries yet.</p>
+          <p className="text-sm text-slate-500">No initiative entries yet.</p>
         ) : (
           <div className="space-y-2">
             {entries.map((entry) => (
-              <div key={entry.id} className="rounded border border-storm-700 p-2 bg-storm-900/40">
+              <div key={entry.id} className="rounded border border-slate-700 p-2 bg-slate-900/40">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm text-storm-100 font-medium">{entry.sourceName}</p>
-                    <p className="text-xs text-storm-400">
+                    <p className="text-sm text-slate-100 font-medium">{entry.sourceName}</p>
+                    <p className="text-xs text-slate-400">
                       {entry.phase.toUpperCase()} ·{' '}
                       {entry.visibility === 'public' ? 'Public' : 'GM only'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-storm-100 font-semibold">{entry.total ?? '-'}</p>
-                    <p className="text-xs text-storm-500">
+                    <p className="text-slate-100 font-semibold">{entry.total ?? '-'}</p>
+                    <p className="text-xs text-slate-500">
                       d20: {entry.rollValue ?? '-'} ({entry.modifier >= 0 ? '+' : ''}
                       {entry.modifier})
                     </p>
@@ -238,7 +238,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                         <input
                           type="text"
                           defaultValue={entry.sourceName}
-                          className="w-32 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                          className="w-32 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
                           onBlur={(e) => handleRenameNpc(entry.sourceId as string, e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -250,7 +250,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                       <input
                         type="number"
                         defaultValue={entry.total ?? 0}
-                        className="w-20 px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                        className="w-20 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
                         onBlur={async (e) => {
                           const total = parseInt(e.target.value, 10);
                           if (!Number.isNaN(total)) {
@@ -262,7 +262,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                     <div className="flex items-center gap-2">
                       <select
                         defaultValue={entry.phase}
-                        className="px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                        className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
                         onChange={async (e) => {
                           await updateEntry(entry.id, { phase: e.target.value as InitiativePhase });
                         }}
@@ -272,7 +272,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                       </select>
                       <select
                         defaultValue={entry.visibility}
-                        className="px-2 py-1 rounded bg-storm-900 border border-storm-700 text-storm-100 text-sm"
+                        className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
                         onChange={async (e) => {
                           await updateEntry(entry.id, {
                             visibility: e.target.value as InitiativeVisibility,
@@ -283,7 +283,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                         <option value="gm_only">GM only</option>
                       </select>
                       <button
-                        className="ml-auto p-1 text-storm-400 hover:text-red-400"
+                        className="ml-auto p-1 text-slate-400 hover:text-red-400"
                         onClick={async () => {
                           await deleteEntry(entry.id);
                         }}
@@ -300,18 +300,18 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
       </div>
 
       {isGM && gmView && (
-        <div className="bg-storm-800/50 rounded-lg p-3 space-y-2">
-          <h3 className="font-semibold text-storm-100">Initiative Roll Log</h3>
+        <div className="bg-slate-800/50 rounded-lg p-3 space-y-2">
+          <h3 className="font-semibold text-slate-100">Initiative Roll Log</h3>
           {rollLogs.length === 0 ? (
-            <p className="text-sm text-storm-500">No initiative rolls recorded yet.</p>
+            <p className="text-sm text-slate-500">No initiative rolls recorded yet.</p>
           ) : (
             <div className="space-y-1 max-h-48 overflow-y-auto">
               {rollLogs.map((log) => (
-                <div key={log.id} className="text-xs text-storm-300 border-b border-storm-700/60 pb-1">
-                  <span className="text-storm-100">{log.sourceName}</span> rolled {log.rollValue}{' '}
+                <div key={log.id} className="text-xs text-slate-300 border-b border-slate-700/60 pb-1">
+                  <span className="text-slate-100">{log.sourceName}</span> rolled {log.rollValue}{' '}
                   ({log.modifier >= 0 ? '+' : ''}{log.modifier}) ={' '}
-                  <span className="text-storm-100">{log.total}</span>{' '}
-                  <span className="text-storm-500">[{log.phase}] by {log.rolledByUsername}</span>
+                  <span className="text-slate-100">{log.total}</span>{' '}
+                  <span className="text-slate-500">[{log.phase}] by {log.rolledByUsername}</span>
                 </div>
               ))}
             </div>

@@ -51,14 +51,14 @@ export const NotepadPanel: React.FC = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-storm-700">
+      <div className="flex items-center justify-between p-4 border-b border-slate-700">
         <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-storm-400" />
-          <h3 className="font-medium text-storm-200">Shared Notes</h3>
+          <FileText className="w-4 h-4 text-slate-400" />
+          <h3 className="font-medium text-slate-200">Shared Notes</h3>
         </div>
         <div className="flex items-center gap-2">
           {isDirty && (
-            <span className="text-xs text-storm-400">Unsaved changes</span>
+            <span className="text-xs text-slate-400">Unsaved changes</span>
           )}
           <Button
             variant="ghost"
@@ -79,11 +79,11 @@ export const NotepadPanel: React.FC = () => {
           onChange={handleChange}
           onBlur={handleSave}
           placeholder="Write notes here... All players can see and edit these notes."
-          className="w-full h-full bg-storm-800 border border-storm-600 rounded-lg p-3 text-storm-100 placeholder-storm-500 resize-none focus:outline-none focus:ring-2 focus:ring-storm-500"
+          className="w-full h-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-tempest-400"
         />
       </div>
 
-      <p className="px-4 pb-4 text-xs text-storm-500">
+      <p className="px-4 pb-4 text-xs text-slate-500">
         Notes are shared with all players and auto-saved.
       </p>
     </div>

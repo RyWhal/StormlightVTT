@@ -684,15 +684,15 @@ export const MapCanvas: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full bg-storm-950 overflow-hidden relative"
+      className="w-full h-full bg-slate-950 overflow-hidden relative"
       style={{ cursor: isMapTab && (fogToolMode || drawingTool) ? 'crosshair' : 'default' }}
     >
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-lg border border-storm-700 bg-storm-900/90 backdrop-blur-sm p-1">
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/90 backdrop-blur-sm p-1">
         <button
           type="button"
           onClick={() => setActiveTab('map')}
           className={`px-3 py-1.5 text-sm rounded-md transition ${
-            isMapTab ? 'bg-storm-700 text-storm-100' : 'text-storm-300 hover:text-storm-100'
+            isMapTab ? 'bg-slate-700 text-slate-100' : 'text-slate-300 hover:text-slate-100'
           }`}
         >
           Map
@@ -701,7 +701,7 @@ export const MapCanvas: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('handouts')}
           className={`px-3 py-1.5 text-sm rounded-md transition ${
-            !isMapTab ? 'bg-storm-700 text-storm-100' : 'text-storm-300 hover:text-storm-100'
+            !isMapTab ? 'bg-slate-700 text-slate-100' : 'text-slate-300 hover:text-slate-100'
           }`}
         >
           Handouts
@@ -860,13 +860,13 @@ export const MapCanvas: React.FC = () => {
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center">
-              <p className="text-storm-400 text-lg mb-2">No map loaded</p>
+              <p className="text-slate-400 text-lg mb-2">No map loaded</p>
               {isGM ? (
-                <p className="text-storm-500 text-sm">
+                <p className="text-slate-500 text-sm">
                   Upload a map from the GM panel to get started
                 </p>
               ) : (
-                <p className="text-storm-500 text-sm">
+                <p className="text-slate-500 text-sm">
                   Waiting for GM to load a map...
                 </p>
               )}
@@ -879,8 +879,8 @@ export const MapCanvas: React.FC = () => {
 
       {/* Fog tool indicator */}
       {fogToolMode && isMapTab && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-storm-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-storm-600">
-          <span className="text-storm-100">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-slate-600">
+          <span className="text-slate-100">
             Fog Tool: <span className="font-semibold capitalize">{fogToolMode}</span>
             {' - '}
             <span className="capitalize">{fogToolShape}</span>
@@ -890,8 +890,8 @@ export const MapCanvas: React.FC = () => {
 
       {/* Drawing tool indicator */}
       {drawingTool && isMapTab && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-storm-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-storm-600">
-          <span className="text-storm-100">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-slate-600">
+          <span className="text-slate-100">
             Drawing Tool: <span className="font-semibold capitalize">{drawingTool}</span>
           </span>
         </div>
@@ -901,11 +901,11 @@ export const MapCanvas: React.FC = () => {
       {isMapTab && activeMap && (
         <div className="absolute bottom-4 left-4 flex flex-col gap-2">
           {/* Zoom controls */}
-          <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
+          <div className="bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-2">
             <div className="flex items-center gap-2 mb-2">
               <button
                 onClick={handleZoomOut}
-                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-slate-100"
                 title="Zoom Out"
               >
                 <ZoomOut className="w-4 h-4" />
@@ -918,12 +918,12 @@ export const MapCanvas: React.FC = () => {
                 max="500"
                 value={zoomPercent}
                 onChange={(e) => zoomTo(parseInt(e.target.value) / 100)}
-                className="w-24 h-1.5 bg-storm-700 rounded-lg appearance-none cursor-pointer accent-storm-400"
+                className="w-24 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-tempest-400"
               />
 
               <button
                 onClick={handleZoomIn}
-                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-slate-100"
                 title="Zoom In"
               >
                 <ZoomIn className="w-4 h-4" />
@@ -931,10 +931,10 @@ export const MapCanvas: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-xs text-storm-400 font-mono">{zoomPercent}%</span>
+              <span className="text-xs text-slate-400 font-mono">{zoomPercent}%</span>
               <button
                 onClick={handleFitToView}
-                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-slate-100"
                 title="Fit to View"
               >
                 <Maximize className="w-4 h-4" />
@@ -943,12 +943,12 @@ export const MapCanvas: React.FC = () => {
           </div>
 
           {/* Pan controls */}
-          <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
+          <div className="bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-2">
             <div className="grid grid-cols-3 gap-0.5 w-fit">
               <div />
               <button
                 onClick={handlePanUp}
-                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-slate-100"
                 title="Pan Up"
               >
                 <ChevronUp className="w-4 h-4" />
@@ -956,17 +956,17 @@ export const MapCanvas: React.FC = () => {
               <div />
               <button
                 onClick={handlePanLeft}
-                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-slate-100"
                 title="Pan Left"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <div className="p-1.5 flex items-center justify-center text-storm-500">
+              <div className="p-1.5 flex items-center justify-center text-slate-500">
                 <Move className="w-3 h-3" />
               </div>
               <button
                 onClick={handlePanRight}
-                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-slate-100"
                 title="Pan Right"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -974,7 +974,7 @@ export const MapCanvas: React.FC = () => {
               <div />
               <button
                 onClick={handlePanDown}
-                className="p-1.5 hover:bg-storm-700 rounded transition-colors text-storm-300 hover:text-storm-100"
+                className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300 hover:text-slate-100"
                 title="Pan Down"
               >
                 <ChevronDown className="w-4 h-4" />
@@ -983,10 +983,10 @@ export const MapCanvas: React.FC = () => {
             </div>
           </div>
           {selectedNpc && canResizeNpc && selectedNpcSizeIndex >= 0 && (
-            <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-2">
-              <div className="text-xs text-storm-400 mb-2">
+            <div className="bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-2">
+              <div className="text-xs text-slate-400 mb-2">
                 NPC Size:{' '}
-                <span className="text-storm-200">{selectedNpc.displayName || 'NPC'}</span>
+                <span className="text-slate-200">{selectedNpc.displayName || 'NPC'}</span>
               </div>
               <input
                 type="range"
@@ -1000,9 +1000,9 @@ export const MapCanvas: React.FC = () => {
                     void updateNPCInstanceDetails(selectedNpc.id, { size: nextSize });
                   }
                 }}
-                className="w-40 h-1.5 bg-storm-700 rounded-lg appearance-none cursor-pointer accent-storm-400"
+                className="w-40 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-tempest-400"
               />
-              <div className="mt-1 text-xs text-storm-500 capitalize">
+              <div className="mt-1 text-xs text-slate-500 capitalize">
                 {TOKEN_SIZE_ORDER[selectedNpcSizeIndex]}
               </div>
             </div>
@@ -1012,8 +1012,8 @@ export const MapCanvas: React.FC = () => {
 
       {/* Map info overlay - Bottom right */}
       {isMapTab && activeMap && (
-        <div className="absolute bottom-4 right-4 bg-storm-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-storm-700">
-          <span className="text-sm text-storm-300">
+        <div className="absolute bottom-4 right-4 bg-slate-900/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-700">
+          <span className="text-sm text-slate-300">
             {activeMap.name} ({activeMap.width}x{activeMap.height})
           </span>
         </div>

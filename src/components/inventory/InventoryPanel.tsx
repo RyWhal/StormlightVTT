@@ -83,8 +83,8 @@ export const InventoryPanel: React.FC = () => {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <div className="text-center">
-          <Package className="w-12 h-12 text-storm-500 mx-auto mb-3" />
-          <p className="text-storm-400">
+          <Package className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+          <p className="text-slate-400">
             Claim a character to manage inventory
           </p>
         </div>
@@ -96,14 +96,14 @@ export const InventoryPanel: React.FC = () => {
     <div className="h-full flex flex-col">
       {/* Character selector (GM only) */}
       {isGM && (
-        <div className="p-4 border-b border-storm-700">
-          <label className="text-sm text-storm-400 mb-1 block">
+        <div className="p-4 border-b border-slate-700">
+          <label className="text-sm text-slate-400 mb-1 block">
             Select Character
           </label>
           <select
             value={selectedCharacterId || ''}
             onChange={(e) => setSelectedCharacterId(e.target.value || null)}
-            className="w-full px-3 py-2 bg-storm-800 border border-storm-600 rounded-lg text-storm-100"
+            className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-slate-100"
           >
             <option value="">Select a character...</option>
             {characters.map((char) => (
@@ -117,8 +117,8 @@ export const InventoryPanel: React.FC = () => {
 
       {/* Header */}
       {selectedCharacter && (
-        <div className="flex items-center justify-between p-4 border-b border-storm-700">
-          <h3 className="font-medium text-storm-200">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+          <h3 className="font-medium text-slate-200">
             {selectedCharacter.name}'s Inventory
           </h3>
           <Button variant="ghost" size="sm" onClick={() => setIsAdding(true)}>
@@ -131,11 +131,11 @@ export const InventoryPanel: React.FC = () => {
       {/* Inventory list */}
       <div className="flex-1 overflow-y-auto p-4">
         {!selectedCharacter ? (
-          <p className="text-storm-500 text-center">Select a character</p>
+          <p className="text-slate-500 text-center">Select a character</p>
         ) : selectedCharacter.inventory.length === 0 && !isAdding ? (
           <div className="text-center py-8">
-            <Package className="w-12 h-12 text-storm-500 mx-auto mb-3" />
-            <p className="text-storm-400">No items yet</p>
+            <Package className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+            <p className="text-slate-400">No items yet</p>
             <Button
               variant="ghost"
               size="sm"
@@ -149,8 +149,8 @@ export const InventoryPanel: React.FC = () => {
           <div className="space-y-3">
             {/* Add item form */}
             {isAdding && (
-              <div className="bg-storm-800 rounded-lg p-4 border border-storm-600">
-                <h4 className="font-medium text-storm-200 mb-3">Add Item</h4>
+              <div className="bg-slate-800 rounded-lg p-4 border border-slate-600">
+                <h4 className="font-medium text-slate-200 mb-3">Add Item</h4>
                 <div className="space-y-3">
                   <Input
                     placeholder="Item name"
@@ -208,7 +208,7 @@ export const InventoryPanel: React.FC = () => {
               <div key={index}>
                 {editingItem?.index === index ? (
                   // Edit mode
-                  <div className="bg-storm-800 rounded-lg p-4 border border-storm-500">
+                  <div className="bg-slate-800 rounded-lg p-4 border border-tempest-500">
                     <div className="space-y-3">
                       <Input
                         placeholder="Item name"
@@ -283,18 +283,18 @@ export const InventoryPanel: React.FC = () => {
                   </div>
                 ) : (
                   // View mode
-                  <div className="bg-storm-800/50 rounded-lg p-3 border border-storm-700 flex items-start justify-between">
+                  <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-storm-200">
+                        <span className="font-medium text-slate-200">
                           {item.name}
                         </span>
-                        <span className="text-sm text-storm-400">
+                        <span className="text-sm text-slate-400">
                           x{item.quantity}
                         </span>
                       </div>
                       {item.notes && (
-                        <p className="text-sm text-storm-400 mt-1">
+                        <p className="text-sm text-slate-400 mt-1">
                           {item.notes}
                         </p>
                       )}
@@ -302,13 +302,13 @@ export const InventoryPanel: React.FC = () => {
                     <div className="flex gap-1">
                       <button
                         onClick={() => setEditingItem({ index, item })}
-                        className="p-1.5 text-storm-400 hover:text-storm-200 transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-slate-200 transition-colors"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteItem(index)}
-                        className="p-1.5 text-storm-400 hover:text-red-400 transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
