@@ -9,6 +9,7 @@ import { broadcastTokenMove } from '../lib/tokenBroadcast';
 export const useCharacters = () => {
   const session = useSessionStore((state) => state.session);
   const currentUser = useSessionStore((state) => state.currentUser);
+  const activeMap = useMapStore((state) => state.activeMap);
   const { characters, addCharacter, updateCharacter, removeCharacter, moveCharacter } = useMapStore();
 
   /**
@@ -246,7 +247,7 @@ export const useCharacters = () => {
       }
 
       // Optimistic update
-      moveCharacter(characterId, x, y);
+      moveCharacter(characterId, x, y, activeMap?.id);
 
       try {
         const { error } = await supabase
@@ -258,7 +259,7 @@ export const useCharacters = () => {
           // Revert on error
           const original = characters.find((c) => c.id === characterId);
           if (original) {
-            moveCharacter(characterId, original.positionX, original.positionY);
+            moveCharacter(characterId, original.positionX, original.positionY, activeMap?.id);
           }
           return { success: false, error: error.message };
         }
@@ -267,6 +268,7 @@ export const useCharacters = () => {
           sessionId: session.id,
           tokenId: characterId,
           tokenType: 'character',
+          mapId: activeMap?.id,
           x,
           y,
         });
@@ -279,7 +281,7 @@ export const useCharacters = () => {
         };
       }
     },
-    [session, characters, moveCharacter]
+    [session, characters, moveCharacter, activeMap?.id]
   );
 
   /**

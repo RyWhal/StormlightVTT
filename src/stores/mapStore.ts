@@ -23,6 +23,15 @@ interface MapState {
   npcTemplates: NPCTemplate[];
   npcInstances: NPCInstance[];
 
+  // Token positions per map
+  tokenPositionsByMap: Record<
+    string,
+    {
+      characters: Record<string, { x: number; y: number }>;
+      npcs: Record<string, { x: number; y: number }>;
+    }
+  >;
+
   // Handouts
   handouts: Handout[];
 
@@ -63,7 +72,7 @@ interface MapState {
   addCharacter: (character: Character) => void;
   updateCharacter: (characterId: string, updates: Partial<Character>) => void;
   removeCharacter: (characterId: string) => void;
-  moveCharacter: (characterId: string, x: number, y: number) => void;
+  moveCharacter: (characterId: string, x: number, y: number, mapId?: string) => void;
 
   // Actions - NPC Templates
   setNPCTemplates: (templates: NPCTemplate[]) => void;
@@ -76,7 +85,7 @@ interface MapState {
   addNPCInstance: (instance: NPCInstance) => void;
   updateNPCInstance: (instanceId: string, updates: Partial<NPCInstance>) => void;
   removeNPCInstance: (instanceId: string) => void;
-  moveNPCInstance: (instanceId: string, x: number, y: number) => void;
+  moveNPCInstance: (instanceId: string, x: number, y: number, mapId?: string) => void;
 
   // Actions - Viewport
   setViewportScale: (scale: number) => void;
@@ -135,6 +144,7 @@ export const useMapStore = create<MapState>()((set, get) => ({
   characters: [],
   npcTemplates: [],
   npcInstances: [],
+  tokenPositionsByMap: {},
   handouts: [],
   viewportScale: 1,
   viewportX: 0,
@@ -184,7 +194,38 @@ export const useMapStore = create<MapState>()((set, get) => ({
     })),
 
   setActiveMap: (map) => {
-    set({ activeMap: map, drawingData: map?.drawingData ?? [] });
+    set((state) => {
+      if (!map) {
+        return { activeMap: null, drawingData: [] };
+      }
+
+      const mapTokenPositions = state.tokenPositionsByMap[map.id];
+      const characters = mapTokenPositions
+        ? state.characters.map((character) => {
+            const position = mapTokenPositions.characters[character.id];
+            return position
+              ? { ...character, positionX: position.x, positionY: position.y }
+              : character;
+          })
+        : state.characters;
+
+      const npcInstances = mapTokenPositions
+        ? state.npcInstances.map((instance) => {
+            if (instance.mapId !== map.id) return instance;
+            const position = mapTokenPositions.npcs[instance.id];
+            return position
+              ? { ...instance, positionX: position.x, positionY: position.y }
+              : instance;
+          })
+        : state.npcInstances;
+
+      return {
+        activeMap: map,
+        drawingData: map.drawingData ?? [],
+        characters,
+        npcInstances,
+      };
+    });
     // Auto-fit map to view when a new map is activated
     if (map) {
       setTimeout(() => get().fitMapToView(), 50);
@@ -192,7 +233,23 @@ export const useMapStore = create<MapState>()((set, get) => ({
   },
 
   // Character actions
-  setCharacters: (characters) => set({ characters }),
+  setCharacters: (characters) =>
+    set((state) => {
+      const activeMapId = state.activeMap?.id;
+      if (!activeMapId) return { characters };
+
+      const mapTokenPositions = state.tokenPositionsByMap[activeMapId];
+      if (!mapTokenPositions) return { characters };
+
+      return {
+        characters: characters.map((character) => {
+          const position = mapTokenPositions.characters[character.id];
+          return position
+            ? { ...character, positionX: position.x, positionY: position.y }
+            : character;
+        }),
+      };
+    }),
 
   addCharacter: (character) =>
     set((state) => ({
@@ -218,12 +275,35 @@ export const useMapStore = create<MapState>()((set, get) => ({
         state.selectedTokenId === characterId ? null : state.selectedTokenType,
     })),
 
-  moveCharacter: (characterId, x, y) =>
-    set((state) => ({
-      characters: state.characters.map((c) =>
-        c.id === characterId ? { ...c, positionX: x, positionY: y } : c
-      ),
-    })),
+  moveCharacter: (characterId, x, y, mapId) =>
+    set((state) => {
+      const resolvedMapId = mapId ?? state.activeMap?.id;
+      const mapPositions = resolvedMapId
+        ? state.tokenPositionsByMap[resolvedMapId] ?? { characters: {}, npcs: {} }
+        : null;
+      const shouldUpdateVisibleCharacter = !resolvedMapId || resolvedMapId === state.activeMap?.id;
+
+      return {
+        characters: shouldUpdateVisibleCharacter
+          ? state.characters.map((c) =>
+              c.id === characterId ? { ...c, positionX: x, positionY: y } : c
+            )
+          : state.characters,
+        tokenPositionsByMap:
+          resolvedMapId && mapPositions
+            ? {
+                ...state.tokenPositionsByMap,
+                [resolvedMapId]: {
+                  ...mapPositions,
+                  characters: {
+                    ...mapPositions.characters,
+                    [characterId]: { x, y },
+                  },
+                },
+              }
+            : state.tokenPositionsByMap,
+      };
+    }),
 
   // NPC Template actions
   setNPCTemplates: (templates) => set({ npcTemplates: templates }),
@@ -249,7 +329,24 @@ export const useMapStore = create<MapState>()((set, get) => ({
     })),
 
   // NPC Instance actions
-  setNPCInstances: (instances) => set({ npcInstances: instances }),
+  setNPCInstances: (instances) =>
+    set((state) => {
+      const activeMapId = state.activeMap?.id;
+      if (!activeMapId) return { npcInstances: instances };
+
+      const mapTokenPositions = state.tokenPositionsByMap[activeMapId];
+      if (!mapTokenPositions) return { npcInstances: instances };
+
+      return {
+        npcInstances: instances.map((instance) => {
+          if (instance.mapId !== activeMapId) return instance;
+          const position = mapTokenPositions.npcs[instance.id];
+          return position
+            ? { ...instance, positionX: position.x, positionY: position.y }
+            : instance;
+        }),
+      };
+    }),
 
   addNPCInstance: (instance) =>
     set((state) => ({
@@ -275,12 +372,33 @@ export const useMapStore = create<MapState>()((set, get) => ({
         state.selectedTokenId === instanceId ? null : state.selectedTokenType,
     })),
 
-  moveNPCInstance: (instanceId, x, y) =>
-    set((state) => ({
-      npcInstances: state.npcInstances.map((i) =>
-        i.id === instanceId ? { ...i, positionX: x, positionY: y } : i
-      ),
-    })),
+  moveNPCInstance: (instanceId, x, y, mapId) =>
+    set((state) => {
+      const instance = state.npcInstances.find((i) => i.id === instanceId);
+      const resolvedMapId = mapId ?? instance?.mapId ?? state.activeMap?.id;
+      const mapPositions = resolvedMapId
+        ? state.tokenPositionsByMap[resolvedMapId] ?? { characters: {}, npcs: {} }
+        : null;
+
+      return {
+        npcInstances: state.npcInstances.map((i) =>
+          i.id === instanceId ? { ...i, positionX: x, positionY: y } : i
+        ),
+        tokenPositionsByMap:
+          resolvedMapId && mapPositions
+            ? {
+                ...state.tokenPositionsByMap,
+                [resolvedMapId]: {
+                  ...mapPositions,
+                  npcs: {
+                    ...mapPositions.npcs,
+                    [instanceId]: { x, y },
+                  },
+                },
+              }
+            : state.tokenPositionsByMap,
+      };
+    }),
 
   // Viewport actions
   setViewportScale: (scale) =>
@@ -518,6 +636,7 @@ export const useMapStore = create<MapState>()((set, get) => ({
       characters: [],
       npcTemplates: [],
       npcInstances: [],
+      tokenPositionsByMap: {},
       handouts: [],
       viewportScale: 1,
       viewportX: 0,

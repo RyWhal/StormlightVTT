@@ -5,6 +5,7 @@ export type TokenMovePayload = {
   sessionId: string;
   tokenId: string;
   tokenType: 'character' | 'npc';
+  mapId?: string;
   x: number;
   y: number;
 };
