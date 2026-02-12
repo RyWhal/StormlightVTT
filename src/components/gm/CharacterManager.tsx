@@ -126,8 +126,8 @@ export const CharacterManager: React.FC = () => {
 
       {/* Create form */}
       {isCreating && (
-        <div className="mb-4 p-4 bg-storm-800 rounded-lg border border-storm-600">
-          <h4 className="font-medium text-storm-200 mb-3">New Character</h4>
+        <div className="mb-4 p-4 bg-slate-800 rounded-lg border border-slate-600">
+          <h4 className="font-medium text-slate-200 mb-3">New Character</h4>
           <div className="space-y-3">
             <Input
               placeholder="Character name"
@@ -183,9 +183,9 @@ export const CharacterManager: React.FC = () => {
       {/* Character list */}
       {characters.length === 0 ? (
         <div className="text-center py-8">
-          <User className="w-12 h-12 text-storm-500 mx-auto mb-3" />
-          <p className="text-storm-400">No characters yet</p>
-          <p className="text-sm text-storm-500">
+          <User className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+          <p className="text-slate-400">No characters yet</p>
+          <p className="text-sm text-slate-500">
             Create characters for players to claim
           </p>
         </div>
@@ -194,7 +194,7 @@ export const CharacterManager: React.FC = () => {
           {characters.map((char) => (
             <div
               key={char.id}
-              className="bg-storm-800/50 rounded-lg border border-storm-700 p-3 cursor-pointer hover:border-storm-500"
+              className="bg-slate-800/50 rounded-lg border border-slate-700 p-3 cursor-pointer hover:border-tempest-500"
               onClick={() => {
                 if (!activeMap) return;
                 selectToken(char.id, 'character');
@@ -204,7 +204,7 @@ export const CharacterManager: React.FC = () => {
               <div className="flex items-center gap-3">
                 {/* Token */}
                 <div className="relative group">
-                  <div className="w-10 h-10 rounded-full bg-storm-700 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden">
                     {char.tokenUrl ? (
                       <img
                         src={char.tokenUrl}
@@ -212,7 +212,7 @@ export const CharacterManager: React.FC = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-storm-400 font-bold">
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold">
                         {char.name.charAt(0)}
                       </div>
                     )}
@@ -229,18 +229,18 @@ export const CharacterManager: React.FC = () => {
                   />
                   <label
                     htmlFor={`token-${char.id}`}
-                    className="absolute inset-0 bg-storm-900/80 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-full cursor-pointer transition-opacity"
+                    className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-full cursor-pointer transition-opacity"
                   >
-                    <Upload className="w-4 h-4 text-storm-200" />
+                    <Upload className="w-4 h-4 text-slate-200" />
                   </label>
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-storm-200 truncate">
+                  <h4 className="font-medium text-slate-200 truncate">
                     {char.name}
                   </h4>
-                  <p className="text-xs text-storm-400">
+                  <p className="text-xs text-slate-400">
                     {char.isClaimed
                       ? `Claimed by ${char.claimedByUsername}`
                       : 'Unclaimed'}
@@ -261,7 +261,7 @@ export const CharacterManager: React.FC = () => {
                         statusRingColor: selected?.value ?? null,
                       });
                     }}
-                    className="bg-storm-900 border border-storm-600 rounded px-1 py-0.5 text-xs text-storm-300 max-w-[84px]"
+                    className="bg-slate-900 border border-slate-600 rounded px-1 py-0.5 text-xs text-slate-300 max-w-[84px]"
                     title="Status ring color"
                   >
                     {STATUS_RING_COLORS.map((color) => (

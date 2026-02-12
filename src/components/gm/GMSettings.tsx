@@ -38,10 +38,10 @@ export const GMSettings: React.FC = () => {
 
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
-      <div className="bg-storm-800/50 rounded-lg p-3 space-y-3">
-        <h3 className="text-storm-100 font-semibold">GM Permissions</h3>
+      <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
+        <h3 className="text-slate-100 font-semibold">GM Permissions</h3>
 
-        <label className="flex items-center justify-between gap-3 text-sm text-storm-300">
+        <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
           <span>Allow players to rename NPCs</span>
           <input
             type="checkbox"
@@ -50,7 +50,7 @@ export const GMSettings: React.FC = () => {
           />
         </label>
 
-        <label className="flex items-center justify-between gap-3 text-sm text-storm-300">
+        <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
           <span>Allow players to move NPCs</span>
           <input
             type="checkbox"
@@ -60,12 +60,12 @@ export const GMSettings: React.FC = () => {
         </label>
       </div>
 
-      <div className="bg-storm-800/50 rounded-lg p-3 space-y-3">
-        <h3 className="text-storm-100 font-semibold">Map Drawings</h3>
-        <p className="text-xs text-storm-400">
+      <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
+        <h3 className="text-slate-100 font-semibold">Map Drawings</h3>
+        <p className="text-xs text-slate-400">
           Clear all drawings across this map, including player annotations.
         </p>
-        <div className="flex items-center justify-between text-sm text-storm-300">
+        <div className="flex items-center justify-between text-sm text-slate-300">
           <span>Drawings on map: {drawingData.length}</span>
           <button
             onClick={handleClearDrawings}
@@ -77,8 +77,8 @@ export const GMSettings: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-storm-800/50 rounded-lg p-3">
-        <h3 className="text-storm-100 font-semibold mb-3">Session Export / Import</h3>
+      <div className="bg-slate-800/50 rounded-lg p-3">
+        <h3 className="text-slate-100 font-semibold mb-3">Session Export / Import</h3>
         <SessionExport />
       </div>
     </div>

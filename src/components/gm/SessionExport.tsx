@@ -214,10 +214,10 @@ export const SessionExport: React.FC = () => {
       <div className="space-y-6">
         {/* Export section */}
         <div>
-          <h3 className="text-sm font-medium text-storm-300 mb-2">
+          <h3 className="text-sm font-medium text-slate-300 mb-2">
             Export Session
           </h3>
-          <p className="text-xs text-storm-400 mb-3">
+          <p className="text-xs text-slate-400 mb-3">
             Download the entire session as a JSON file including maps, characters,
             NPCs, and their images.
           </p>
@@ -230,17 +230,17 @@ export const SessionExport: React.FC = () => {
             <Download className="w-4 h-4 mr-2" />
             Export to JSON
           </Button>
-          <p className="text-xs text-storm-500 mt-2">
+          <p className="text-xs text-slate-500 mt-2">
             Note: Chat messages and dice rolls are not included in exports.
           </p>
         </div>
 
         {/* Import section */}
         <div>
-          <h3 className="text-sm font-medium text-storm-300 mb-2">
+          <h3 className="text-sm font-medium text-slate-300 mb-2">
             Import Session
           </h3>
-          <p className="text-xs text-storm-400 mb-3">
+          <p className="text-xs text-slate-400 mb-3">
             Import a previously exported session. This will create a new session
             with all the saved data.
           </p>
@@ -278,11 +278,11 @@ export const SessionExport: React.FC = () => {
 
         {/* Session info */}
         {session && (
-          <div className="bg-storm-800/50 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-storm-300 mb-2">
+          <div className="bg-slate-800/50 rounded-lg p-3">
+            <h4 className="text-sm font-medium text-slate-300 mb-2">
               Current Session Info
             </h4>
-            <div className="text-xs text-storm-400 space-y-1">
+            <div className="text-xs text-slate-400 space-y-1">
               <p>Name: {session.name}</p>
               <p>Code: {session.code}</p>
               <p>Maps: {maps.length}</p>

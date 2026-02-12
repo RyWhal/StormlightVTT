@@ -50,9 +50,9 @@ export const DrawingTools: React.FC = () => {
   };
 
   return (
-    <div className="bg-storm-900/90 backdrop-blur-sm rounded-lg border border-storm-700 p-3 flex flex-col gap-3">
+    <div className="bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-3 flex flex-col gap-3">
       <div>
-        <p className="text-xs uppercase tracking-wide text-storm-400 mb-2">Draw</p>
+        <p className="text-xs uppercase tracking-wide text-slate-400 mb-2">Draw</p>
         <div className="flex flex-wrap gap-2">
           {TOOL_DEFINITIONS.map(({ tool, label, icon }) => (
             <button
@@ -60,8 +60,8 @@ export const DrawingTools: React.FC = () => {
               onClick={() => handleToolSelect(tool)}
               className={`flex items-center gap-1 px-2 py-1 rounded border text-xs transition-colors ${
                 drawingTool === tool
-                  ? 'bg-storm-700 border-storm-400 text-storm-100'
-                  : 'border-storm-700 text-storm-300 hover:text-storm-100 hover:border-storm-500'
+                  ? 'bg-slate-700 border-tempest-400 text-slate-100'
+                  : 'border-slate-700 text-slate-300 hover:text-slate-100 hover:border-tempest-500'
               }`}
               title={label}
             >
@@ -73,14 +73,14 @@ export const DrawingTools: React.FC = () => {
       </div>
 
       <div>
-        <p className="text-xs uppercase tracking-wide text-storm-400 mb-2">Colors</p>
+        <p className="text-xs uppercase tracking-wide text-slate-400 mb-2">Colors</p>
         <div className="flex flex-wrap gap-2">
           {DRAWING_COLOR_OPTIONS.map(({ label, value }) => (
             <button
               key={value}
               onClick={() => handleColorSelect(value)}
               className={`w-6 h-6 rounded border-2 ${
-                drawingColor === value ? 'border-storm-100' : 'border-storm-700'
+                drawingColor === value ? 'border-slate-100' : 'border-slate-700'
               }`}
               style={{ backgroundColor: value }}
               title={label}
@@ -92,7 +92,7 @@ export const DrawingTools: React.FC = () => {
       </div>
 
       <div>
-        <p className="text-xs uppercase tracking-wide text-storm-400 mb-2">Stroke</p>
+        <p className="text-xs uppercase tracking-wide text-slate-400 mb-2">Stroke</p>
         <div className="flex flex-wrap gap-2">
           {STROKE_SIZES.map(({ label, value }) => (
             <button
@@ -100,8 +100,8 @@ export const DrawingTools: React.FC = () => {
               onClick={() => setDrawingStrokeWidth(value)}
               className={`px-2 py-1 rounded border text-xs transition-colors ${
                 drawingStrokeWidth === value
-                  ? 'bg-storm-700 border-storm-400 text-storm-100'
-                  : 'border-storm-700 text-storm-300 hover:text-storm-100 hover:border-storm-500'
+                  ? 'bg-slate-700 border-tempest-400 text-slate-100'
+                  : 'border-slate-700 text-slate-300 hover:text-slate-100 hover:border-tempest-500'
               }`}
             >
               {label}

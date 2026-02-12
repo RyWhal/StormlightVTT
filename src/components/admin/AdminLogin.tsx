@@ -36,7 +36,7 @@ export const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-storm-950 to-storm-900">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900">
       <div className="w-full max-w-md">
         <Button
           variant="ghost"
@@ -69,7 +69,7 @@ export const AdminLogin: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-8 text-storm-400 hover:text-storm-200"
+                className="absolute right-3 top-8 text-slate-400 hover:text-slate-200"
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />

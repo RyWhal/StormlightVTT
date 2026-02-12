@@ -143,7 +143,7 @@ export const AssetCreate: React.FC = () => {
   const tokenSizes = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
 
   return (
-    <div className="min-h-screen bg-storm-950 p-6">
+    <div className="min-h-screen bg-slate-950 p-6">
       <div className="max-w-2xl mx-auto">
         <Button variant="ghost" className="mb-4" onClick={() => navigate('/admin/dashboard')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -158,7 +158,7 @@ export const AssetCreate: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Asset Type */}
             <div>
-              <label className="text-sm text-storm-400 mb-2 block">Asset Type</label>
+              <label className="text-sm text-slate-400 mb-2 block">Asset Type</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -172,8 +172,8 @@ export const AssetCreate: React.FC = () => {
                     p-3 rounded-lg border transition-colors text-left
                     ${
                       assetType === 'token'
-                        ? 'bg-storm-700 border-storm-500 text-storm-100'
-                        : 'bg-storm-800/50 border-storm-700 text-storm-400 hover:bg-storm-700/50'
+                        ? 'bg-slate-700 border-tempest-500 text-slate-100'
+                        : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700/50'
                     }
                   `}
                 >
@@ -192,8 +192,8 @@ export const AssetCreate: React.FC = () => {
                     p-3 rounded-lg border transition-colors text-left
                     ${
                       assetType === 'map'
-                        ? 'bg-storm-700 border-storm-500 text-storm-100'
-                        : 'bg-storm-800/50 border-storm-700 text-storm-400 hover:bg-storm-700/50'
+                        ? 'bg-slate-700 border-tempest-500 text-slate-100'
+                        : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700/50'
                     }
                   `}
                 >
@@ -205,7 +205,7 @@ export const AssetCreate: React.FC = () => {
 
             {/* Image Upload */}
             <div>
-              <label className="text-sm text-storm-400 mb-2 block">Image</label>
+              <label className="text-sm text-slate-400 mb-2 block">Image</label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -218,7 +218,7 @@ export const AssetCreate: React.FC = () => {
                 <div className="relative">
                   <div
                     className={`
-                    rounded-lg overflow-hidden bg-storm-800 border border-storm-600
+                    rounded-lg overflow-hidden bg-slate-800 border border-slate-600
                     ${assetType === 'token' ? 'w-32 h-32' : 'w-full max-h-64'}
                   `}
                   >
@@ -229,7 +229,7 @@ export const AssetCreate: React.FC = () => {
                     />
                   </div>
                   {dimensions && (
-                    <p className="text-xs text-storm-400 mt-1">
+                    <p className="text-xs text-slate-400 mt-1">
                       {dimensions.width} x {dimensions.height} pixels
                     </p>
                   )}
@@ -248,14 +248,14 @@ export const AssetCreate: React.FC = () => {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className={`
-                    w-full p-6 border-2 border-dashed border-storm-600 rounded-lg
-                    hover:border-storm-500 transition-colors text-center
+                    w-full p-6 border-2 border-dashed border-slate-600 rounded-lg
+                    hover:border-tempest-500 transition-colors text-center
                     ${errors.file ? 'border-red-500' : ''}
                   `}
                 >
-                  <Upload className="w-8 h-8 text-storm-500 mx-auto mb-2" />
-                  <p className="text-storm-400">Click to upload image</p>
-                  <p className="text-xs text-storm-500 mt-1">
+                  <Upload className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+                  <p className="text-slate-400">Click to upload image</p>
+                  <p className="text-xs text-slate-500 mt-1">
                     {assetType === 'map'
                       ? 'PNG, JPG, WEBP - Max 25MB, 5000x5000px'
                       : 'PNG, JPG, WEBP, GIF - Max 2MB'}
@@ -276,23 +276,23 @@ export const AssetCreate: React.FC = () => {
 
             {/* Description */}
             <div>
-              <label className="text-sm text-storm-400 mb-1 block">Description (optional)</label>
+              <label className="text-sm text-slate-400 mb-1 block">Description (optional)</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief description of this asset..."
                 rows={2}
-                className="w-full px-3 py-2 bg-storm-800 border border-storm-600 rounded-lg text-storm-100 placeholder-storm-500 focus:outline-none focus:ring-2 focus:ring-storm-500"
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-tempest-400"
               />
             </div>
 
             {/* Category */}
             <div>
-              <label className="text-sm text-storm-400 mb-1 block">Category</label>
+              <label className="text-sm text-slate-400 mb-1 block">Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 bg-storm-800 border border-storm-600 rounded-lg text-storm-100"
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-slate-100"
               >
                 <option value="">Select category...</option>
                 {(assetType === 'token' ? tokenCategories : mapCategories).map((cat) => (
@@ -306,11 +306,11 @@ export const AssetCreate: React.FC = () => {
             {/* Token Size (only for tokens) */}
             {assetType === 'token' && (
               <div>
-                <label className="text-sm text-storm-400 mb-1 block">Default Size</label>
+                <label className="text-sm text-slate-400 mb-1 block">Default Size</label>
                 <select
                   value={defaultSize}
                   onChange={(e) => setDefaultSize(e.target.value)}
-                  className="w-full px-3 py-2 bg-storm-800 border border-storm-600 rounded-lg text-storm-100"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-slate-100"
                 >
                   {tokenSizes.map((size) => (
                     <option key={size} value={size}>

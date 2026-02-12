@@ -130,7 +130,7 @@ export const MapManager: React.FC = () => {
             Upload
           </Button>
         </div>
-        <p className="text-xs text-storm-500 text-center">
+        <p className="text-xs text-slate-500 text-center">
           Browse global library or upload custom (PNG, JPG, WEBP)
         </p>
       </div>
@@ -138,9 +138,9 @@ export const MapManager: React.FC = () => {
       {/* Map list */}
       {maps.length === 0 ? (
         <div className="text-center py-8">
-          <Image className="w-12 h-12 text-storm-500 mx-auto mb-3" />
-          <p className="text-storm-400">No maps yet</p>
-          <p className="text-sm text-storm-500">Upload a map to get started</p>
+          <Image className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+          <p className="text-slate-400">No maps yet</p>
+          <p className="text-sm text-slate-500">Upload a map to get started</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -153,12 +153,12 @@ export const MapManager: React.FC = () => {
                 key={map.id}
                 className={`
                   rounded-lg border transition-colors
-                  ${isActive ? 'bg-storm-700/50 border-storm-500' : 'bg-storm-800/50 border-storm-700'}
+                  ${isActive ? 'bg-slate-700/50 border-tempest-500' : 'bg-slate-800/50 border-slate-700'}
                 `}
               >
                 <div className="flex items-center gap-3 p-3">
                   {/* Thumbnail */}
-                  <div className="w-12 h-12 rounded bg-storm-700 overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 rounded bg-slate-700 overflow-hidden flex-shrink-0">
                     <img
                       src={map.imageUrl}
                       alt={map.name}
@@ -168,10 +168,10 @@ export const MapManager: React.FC = () => {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-storm-200 truncate">
+                    <h4 className="font-medium text-slate-200 truncate">
                       {map.name}
                     </h4>
-                    <p className="text-xs text-storm-400">
+                    <p className="text-xs text-slate-400">
                       {map.width}x{map.height}
                     </p>
                   </div>
@@ -283,7 +283,7 @@ const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => 
   };
 
   return (
-    <div className="p-3 border-t border-storm-600 space-y-3">
+    <div className="p-3 border-t border-slate-600 space-y-3">
       <Input
         label="Map Name"
         value={settings.name}
@@ -291,14 +291,14 @@ const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => 
       />
 
       <div className="space-y-2">
-        <label className="flex items-center gap-2 text-sm text-storm-300">
+        <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
             checked={settings.gridEnabled}
             onChange={(e) =>
               setSettings((s) => ({ ...s, gridEnabled: e.target.checked }))
             }
-            className="rounded border-storm-600 bg-storm-800"
+            className="rounded border-slate-600 bg-slate-800"
           />
           Show Grid
         </label>
@@ -343,21 +343,21 @@ const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => 
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm text-storm-300">
+        <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
             checked={settings.fogEnabled}
             onChange={(e) =>
               setSettings((s) => ({ ...s, fogEnabled: e.target.checked }))
             }
-            className="rounded border-storm-600 bg-storm-800"
+            className="rounded border-slate-600 bg-slate-800"
           />
           Enable Fog of War
         </label>
 
         {settings.fogEnabled && (
           <div className="pl-6">
-            <label className="text-xs text-storm-400">Default State</label>
+            <label className="text-xs text-slate-400">Default State</label>
             <select
               value={settings.fogDefaultState}
               onChange={(e) =>
@@ -366,7 +366,7 @@ const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => 
                   fogDefaultState: e.target.value as 'fogged' | 'revealed',
                 }))
               }
-              className="w-full mt-1 px-2 py-1 bg-storm-800 border border-storm-600 rounded text-sm text-storm-200"
+              className="w-full mt-1 px-2 py-1 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
             >
               <option value="fogged">Fogged (hidden by default)</option>
               <option value="revealed">Revealed (visible by default)</option>
@@ -374,14 +374,14 @@ const MapSettings: React.FC<MapSettingsProps> = ({ map, onUpdate, onClose }) => 
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm text-storm-300">
+        <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
             checked={settings.showPlayerTokens}
             onChange={(e) =>
               setSettings((s) => ({ ...s, showPlayerTokens: e.target.checked }))
             }
-            className="rounded border-storm-600 bg-storm-800"
+            className="rounded border-slate-600 bg-slate-800"
           />
           Show Player Tokens
         </label>
