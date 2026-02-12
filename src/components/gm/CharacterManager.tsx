@@ -249,37 +249,27 @@ export const CharacterManager: React.FC = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1">
-                  <div
-                    className="flex items-center gap-1"
+                  <select
+                    value={char.statusRingColor || 'none'}
                     onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const selected = STATUS_RING_COLORS.find((color) =>
+                        (color.value ?? 'none') === value
+                      );
+                      void updateCharacterDetails(char.id, {
+                        statusRingColor: selected?.value ?? null,
+                      });
+                    }}
+                    className="bg-storm-900 border border-storm-600 rounded px-1 py-0.5 text-xs text-storm-300 max-w-[84px]"
                     title="Status ring color"
                   >
-                    {STATUS_RING_COLORS.map((color) => {
-                      const isActive = (char.statusRingColor || null) === color.value;
-                      return (
-                        <button
-                          key={color.label}
-                          type="button"
-                          onClick={() => {
-                            void updateCharacterDetails(char.id, {
-                              statusRingColor: color.value,
-                            });
-                          }}
-                          className={`w-4 h-4 rounded-full border transition ${
-                            isActive
-                              ? 'border-storm-100 ring-1 ring-storm-100'
-                              : 'border-storm-500 hover:border-storm-200'
-                          }`}
-                          style={{ backgroundColor: color.value || 'transparent' }}
-                          aria-label={color.label}
-                        >
-                          {!color.value && (
-                            <span className="block w-full h-full rounded-full bg-storm-900 border border-storm-600" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                    {STATUS_RING_COLORS.map((color) => (
+                      <option key={color.label} value={color.value ?? 'none'}>
+                        {color.label}
+                      </option>
+                    ))}
+                  </select>
                   {char.isClaimed && (
                     <Button
                       variant="ghost"
