@@ -1,6 +1,6 @@
-# Stormlight VTT - Setup Guide
+# Tempest Table - Setup Guide
 
-Complete setup instructions for running the Stormlight Virtual Tabletop application.
+Complete setup instructions for running the Tempest Virtual Tabletop application.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ Complete setup instructions for running the Stormlight Virtual Tabletop applicat
 1. Go to [supabase.com](https://supabase.com) and sign up/log in
 2. Click **"New Project"**
 3. Fill in the details:
-   - **Name**: `stormlight-vtt` (or any name you prefer)
+   - **Name**: `tempest-table` (or any name you prefer)
    - **Database Password**: Generate a strong password and save it
    - **Region**: Choose the closest to your players
 4. Click **"Create new project"** and wait for it to initialize (~2 minutes)

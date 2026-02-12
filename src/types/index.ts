@@ -1,4 +1,4 @@
-// types/index.ts - TypeScript type definitions for Stormlight VTT
+// types/index.ts - TypeScript type definitions for Tempest Table
 
 export type TokenSize = 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargantuan';
 

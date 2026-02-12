@@ -58,28 +58,26 @@ export const SessionJoin: React.FC = () => {
         .select('username, is_gm')
         .eq('session_id', sessionData.id);
 
-      if (isActive) {
-        const players =
-          playersData?.map((player) => ({
-            username: player.username,
-            isGm: player.is_gm,
-          })) ?? [];
+      if (!isActive) return;
 
-        players.sort((a, b) => a.username.localeCompare(b.username));
-        setExistingPlayers(players);
-        setIsLoadingPlayers(false);
-      }
+      const players =
+        playersData?.map((player) => ({
+          username: player.username,
+          isGm: player.is_gm,
+        })) ?? [];
+
+      players.sort((a, b) => a.username.localeCompare(b.username));
+      setExistingPlayers(players);
+      setIsLoadingPlayers(false);
     };
 
     void loadPlayers();
-
     return () => {
       isActive = false;
     };
   }, [sessionCode]);
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Auto-format as user types
     const value = e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9-]/g, '');
     if (value.length <= 9) {
       setSessionCode(value);
@@ -89,10 +87,8 @@ export const SessionJoin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
     const normalizedCode = normalizeSessionCode(sessionCode);
     const usernameValidation = validateUsername(username);
-
     const newErrors: { sessionCode?: string; username?: string } = {};
 
     if (!isValidSessionCodeFormat(normalizedCode)) {
@@ -110,35 +106,30 @@ export const SessionJoin: React.FC = () => {
 
     setErrors({});
     setIsLoading(true);
-
     const result = await joinSession(normalizedCode, username);
-
     setIsLoading(false);
 
     if (result.success) {
       showToast('Joined session!', 'success');
       navigate('/lobby');
-    } else {
-      showToast(result.error || 'Failed to join session', 'error');
+      return;
     }
+
+    showToast(result.error || 'Failed to join session', 'error');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-storm-950 to-storm-900">
+    <main className="tempest-shell flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <Button
-          variant="ghost"
-          className="mb-4"
-          onClick={() => navigate('/')}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+        <Button variant="ghost" className="mb-4" onClick={() => navigate('/')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <LogIn className="w-5 h-5 text-storm-400" />
+              <LogIn className="h-5 w-5 text-tempest-300" />
               Join Session
             </CardTitle>
           </CardHeader>
@@ -150,32 +141,30 @@ export const SessionJoin: React.FC = () => {
               value={sessionCode}
               onChange={handleCodeChange}
               error={errors.sessionCode}
-              className="font-mono text-lg tracking-wider text-center"
+              className="text-center font-mono text-lg tracking-wider"
               autoFocus
             />
 
             <Input
               label="Your Username"
-              placeholder="e.g., Ryan"
+              placeholder="e.g., Aria"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               error={errors.username}
             />
 
             {isLoadingPlayers ? (
-              <div className="text-sm text-storm-400">Loading existing players…</div>
+              <div className="text-sm text-slate-400">Loading current players…</div>
             ) : existingPlayers.length > 0 ? (
               <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-storm-500">
-                  Rejoin as
-                </p>
+                <p className="text-xs uppercase tracking-wide text-slate-500">Rejoin as</p>
                 <div className="flex flex-wrap gap-2">
                   {existingPlayers.map((player) => (
                     <button
                       key={player.username}
                       type="button"
                       onClick={() => setUsername(player.username)}
-                      className="px-3 py-1 rounded-full text-sm bg-storm-800 text-storm-200 hover:bg-storm-700 transition-colors"
+                      className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-sm text-slate-200 transition-colors hover:bg-slate-700"
                     >
                       {player.username}
                       {player.isGm && ' (GM)'}
@@ -185,22 +174,12 @@ export const SessionJoin: React.FC = () => {
               </div>
             ) : null}
 
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full"
-              isLoading={isLoading}
-            >
+            <Button type="submit" variant="primary" size="lg" className="w-full" isLoading={isLoading}>
               Join Session
             </Button>
           </form>
-
-          <p className="mt-4 text-sm text-storm-400 text-center">
-            Get the session code from your GM
-          </p>
         </Card>
       </div>
-    </div>
+    </main>
   );
 };

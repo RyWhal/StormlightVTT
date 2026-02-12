@@ -127,7 +127,7 @@ export const DicePanel: React.FC = () => {
           </button>
         </div>
 
-        {/* Plot dice (Stormlight specific) */}
+        {/* Plot dice (Tempest system) */}
         <div className="flex items-center gap-2 mb-3">
           <label className="text-sm text-storm-400">Plot Dice:</label>
           <button
@@ -143,7 +143,7 @@ export const DicePanel: React.FC = () => {
           >
             +
           </button>
-          <span className="text-xs text-storm-500">(Stormlight RPG)</span>
+          <span className="text-xs text-storm-500">(Tempest RPG)</span>
         </div>
 
         {/* Visibility */}

@@ -326,7 +326,7 @@ export const AssetCreate: React.FC = () => {
               label="Tags (optional)"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="e.g., stormlight, creature, undead (comma separated)"
+              placeholder="e.g., tempest, creature, undead (comma separated)"
               helperText="Add tags to help find this asset later"
             />
 

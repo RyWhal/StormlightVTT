@@ -1,6 +1,6 @@
-# StormlightVTT
+# TempestTable
 
-StormlightVTT is a TypeScript-based virtual tabletop (VTT) for tabletop RPG sessions.
+TempestTable is a TypeScript-based virtual tabletop (VTT) for tabletop RPG sessions.
 
 ## Tech stack
 
