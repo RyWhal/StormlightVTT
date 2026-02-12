@@ -307,7 +307,8 @@ export const useNPCs = () => {
       }
 
       // Optimistic update
-      moveNPCInstance(instanceId, x, y);
+      const instance = npcInstances.find((i) => i.id === instanceId);
+      moveNPCInstance(instanceId, x, y, instance?.mapId);
 
       try {
         const { error } = await supabase
@@ -319,7 +320,7 @@ export const useNPCs = () => {
           // Revert on error
           const original = npcInstances.find((i) => i.id === instanceId);
           if (original) {
-            moveNPCInstance(instanceId, original.positionX, original.positionY);
+            moveNPCInstance(instanceId, original.positionX, original.positionY, original.mapId);
           }
           return { success: false, error: error.message };
         }
@@ -328,6 +329,7 @@ export const useNPCs = () => {
           sessionId: session.id,
           tokenId: instanceId,
           tokenType: 'npc',
+          mapId: instance?.mapId,
           x,
           y,
         });

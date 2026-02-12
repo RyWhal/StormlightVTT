@@ -455,6 +455,7 @@ export const useRealtime = () => {
         sessionId: string;
         tokenId: string;
         tokenType: 'character' | 'npc';
+        mapId?: string;
         x: number;
         y: number;
       };
@@ -462,9 +463,9 @@ export const useRealtime = () => {
       if (movePayload.sessionId !== sessionId) return;
 
       if (movePayload.tokenType === 'character') {
-        moveCharacter(movePayload.tokenId, movePayload.x, movePayload.y);
+        moveCharacter(movePayload.tokenId, movePayload.x, movePayload.y, movePayload.mapId);
       } else {
-        moveNPCInstance(movePayload.tokenId, movePayload.x, movePayload.y);
+        moveNPCInstance(movePayload.tokenId, movePayload.x, movePayload.y, movePayload.mapId);
       }
     });
 
