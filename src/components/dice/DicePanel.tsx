@@ -57,19 +57,19 @@ export const DicePanel: React.FC = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Dice selector */}
-      <div className="p-4 border-b border-storm-700">
+      <div className="p-4 border-b border-slate-700">
         <div className="mb-3">
-          <label className="text-sm text-storm-400 mb-2 block">Standard Dice</label>
+          <label className="text-sm text-slate-400 mb-2 block">Standard Dice</label>
           <div className="grid grid-cols-6 gap-2">
             {DICE_TYPES.map((sides) => (
               <button
                 key={sides}
                 onClick={() => addDie(sides)}
-                className="p-2 bg-storm-800 hover:bg-storm-700 rounded-lg text-center transition-colors"
+                className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-center transition-colors"
               >
-                <div className="text-sm font-medium text-storm-200">d{sides}</div>
+                <div className="text-sm font-medium text-slate-200">d{sides}</div>
                 {dice[sides] > 0 && (
-                  <div className="text-xs text-storm-400">x{dice[sides]}</div>
+                  <div className="text-xs text-slate-400">x{dice[sides]}</div>
                 )}
               </button>
             ))}
@@ -77,7 +77,7 @@ export const DicePanel: React.FC = () => {
         </div>
 
         {/* Current roll display */}
-        <div className="bg-storm-800 rounded-lg p-3 mb-3">
+        <div className="bg-slate-800 rounded-lg p-3 mb-3">
           <div className="flex flex-wrap gap-2 min-h-[2rem]">
             {DICE_TYPES.map(
               (sides) =>
@@ -85,19 +85,19 @@ export const DicePanel: React.FC = () => {
                   <button
                     key={sides}
                     onClick={() => removeDie(sides)}
-                    className="px-2 py-1 bg-storm-700 hover:bg-red-900/50 rounded text-sm text-storm-200 transition-colors"
+                    className="px-2 py-1 bg-slate-700 hover:bg-red-900/50 rounded text-sm text-slate-200 transition-colors"
                   >
                     {dice[sides]}d{sides} ×
                   </button>
                 )
             )}
             {modifier !== 0 && (
-              <span className="px-2 py-1 text-sm text-storm-300">
+              <span className="px-2 py-1 text-sm text-slate-300">
                 {modifier > 0 ? `+${modifier}` : modifier}
               </span>
             )}
             {totalDice === 0 && modifier === 0 && plotDiceCount === 0 && (
-              <span className="text-storm-500 text-sm">
+              <span className="text-slate-500 text-sm">
                 Click dice above to add
               </span>
             )}
@@ -106,10 +106,10 @@ export const DicePanel: React.FC = () => {
 
         {/* Modifier */}
         <div className="flex items-center gap-2 mb-3">
-          <label className="text-sm text-storm-400">Modifier:</label>
+          <label className="text-sm text-slate-400">Modifier:</label>
           <button
             onClick={() => setModifier((m) => m - 1)}
-            className="w-8 h-8 bg-storm-800 hover:bg-storm-700 rounded text-storm-200"
+            className="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded text-slate-200"
           >
             -
           </button>
@@ -117,42 +117,42 @@ export const DicePanel: React.FC = () => {
             type="number"
             value={modifier}
             onChange={(e) => setModifier(parseInt(e.target.value) || 0)}
-            className="w-16 px-2 py-1 bg-storm-800 border border-storm-600 rounded text-center text-storm-200"
+            className="w-16 px-2 py-1 bg-slate-800 border border-slate-600 rounded text-center text-slate-200"
           />
           <button
             onClick={() => setModifier((m) => m + 1)}
-            className="w-8 h-8 bg-storm-800 hover:bg-storm-700 rounded text-storm-200"
+            className="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded text-slate-200"
           >
             +
           </button>
         </div>
 
-        {/* Plot dice (Stormlight specific) */}
+        {/* Plot dice (Tempest system) */}
         <div className="flex items-center gap-2 mb-3">
-          <label className="text-sm text-storm-400">Plot Dice:</label>
+          <label className="text-sm text-slate-400">Plot Dice:</label>
           <button
             onClick={() => setPlotDiceCount((c) => Math.max(0, c - 1))}
-            className="w-8 h-8 bg-storm-800 hover:bg-storm-700 rounded text-storm-200"
+            className="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded text-slate-200"
           >
             -
           </button>
-          <span className="w-8 text-center text-storm-200">{plotDiceCount}</span>
+          <span className="w-8 text-center text-slate-200">{plotDiceCount}</span>
           <button
             onClick={() => setPlotDiceCount((c) => Math.min(5, c + 1))}
-            className="w-8 h-8 bg-storm-800 hover:bg-storm-700 rounded text-storm-200"
+            className="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded text-slate-200"
           >
             +
           </button>
-          <span className="text-xs text-storm-500">(Stormlight RPG)</span>
+          <span className="text-xs text-slate-500">(Tempest RPG)</span>
         </div>
 
         {/* Visibility */}
         <div className="flex items-center gap-2 mb-4">
-          <label className="text-sm text-storm-400">Visibility:</label>
+          <label className="text-sm text-slate-400">Visibility:</label>
           <select
             value={visibility}
             onChange={(e) => setVisibility(e.target.value as RollVisibility)}
-            className="flex-1 px-2 py-1 bg-storm-800 border border-storm-600 rounded text-storm-200"
+            className="flex-1 px-2 py-1 bg-slate-800 border border-slate-600 rounded text-slate-200"
           >
             <option value="public">Public</option>
             <option value="gm_only">GM Only</option>
@@ -180,10 +180,10 @@ export const DicePanel: React.FC = () => {
 
       {/* Roll history */}
       <div className="flex-1 overflow-y-auto p-4">
-        <h3 className="text-sm font-medium text-storm-400 mb-3">Roll History</h3>
+        <h3 className="text-sm font-medium text-slate-400 mb-3">Roll History</h3>
 
         {diceRolls.length === 0 ? (
-          <p className="text-storm-500 text-sm text-center py-4">
+          <p className="text-slate-500 text-sm text-center py-4">
             No rolls yet
           </p>
         ) : (
@@ -242,32 +242,32 @@ const DiceRollEntry: React.FC<DiceRollEntryProps> = ({ roll, isNew }) => {
   return (
     <div
       className={`
-        bg-storm-800/50 rounded-lg p-3 border border-storm-700
+        bg-slate-800/50 rounded-lg p-3 border border-slate-700
         ${isNew ? 'animate-roll-appear' : ''}
       `}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-storm-200">{roll.username}</span>
+          <span className="font-medium text-slate-200">{roll.username}</span>
           {roll.characterName && (
-            <span className="text-storm-400 text-sm">
+            <span className="text-slate-400 text-sm">
               ({roll.characterName})
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-storm-500">
+        <div className="flex items-center gap-2 text-slate-500">
           {visibilityIcon[roll.visibility]}
           <span className="text-xs">{formatTime(roll.createdAt)}</span>
         </div>
       </div>
 
       {/* Roll results */}
-      <div className="text-sm text-storm-300 mb-1">
-        <span className="text-storm-400">{roll.rollExpression}:</span>{' '}
+      <div className="text-sm text-slate-300 mb-1">
+        <span className="text-slate-400">{roll.rollExpression}:</span>{' '}
         {roll.rollResults.dice.map((d, i) => (
           <span key={i}>
             {i > 0 && ' + '}
-            <span className="text-storm-100">[{d.results.join(', ')}]</span>
+            <span className="text-slate-100">[{d.results.join(', ')}]</span>
           </span>
         ))}
         {roll.rollResults.modifier !== 0 && (
@@ -278,14 +278,14 @@ const DiceRollEntry: React.FC<DiceRollEntryProps> = ({ roll, isNew }) => {
         )}
       </div>
 
-      <div className="text-xl font-bold text-storm-100">
+      <div className="text-xl font-bold text-slate-100">
         = {roll.rollResults.total}
       </div>
 
       {/* Plot dice results */}
       {roll.plotDiceResults && roll.plotDiceResults.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-storm-700">
-          <span className="text-sm text-storm-400">Plot Dice: </span>
+        <div className="mt-2 pt-2 border-t border-slate-700">
+          <span className="text-sm text-slate-400">Plot Dice: </span>
           <div className="flex gap-2 mt-1">
             {roll.plotDiceResults.map((pd, i) => (
               <PlotDieDisplay key={i} face={pd.face} />
@@ -313,9 +313,9 @@ const PlotDieDisplay: React.FC<{ face: PlotDieFace }> = ({ face }) => {
     },
     blank: {
       icon: <Circle className="w-4 h-4" />,
-      bg: 'bg-storm-700/50',
-      border: 'border-storm-600',
-      text: 'text-storm-400',
+      bg: 'bg-slate-700/50',
+      border: 'border-slate-600',
+      text: 'text-slate-400',
     },
   };
 

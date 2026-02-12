@@ -165,7 +165,7 @@ export const NPCManager: React.FC = () => {
       {/* NPC Templates Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-storm-300">NPC Library</h3>
+          <h3 className="text-sm font-medium text-slate-300">NPC Library</h3>
           {!isCreating && (
             <Button
               variant="ghost"
@@ -180,7 +180,7 @@ export const NPCManager: React.FC = () => {
 
         {/* Create form */}
         {isCreating && (
-          <div className="mb-4 p-3 bg-storm-800 rounded-lg border border-storm-600">
+          <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-600">
             <div className="space-y-3">
               <Input
                 placeholder="NPC name (e.g., Goblin)"
@@ -190,11 +190,11 @@ export const NPCManager: React.FC = () => {
               />
 
               <div>
-                <label className="text-xs text-storm-400 block mb-1">Size</label>
+                <label className="text-xs text-slate-400 block mb-1">Size</label>
                 <select
                   value={newSize}
                   onChange={(e) => setNewSize(e.target.value as TokenSize)}
-                  className="w-full px-2 py-1.5 bg-storm-700 border border-storm-600 rounded text-sm text-storm-200"
+                  className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-sm text-slate-200"
                 >
                   {SIZE_OPTIONS.map((size) => (
                     <option key={size} value={size}>
@@ -216,18 +216,18 @@ export const NPCManager: React.FC = () => {
 
                 {/* Show selected asset preview */}
                 {selectedGlobalAsset && (
-                  <div className="flex items-center gap-2 p-2 bg-storm-700 rounded">
+                  <div className="flex items-center gap-2 p-2 bg-slate-700 rounded">
                     <img
                       src={selectedGlobalAsset.imageUrl}
                       alt={selectedGlobalAsset.name}
                       className="w-10 h-10 rounded object-cover"
                     />
-                    <span className="text-sm text-storm-200 flex-1 truncate">
+                    <span className="text-sm text-slate-200 flex-1 truncate">
                       {selectedGlobalAsset.name}
                     </span>
                     <button
                       onClick={() => setSelectedGlobalAsset(null)}
-                      className="text-storm-400 hover:text-storm-200"
+                      className="text-slate-400 hover:text-slate-200"
                     >
                       ×
                     </button>
@@ -253,7 +253,7 @@ export const NPCManager: React.FC = () => {
                   </Button>
                 </div>
                 {newTokenFile && (
-                  <p className="text-xs text-storm-400 truncate">{newTokenFile.name}</p>
+                  <p className="text-xs text-slate-400 truncate">{newTokenFile.name}</p>
                 )}
               </div>
 
@@ -288,7 +288,7 @@ export const NPCManager: React.FC = () => {
 
         {/* Template list */}
         {npcTemplates.length === 0 ? (
-          <p className="text-storm-500 text-sm text-center py-4">
+          <p className="text-slate-500 text-sm text-center py-4">
             No NPC templates yet
           </p>
         ) : (
@@ -296,9 +296,9 @@ export const NPCManager: React.FC = () => {
             {npcTemplates.map((template) => (
               <div
                 key={template.id}
-                className="flex items-center gap-2 p-2 bg-storm-800/50 rounded border border-storm-700"
+                className="flex items-center gap-2 p-2 bg-slate-800/50 rounded border border-slate-700"
               >
-                <div className="w-8 h-8 rounded bg-storm-700 overflow-hidden flex-shrink-0">
+                <div className="w-8 h-8 rounded bg-slate-700 overflow-hidden flex-shrink-0">
                   {template.tokenUrl ? (
                     <img
                       src={template.tokenUrl}
@@ -307,15 +307,15 @@ export const NPCManager: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Skull className="w-4 h-4 text-storm-400" />
+                      <Skull className="w-4 h-4 text-slate-400" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-storm-200 truncate">
+                  <p className="text-sm text-slate-200 truncate">
                     {template.name}
                   </p>
-                  <p className="text-xs text-storm-500 capitalize">
+                  <p className="text-xs text-slate-500 capitalize">
                     {template.defaultSize}
                   </p>
                 </div>
@@ -343,16 +343,16 @@ export const NPCManager: React.FC = () => {
 
       {/* NPCs on Current Map */}
       <div>
-        <h3 className="text-sm font-medium text-storm-300 mb-3">
+        <h3 className="text-sm font-medium text-slate-300 mb-3">
           NPCs on Current Map
         </h3>
 
         {!activeMap ? (
-          <p className="text-storm-500 text-sm text-center py-4">
+          <p className="text-slate-500 text-sm text-center py-4">
             No active map
           </p>
         ) : currentMapNPCs.length === 0 ? (
-          <p className="text-storm-500 text-sm text-center py-4">
+          <p className="text-slate-500 text-sm text-center py-4">
             No NPCs on this map
           </p>
         ) : (
@@ -362,14 +362,14 @@ export const NPCManager: React.FC = () => {
                 key={npc.id}
                 className={`
                   flex items-center gap-2 p-2 rounded border cursor-pointer
-                  ${npc.isVisible ? 'bg-storm-800/50 border-storm-700' : 'bg-storm-800/30 border-storm-700/50'}
+                  ${npc.isVisible ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-800/30 border-slate-700/50'}
                 `}
                 onClick={() => {
                   selectToken(npc.id, 'npc');
                   focusToken(npc.positionX, npc.positionY);
                 }}
               >
-                <div className="w-8 h-8 rounded bg-storm-700 overflow-hidden flex-shrink-0">
+                <div className="w-8 h-8 rounded bg-slate-700 overflow-hidden flex-shrink-0">
                   {npc.tokenUrl ? (
                     <img
                       src={npc.tokenUrl}
@@ -378,7 +378,7 @@ export const NPCManager: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Skull className="w-4 h-4 text-storm-400" />
+                      <Skull className="w-4 h-4 text-slate-400" />
                     </div>
                   )}
                 </div>
@@ -387,7 +387,7 @@ export const NPCManager: React.FC = () => {
                     type="text"
                     defaultValue={npc.displayName || 'NPC'}
                     className={`w-full bg-transparent text-sm truncate focus:outline-none ${
-                      npc.isVisible ? 'text-storm-200' : 'text-storm-400'
+                      npc.isVisible ? 'text-slate-200' : 'text-slate-400'
                     }`}
                     onBlur={(e) => handleRenameNPC(npc.id, e.target.value)}
                     onKeyDown={(e) => {
@@ -409,7 +409,7 @@ export const NPCManager: React.FC = () => {
                   {npc.isVisible ? (
                     <Eye className="w-4 h-4 text-green-400" />
                   ) : (
-                    <EyeOff className="w-4 h-4 text-storm-400" />
+                    <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </Button>
                 <select
@@ -424,7 +424,7 @@ export const NPCManager: React.FC = () => {
                       statusRingColor: selected?.value ?? null,
                     });
                   }}
-                  className="bg-storm-900 border border-storm-600 rounded px-1 py-0.5 text-xs text-storm-300 max-w-[84px]"
+                  className="bg-slate-900 border border-slate-600 rounded px-1 py-0.5 text-xs text-slate-300 max-w-[84px]"
                   title="Status ring color"
                 >
                   {STATUS_RING_COLORS.map((color) => (

@@ -33,7 +33,7 @@ export const useAdminStore = create<AdminState>()(
         }),
     }),
     {
-      name: 'stormlight-vtt-admin',
+      name: 'tempest-table-admin',
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         lastActivity: state.lastActivity,

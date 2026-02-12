@@ -39,18 +39,18 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-3 border-b border-storm-700">
-        <h2 className="font-semibold text-storm-100">GM Controls</h2>
+      <div className="flex items-center justify-between p-3 border-b border-slate-700">
+        <h2 className="font-semibold text-slate-100">GM Controls</h2>
         <button
           onClick={onClose}
-          className="p-1 text-storm-400 hover:text-storm-200 transition-colors"
+          className="p-1 text-slate-400 hover:text-slate-200 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-storm-700 overflow-x-auto">
+      <div className="flex border-b border-slate-700 overflow-x-auto">
         <GMTabButton
           active={activeTab === 'maps'}
           onClick={() => handleTabChange('maps')}
@@ -123,8 +123,8 @@ const GMTabButton: React.FC<GMTabButtonProps> = ({ active, onClick, icon, label 
       transition-colors border-b-2
       ${
         active
-          ? 'text-storm-100 border-storm-400 bg-storm-800/50'
-          : 'text-storm-400 border-transparent hover:text-storm-200 hover:bg-storm-800/30'
+          ? 'text-slate-100 border-tempest-400 bg-slate-800/50'
+          : 'text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/30'
       }
     `}
   >

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS system_settings (
 
 -- Insert default admin password (should be changed after first login)
 INSERT INTO system_settings (key, value)
-VALUES ('admin_password', 'stormlight-admin-2024')
+VALUES ('admin_password', 'tempest-admin-2024')
 ON CONFLICT (key) DO NOTHING;
 
 -- Global asset library (tokens and maps that can be shared across sessions)

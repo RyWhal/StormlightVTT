@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Map as MapIcon,
@@ -11,10 +11,11 @@ import {
   Wifi,
   WifiOff,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Palette,
+  SidebarClose,
+  SidebarOpen,
   PencilLine,
+  Package,
+  Wrench,
 } from 'lucide-react';
 import { MapCanvas } from '../map/MapCanvas';
 import { ChatPanel } from '../chat/ChatPanel';
@@ -31,204 +32,9 @@ import { useSession } from '../../hooks/useSession';
 import { useMap } from '../../hooks/useMap';
 import { useToast } from '../shared/Toast';
 
-type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'draw' | 'settings';
-type ColorScheme =
-  | 'storm'
-  | 'dawn'
-  | 'charcoal'
-  | 'forest'
-  | 'sky'
-  | 'slate'
-  | 'rose';
+type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'draw' | 'session';
 
-const COLOR_SCHEMES: Record<
-  ColorScheme,
-  {
-    label: string;
-    appBg: string;
-    headerBg: string;
-    headerBorder: string;
-    headerText: string;
-    headerMuted: string;
-    headerSubtle: string;
-    badgeBg: string;
-    sidePanelBg: string;
-    sidePanelBorder: string;
-    overlayBg: string;
-    overlayBorder: string;
-    tabActive: string;
-    tabInactive: string;
-    buttonActive: string;
-    settingsPanelBg: string;
-    settingsPanelBorder: string;
-    settingsInputBg: string;
-    settingsInputBorder: string;
-    settingsInputText: string;
-    settingsInputMuted: string;
-  }
-> = {
-  storm: {
-    label: 'Stormlight',
-    appBg: 'bg-storm-950',
-    headerBg: 'bg-storm-900',
-    headerBorder: 'border-storm-700',
-    headerText: 'text-storm-100',
-    headerMuted: 'text-storm-300',
-    headerSubtle: 'text-storm-400',
-    badgeBg: 'bg-storm-800',
-    sidePanelBg: 'bg-storm-900',
-    sidePanelBorder: 'border-storm-700',
-    overlayBg: 'bg-storm-900/90',
-    overlayBorder: 'border-storm-700',
-    tabActive: 'text-storm-100 border-storm-400 bg-storm-800/50',
-    tabInactive: 'text-storm-400 border-transparent hover:text-storm-200 hover:bg-storm-800/30',
-    buttonActive: 'bg-storm-800',
-    settingsPanelBg: 'bg-storm-950',
-    settingsPanelBorder: 'border-storm-800',
-    settingsInputBg: 'bg-storm-900',
-    settingsInputBorder: 'border-storm-700',
-    settingsInputText: 'text-storm-100',
-    settingsInputMuted: 'text-storm-400',
-  },
-  dawn: {
-    label: 'Dawn',
-    appBg: 'bg-slate-100',
-    headerBg: 'bg-white',
-    headerBorder: 'border-slate-200',
-    headerText: 'text-slate-900',
-    headerMuted: 'text-slate-600',
-    headerSubtle: 'text-slate-500',
-    badgeBg: 'bg-slate-100',
-    sidePanelBg: 'bg-white',
-    sidePanelBorder: 'border-slate-200',
-    overlayBg: 'bg-white/90',
-    overlayBorder: 'border-slate-200',
-    tabActive: 'text-slate-900 border-slate-400 bg-slate-200/60',
-    tabInactive: 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-100',
-    buttonActive: 'bg-slate-200',
-    settingsPanelBg: 'bg-slate-50',
-    settingsPanelBorder: 'border-slate-200',
-    settingsInputBg: 'bg-white',
-    settingsInputBorder: 'border-slate-300',
-    settingsInputText: 'text-slate-900',
-    settingsInputMuted: 'text-slate-600',
-  },
-  charcoal: {
-    label: 'Charcoal',
-    appBg: 'bg-zinc-950',
-    headerBg: 'bg-zinc-900',
-    headerBorder: 'border-zinc-700',
-    headerText: 'text-zinc-100',
-    headerMuted: 'text-zinc-400',
-    headerSubtle: 'text-zinc-500',
-    badgeBg: 'bg-zinc-800',
-    sidePanelBg: 'bg-zinc-900',
-    sidePanelBorder: 'border-zinc-700',
-    overlayBg: 'bg-zinc-900/90',
-    overlayBorder: 'border-zinc-700',
-    tabActive: 'text-zinc-100 border-zinc-400 bg-zinc-800/50',
-    tabInactive: 'text-zinc-400 border-transparent hover:text-zinc-200 hover:bg-zinc-800/30',
-    buttonActive: 'bg-zinc-800',
-    settingsPanelBg: 'bg-zinc-950',
-    settingsPanelBorder: 'border-zinc-800',
-    settingsInputBg: 'bg-zinc-900',
-    settingsInputBorder: 'border-zinc-700',
-    settingsInputText: 'text-zinc-100',
-    settingsInputMuted: 'text-zinc-400',
-  },
-  forest: {
-    label: 'Forest',
-    appBg: 'bg-emerald-950',
-    headerBg: 'bg-emerald-900',
-    headerBorder: 'border-emerald-700',
-    headerText: 'text-emerald-100',
-    headerMuted: 'text-emerald-300',
-    headerSubtle: 'text-emerald-400',
-    badgeBg: 'bg-emerald-800',
-    sidePanelBg: 'bg-emerald-900',
-    sidePanelBorder: 'border-emerald-700',
-    overlayBg: 'bg-emerald-900/90',
-    overlayBorder: 'border-emerald-700',
-    tabActive: 'text-emerald-100 border-emerald-400 bg-emerald-800/50',
-    tabInactive: 'text-emerald-300 border-transparent hover:text-emerald-200 hover:bg-emerald-800/30',
-    buttonActive: 'bg-emerald-800',
-    settingsPanelBg: 'bg-emerald-950',
-    settingsPanelBorder: 'border-emerald-800',
-    settingsInputBg: 'bg-emerald-900',
-    settingsInputBorder: 'border-emerald-700',
-    settingsInputText: 'text-emerald-100',
-    settingsInputMuted: 'text-emerald-400',
-  },
-  sky: {
-    label: 'Sky',
-    appBg: 'bg-sky-950',
-    headerBg: 'bg-sky-900',
-    headerBorder: 'border-sky-700',
-    headerText: 'text-sky-100',
-    headerMuted: 'text-sky-300',
-    headerSubtle: 'text-sky-400',
-    badgeBg: 'bg-sky-800',
-    sidePanelBg: 'bg-sky-900',
-    sidePanelBorder: 'border-sky-700',
-    overlayBg: 'bg-sky-900/90',
-    overlayBorder: 'border-sky-700',
-    tabActive: 'text-sky-100 border-sky-400 bg-sky-800/50',
-    tabInactive: 'text-sky-300 border-transparent hover:text-sky-200 hover:bg-sky-800/30',
-    buttonActive: 'bg-sky-800',
-    settingsPanelBg: 'bg-sky-950',
-    settingsPanelBorder: 'border-sky-800',
-    settingsInputBg: 'bg-sky-900',
-    settingsInputBorder: 'border-sky-700',
-    settingsInputText: 'text-sky-100',
-    settingsInputMuted: 'text-sky-400',
-  },
-  slate: {
-    label: 'Slate',
-    appBg: 'bg-slate-950',
-    headerBg: 'bg-slate-900',
-    headerBorder: 'border-slate-700',
-    headerText: 'text-slate-100',
-    headerMuted: 'text-slate-300',
-    headerSubtle: 'text-slate-400',
-    badgeBg: 'bg-slate-800',
-    sidePanelBg: 'bg-slate-900',
-    sidePanelBorder: 'border-slate-700',
-    overlayBg: 'bg-slate-900/90',
-    overlayBorder: 'border-slate-700',
-    tabActive: 'text-slate-100 border-slate-400 bg-slate-800/50',
-    tabInactive: 'text-slate-300 border-transparent hover:text-slate-200 hover:bg-slate-800/30',
-    buttonActive: 'bg-slate-800',
-    settingsPanelBg: 'bg-slate-950',
-    settingsPanelBorder: 'border-slate-800',
-    settingsInputBg: 'bg-slate-900',
-    settingsInputBorder: 'border-slate-700',
-    settingsInputText: 'text-slate-100',
-    settingsInputMuted: 'text-slate-400',
-  },
-  rose: {
-    label: 'Roshar',
-    appBg: 'bg-rose-950',
-    headerBg: 'bg-rose-900',
-    headerBorder: 'border-rose-700',
-    headerText: 'text-rose-100',
-    headerMuted: 'text-rose-300',
-    headerSubtle: 'text-rose-400',
-    badgeBg: 'bg-rose-800',
-    sidePanelBg: 'bg-rose-900',
-    sidePanelBorder: 'border-rose-700',
-    overlayBg: 'bg-rose-900/90',
-    overlayBorder: 'border-rose-700',
-    tabActive: 'text-rose-100 border-rose-400 bg-rose-800/50',
-    tabInactive: 'text-rose-300 border-transparent hover:text-rose-200 hover:bg-rose-800/30',
-    buttonActive: 'bg-rose-800',
-    settingsPanelBg: 'bg-rose-950',
-    settingsPanelBorder: 'border-rose-800',
-    settingsInputBg: 'bg-rose-900',
-    settingsInputBorder: 'border-rose-700',
-    settingsInputText: 'text-rose-100',
-    settingsInputMuted: 'text-rose-400',
-  },
-};
+const PLAYER_PANEL_KEY = 'tempest-player-panel-collapsed';
 
 export const PlaySession: React.FC = () => {
   const navigate = useNavigate();
@@ -246,59 +52,28 @@ export const PlaySession: React.FC = () => {
   const [sideTab, setSideTab] = useState<SideTab>('chat');
   const [showGMPanel, setShowGMPanel] = useState(false);
   const [isPlayerPanelCollapsed, setIsPlayerPanelCollapsed] = useState(() => {
-    const stored = localStorage.getItem('stormlight-player-panel-collapsed');
+    const stored = localStorage.getItem(PLAYER_PANEL_KEY);
     return stored === 'true';
-  });
-  const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
-    const stored = localStorage.getItem('stormlight-color-scheme') as ColorScheme | null;
-    return stored && stored in COLOR_SCHEMES ? stored : 'storm';
   });
 
   useEffect(() => {
-    localStorage.setItem('stormlight-player-panel-collapsed', String(isPlayerPanelCollapsed));
+    localStorage.setItem(PLAYER_PANEL_KEY, String(isPlayerPanelCollapsed));
   }, [isPlayerPanelCollapsed]);
 
   useEffect(() => {
-    localStorage.setItem('stormlight-color-scheme', colorScheme);
-  }, [colorScheme]);
-
-  useEffect(() => {
-    // Open GM panel by default for GM
     if (isGM) {
       setShowGMPanel(true);
     }
   }, [isGM]);
 
-  if (!session || !currentUser) {
-    return null;
-  }
-
-  const handleLeave = async () => {
-    await leaveSession();
-    navigate('/');
-  };
+  if (!session || !currentUser) return null;
 
   const handleClaimGM = async () => {
-    const confirmed = confirm(
-      'You are about to assume GM permissions. Only do this if you are the GM. Proceed?'
-    );
+    const confirmed = confirm('Assume GM permissions for this table?');
     if (!confirmed) return;
 
     const result = await claimGM();
-    if (result.success) {
-      showToast('You are now the GM!', 'success');
-    } else {
-      showToast(result.error || 'Failed to claim GM', 'error');
-    }
-  };
-
-  const handleReleaseGM = async () => {
-    const result = await releaseGM();
-    if (result.success) {
-      showToast('GM role released', 'info');
-    } else {
-      showToast(result.error || 'Failed to release GM', 'error');
-    }
+    showToast(result.success ? 'You are now the GM.' : result.error || 'Failed to claim GM', result.success ? 'success' : 'error');
   };
 
   const handleClearPlayerDrawings = async () => {
@@ -308,193 +83,91 @@ export const PlaySession: React.FC = () => {
 
     const remainingDrawings = drawingData.filter((drawing) => drawing.authorRole !== 'player');
     const result = await updateDrawingData(activeMap.id, remainingDrawings);
-    if (result.success) {
-      showToast('Player drawings cleared', 'success');
-    } else {
-      showToast(result.error || 'Failed to clear drawings', 'error');
-    }
+    showToast(result.success ? 'Player drawings cleared.' : result.error || 'Failed to clear drawings', result.success ? 'success' : 'error');
   };
 
-  const scheme = COLOR_SCHEMES[colorScheme];
-
   return (
-    <div className={`h-screen flex flex-col ${scheme.appBg}`}>
-      {/* Header */}
-      <header
-        className={`flex-shrink-0 h-12 ${scheme.headerBg} border-b ${scheme.headerBorder} px-4 flex items-center justify-between`}
-      >
-        <div className="flex items-center gap-4">
-          <h1 className={`font-semibold ${scheme.headerText}`}>{session.name}</h1>
-          <span className={`text-sm font-mono ${scheme.headerSubtle} ${scheme.badgeBg} px-2 py-0.5 rounded`}>
+    <div className="tempest-shell flex h-screen flex-col">
+      <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-slate-800 bg-slate-950/95 px-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-semibold text-slate-100">{session.name}</h1>
+          <span className="rounded-md border border-slate-700 bg-slate-800 px-2 py-0.5 font-mono text-xs text-slate-300">
             {session.code}
           </span>
           {activeMap && (
-            <span className={`text-sm ${scheme.headerMuted} flex items-center gap-1`}>
-              <MapIcon className="w-4 h-4" />
+            <span className="flex items-center gap-1 text-sm text-slate-400">
+              <MapIcon className="h-4 w-4" />
               {activeMap.name}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Connection status */}
-          <span
-            className={`flex items-center gap-1 text-sm ${
-              connectionStatus === 'connected'
-                ? 'text-green-400'
-                : connectionStatus === 'reconnecting'
-                ? 'text-yellow-400'
-                : 'text-red-400'
-            }`}
-          >
-            {connectionStatus === 'connected' ? (
-              <Wifi className="w-4 h-4" />
-            ) : (
-              <WifiOff className="w-4 h-4" />
-            )}
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs ${connectionStatus === 'connected' ? 'bg-emerald-500/10 text-emerald-300' : connectionStatus === 'reconnecting' ? 'bg-amber-500/10 text-amber-300' : 'bg-red-500/10 text-red-300'}`}>
+            {connectionStatus === 'connected' ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
           </span>
 
-          {/* Players count */}
-          <span className={`text-sm ${scheme.headerMuted} flex items-center gap-1`}>
-            <Users className="w-4 h-4" />
+          <span className="inline-flex items-center gap-1 text-sm text-slate-400">
+            <Users className="h-4 w-4" />
             {players.length}
           </span>
 
-          {/* GM badge or claim button */}
           {isGM ? (
             <button
-              onClick={handleReleaseGM}
-              className="flex items-center gap-1 px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded text-sm hover:bg-yellow-600/30 transition-colors"
-              title="Click to release GM role"
+              onClick={() => void releaseGM()}
+              className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-300"
+              title="Release GM role"
             >
-              <Crown className="w-4 h-4" />
-              GM
+              <Crown className="h-3.5 w-3.5" /> GM
             </button>
           ) : (
             <Button variant="ghost" size="sm" onClick={handleClaimGM}>
-              <Crown className="w-4 h-4 mr-1" />
-              Assume GM
+              <Crown className="mr-1 h-4 w-4" /> Assume GM
             </Button>
           )}
 
-          {/* Settings */}
           {isGM && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowGMPanel(!showGMPanel)}
-              className={showGMPanel ? scheme.buttonActive : ''}
-            >
-              <Settings className="w-4 h-4" />
+            <Button variant="ghost" size="sm" onClick={() => setShowGMPanel((prev) => !prev)}>
+              <Settings className="h-4 w-4" />
             </Button>
           )}
 
-          {/* Player panel toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsPlayerPanelCollapsed((prev) => !prev)}
-            title={isPlayerPanelCollapsed ? 'Show player panel' : 'Hide player panel'}
-          >
-            {isPlayerPanelCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          <Button variant="ghost" size="sm" onClick={() => setIsPlayerPanelCollapsed((prev) => !prev)}>
+            {isPlayerPanelCollapsed ? <SidebarOpen className="h-4 w-4" /> : <SidebarClose className="h-4 w-4" />}
           </Button>
 
-          {/* Leave */}
-          <Button variant="ghost" size="sm" onClick={handleLeave}>
-            <LogOut className="w-4 h-4" />
+          <Button variant="ghost" size="sm" onClick={async () => { await leaveSession(); navigate('/'); }}>
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* GM Panel (collapsible) */}
+      <div className="flex flex-1 overflow-hidden">
         {isGM && showGMPanel && (
-          <div className={`w-80 flex-shrink-0 border-r ${scheme.sidePanelBorder} ${scheme.sidePanelBg} overflow-hidden`}>
+          <aside className="w-80 flex-shrink-0 overflow-hidden border-r border-slate-800 bg-slate-900">
             <GMPanel onClose={() => setShowGMPanel(false)} />
-          </div>
+          </aside>
         )}
 
-        {/* Map canvas */}
-        <div className="flex-1 relative overflow-hidden">
+        <section className="relative flex-1 overflow-hidden">
           <MapCanvas />
-
-          {/* Map controls overlay */}
-          <div
-            className={`absolute bottom-4 left-4 flex items-center gap-2 ${scheme.overlayBg} backdrop-blur-sm rounded-lg px-3 py-2 border ${scheme.overlayBorder} pointer-events-none`}
-          >
-            <span className={`text-sm ${scheme.headerMuted}`}>
-              {activeMap ? `${activeMap.width}x${activeMap.height}` : 'No map'}
-            </span>
+          <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-xs text-slate-300 backdrop-blur-sm">
+            {activeMap ? `${activeMap.width} × ${activeMap.height}` : 'No map selected'}
           </div>
-        </div>
+        </section>
 
-        {/* Side panel */}
         {!isPlayerPanelCollapsed && (
-          <div className={`w-96 flex-shrink-0 border-l ${scheme.sidePanelBorder} ${scheme.sidePanelBg} flex flex-col`}>
-            {/* Tabs */}
-            <div className={`flex border-b ${scheme.sidePanelBorder} overflow-x-auto`}>
-              <TabButton
-                active={sideTab === 'chat'}
-                onClick={() => setSideTab('chat')}
-                icon={<MessageSquare className="w-4 h-4" />}
-                label="Chat"
-                activeClassName={scheme.tabActive}
-                inactiveClassName={scheme.tabInactive}
-              />
-              <TabButton
-                active={sideTab === 'dice'}
-                onClick={() => setSideTab('dice')}
-                icon={<Dices className="w-4 h-4" />}
-                label="Dice"
-                activeClassName={scheme.tabActive}
-                inactiveClassName={scheme.tabInactive}
-              />
-              {!isGM && (
-                <TabButton
-                  active={sideTab === 'initiative'}
-                  onClick={() => setSideTab('initiative')}
-                  icon={<Users className="w-4 h-4" />}
-                  label="Initiative"
-                  activeClassName={scheme.tabActive}
-                  inactiveClassName={scheme.tabInactive}
-                />
-              )}
-              <TabButton
-                active={sideTab === 'notes'}
-                onClick={() => setSideTab('notes')}
-                icon={<FileText className="w-4 h-4" />}
-                label="Notes"
-                activeClassName={scheme.tabActive}
-                inactiveClassName={scheme.tabInactive}
-              />
-              <TabButton
-                active={sideTab === 'inventory'}
-                onClick={() => setSideTab('inventory')}
-                icon={<FileText className="w-4 h-4" />}
-                label="Items"
-                activeClassName={scheme.tabActive}
-                inactiveClassName={scheme.tabInactive}
-              />
-              <TabButton
-                active={sideTab === 'draw'}
-                onClick={() => setSideTab('draw')}
-                icon={<PencilLine className="w-4 h-4" />}
-                label="Draw"
-                activeClassName={scheme.tabActive}
-                inactiveClassName={scheme.tabInactive}
-              />
-              <TabButton
-                active={sideTab === 'settings'}
-                onClick={() => setSideTab('settings')}
-                icon={<Palette className="w-4 h-4" />}
-                label="Prefs"
-                activeClassName={scheme.tabActive}
-                inactiveClassName={scheme.tabInactive}
-              />
-            </div>
+          <aside className="flex w-96 flex-shrink-0 flex-col border-l border-slate-800 bg-slate-900">
+            <nav className="flex border-b border-slate-800 overflow-x-auto">
+              <TabButton active={sideTab === 'chat'} onClick={() => setSideTab('chat')} icon={<MessageSquare className="h-4 w-4" />} label="Chat" />
+              <TabButton active={sideTab === 'dice'} onClick={() => setSideTab('dice')} icon={<Dices className="h-4 w-4" />} label="Dice" />
+              {!isGM && <TabButton active={sideTab === 'initiative'} onClick={() => setSideTab('initiative')} icon={<Users className="h-4 w-4" />} label="Init" />}
+              <TabButton active={sideTab === 'notes'} onClick={() => setSideTab('notes')} icon={<FileText className="h-4 w-4" />} label="Notes" />
+              <TabButton active={sideTab === 'inventory'} onClick={() => setSideTab('inventory')} icon={<Package className="h-4 w-4" />} label="Items" />
+              <TabButton active={sideTab === 'draw'} onClick={() => setSideTab('draw')} icon={<PencilLine className="h-4 w-4" />} label="Draw" />
+              <TabButton active={sideTab === 'session'} onClick={() => setSideTab('session')} icon={<Wrench className="h-4 w-4" />} label="Session" />
+            </nav>
 
-            {/* Tab content */}
             <div className="flex-1 overflow-hidden">
               {sideTab === 'chat' && <ChatPanel />}
               {sideTab === 'dice' && <DicePanel />}
@@ -502,22 +175,18 @@ export const PlaySession: React.FC = () => {
               {sideTab === 'notes' && <NotepadPanel />}
               {sideTab === 'inventory' && <InventoryPanel />}
               {sideTab === 'draw' && (
-                <div className={`h-full overflow-y-auto p-4 ${scheme.settingsPanelBg}`}>
-                  <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
-                    <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Drawing Tools</h3>
-                    <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
-                      Use these tools to annotate the map without cluttering the canvas.
-                    </p>
-                    <div className="mt-3 flex items-center justify-between text-xs">
-                      <span className={scheme.settingsInputMuted}>
-                        Player drawings: {drawingData.filter((drawing) => drawing.authorRole === 'player').length}
-                      </span>
+                <div className="h-full space-y-3 overflow-y-auto p-4">
+                  <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
+                    <h3 className="text-sm font-semibold text-slate-100">Drawing Tools</h3>
+                    <p className="mt-1 text-xs text-slate-400">Quick annotations and planning marks.</p>
+                    <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+                      <span>Player drawings: {drawingData.filter((drawing) => drawing.authorRole === 'player').length}</span>
                       <button
                         onClick={handleClearPlayerDrawings}
-                        className="px-2 py-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors"
+                        className="rounded bg-red-500/20 px-2 py-1 text-red-300 hover:bg-red-500/30"
                         disabled={!activeMap || drawingData.every((drawing) => drawing.authorRole !== 'player')}
                       >
-                        Clear all
+                        Clear
                       </button>
                     </div>
                     <div className="mt-3 max-h-72 overflow-y-auto pr-2">
@@ -526,17 +195,23 @@ export const PlaySession: React.FC = () => {
                   </div>
                 </div>
               )}
-              {sideTab === 'settings' && (
-                <PlayerSettingsPanel
-                  colorScheme={colorScheme}
-                  onColorSchemeChange={setColorScheme}
-                  isPanelCollapsed={isPlayerPanelCollapsed}
-                  onTogglePanel={() => setIsPlayerPanelCollapsed((prev) => !prev)}
-                  scheme={scheme}
-                />
+              {sideTab === 'session' && (
+                <div className="h-full overflow-y-auto p-4 text-sm text-slate-300">
+                  <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+                    <h3 className="font-semibold text-slate-100">Session layout</h3>
+                    <p className="mt-2 text-slate-400">
+                      Tools are grouped by in-session actions: communication, rolling, tracking, and map interaction.
+                    </p>
+                    <ul className="mt-3 list-disc space-y-1 pl-5 text-slate-400">
+                      <li>GM controls stay isolated in the left rail.</li>
+                      <li>Player tools are focused in the right rail.</li>
+                      <li>The map remains center stage.</li>
+                    </ul>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
+          </aside>
         )}
       </div>
     </div>
@@ -548,88 +223,18 @@ interface TabButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
-  activeClassName: string;
-  inactiveClassName: string;
 }
 
-const TabButton: React.FC<TabButtonProps> = ({
-  active,
-  onClick,
-  icon,
-  label,
-  activeClassName,
-  inactiveClassName,
-}) => (
+const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => (
   <button
     onClick={onClick}
-    className={`
-      flex-1 min-w-[84px] flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium
-      transition-colors border-b-2
-      ${active ? activeClassName : inactiveClassName}
-    `}
+    className={`flex min-w-[82px] flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors ${
+      active
+        ? 'border-tempest-400 bg-slate-800/80 text-slate-100'
+        : 'border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+    }`}
   >
     {icon}
     {label}
   </button>
-);
-
-interface PlayerSettingsPanelProps {
-  colorScheme: ColorScheme;
-  onColorSchemeChange: (value: ColorScheme) => void;
-  isPanelCollapsed: boolean;
-  onTogglePanel: () => void;
-  scheme: (typeof COLOR_SCHEMES)[ColorScheme];
-}
-
-const PlayerSettingsPanel: React.FC<PlayerSettingsPanelProps> = ({
-  colorScheme,
-  onColorSchemeChange,
-  isPanelCollapsed,
-  onTogglePanel,
-  scheme,
-}) => (
-  <div className={`h-full overflow-y-auto p-4 ${scheme.settingsPanelBg}`}>
-    <div className="space-y-4">
-      <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
-        <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Player Panel</h3>
-        <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
-          Collapse the right-side panel to keep the map front and center.
-        </p>
-        <label className="mt-3 flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="h-4 w-4"
-            checked={isPanelCollapsed}
-            onChange={onTogglePanel}
-          />
-          <span className={scheme.settingsInputText}>Collapse player panel</span>
-        </label>
-      </div>
-
-      <div className={`rounded-lg border ${scheme.settingsPanelBorder} p-3`}>
-        <h3 className={`text-sm font-semibold ${scheme.settingsInputText}`}>Color Scheme</h3>
-        <p className={`text-xs ${scheme.settingsInputMuted} mt-1`}>
-          This only changes your local view.
-        </p>
-        <div className="mt-3">
-          <label className={`block text-xs ${scheme.settingsInputMuted} mb-2`} htmlFor="color-scheme-select">
-            Theme
-          </label>
-          <select
-            id="color-scheme-select"
-            className={`w-full rounded-md border ${scheme.settingsInputBorder} ${scheme.settingsInputBg} px-2 py-1 text-sm ${scheme.settingsInputText}`}
-            value={colorScheme}
-            onChange={(event) => onColorSchemeChange(event.target.value as ColorScheme)}
-          >
-            {Object.entries(COLOR_SCHEMES).map(([value, data]) => (
-              <option key={value} value={value}>
-                {data.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-    </div>
-  </div>
 );

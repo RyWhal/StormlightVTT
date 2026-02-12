@@ -22,14 +22,14 @@ export const HandoutViewer: React.FC = () => {
   );
 
   return (
-    <div className="w-full h-full flex bg-storm-950">
-      <div className="w-72 border-r border-storm-800 bg-storm-900/60">
-        <div className="p-3 text-sm font-medium text-storm-300 border-b border-storm-800">
+    <div className="w-full h-full flex bg-slate-950">
+      <div className="w-72 border-r border-slate-800 bg-slate-900/60">
+        <div className="p-3 text-sm font-medium text-slate-300 border-b border-slate-800">
           Handouts
         </div>
         <div className="p-2 space-y-2 overflow-y-auto h-[calc(100%-48px)]">
           {handouts.length === 0 ? (
-            <div className="text-sm text-storm-500 text-center py-8">
+            <div className="text-sm text-slate-500 text-center py-8">
               No handouts shared yet.
             </div>
           ) : (
@@ -42,21 +42,21 @@ export const HandoutViewer: React.FC = () => {
                   onClick={() => setSelectedId(handout.id)}
                   className={`w-full text-left px-3 py-2 rounded border transition ${
                     isActive
-                      ? 'bg-storm-800 border-storm-600 text-storm-100'
-                      : 'bg-storm-900 border-storm-800 text-storm-300 hover:bg-storm-800/60'
+                      ? 'bg-slate-800 border-slate-600 text-slate-100'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800/60'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded bg-storm-700 flex items-center justify-center">
+                    <span className="w-6 h-6 rounded bg-slate-700 flex items-center justify-center">
                       {handout.kind === 'text' ? (
-                        <FileText className="w-3.5 h-3.5 text-storm-300" />
+                        <FileText className="w-3.5 h-3.5 text-slate-300" />
                       ) : (
-                        <ImageIcon className="w-3.5 h-3.5 text-storm-300" />
+                        <ImageIcon className="w-3.5 h-3.5 text-slate-300" />
                       )}
                     </span>
                     <span className="text-sm font-medium truncate">{handout.title}</span>
                   </div>
-                  <div className="text-xs text-storm-500 capitalize mt-1">{handout.kind}</div>
+                  <div className="text-xs text-slate-500 capitalize mt-1">{handout.kind}</div>
                 </button>
               );
             })
@@ -65,17 +65,17 @@ export const HandoutViewer: React.FC = () => {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="p-4 border-b border-storm-800 bg-storm-900/60">
-          <h2 className="text-lg font-semibold text-storm-100">
+        <div className="p-4 border-b border-slate-800 bg-slate-900/60">
+          <h2 className="text-lg font-semibold text-slate-100">
             {selectedHandout ? selectedHandout.title : 'Select a handout'}
           </h2>
           {selectedHandout && (
-            <p className="text-xs text-storm-500 capitalize">{selectedHandout.kind}</p>
+            <p className="text-xs text-slate-500 capitalize">{selectedHandout.kind}</p>
           )}
         </div>
         <div className="flex-1 overflow-y-auto p-6">
           {!selectedHandout ? (
-            <div className="text-storm-500 text-sm text-center py-12">
+            <div className="text-slate-500 text-sm text-center py-12">
               Choose a handout from the list to view it here.
             </div>
           ) : selectedHandout.kind === 'image' ? (
@@ -88,10 +88,10 @@ export const HandoutViewer: React.FC = () => {
                 />
               </div>
             ) : (
-              <div className="text-sm text-storm-500">Image not available.</div>
+              <div className="text-sm text-slate-500">Image not available.</div>
             )
           ) : (
-            <div className="whitespace-pre-wrap text-storm-100 leading-relaxed">
+            <div className="whitespace-pre-wrap text-slate-100 leading-relaxed">
               {selectedHandout.body || 'No text content.'}
             </div>
           )}

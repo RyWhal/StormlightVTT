@@ -73,7 +73,7 @@ export const HandoutManager: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-storm-300">Handouts</h3>
+        <h3 className="text-sm font-medium text-slate-300">Handouts</h3>
         {!isCreating && (
           <Button variant="ghost" size="sm" onClick={() => setIsCreating(true)}>
             <Upload className="w-4 h-4 mr-1" />
@@ -83,7 +83,7 @@ export const HandoutManager: React.FC = () => {
       </div>
 
       {isCreating && (
-        <div className="mb-4 p-3 bg-storm-800 rounded-lg border border-storm-600 space-y-3">
+        <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-600 space-y-3">
           <Input
             placeholder="Handout title"
             value={title}
@@ -116,7 +116,7 @@ export const HandoutManager: React.FC = () => {
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               placeholder="Paste or type handout text..."
-              className="w-full rounded bg-storm-700 border border-storm-600 px-3 py-2 text-sm text-storm-100 focus:outline-none focus:border-storm-400 resize-none"
+              className="w-full rounded bg-slate-700 border border-slate-600 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-tempest-400 resize-none"
             />
           ) : (
             <div className="space-y-2">
@@ -132,7 +132,7 @@ export const HandoutManager: React.FC = () => {
                 {imageFile ? 'Change Image' : 'Upload Image'}
               </Button>
               {imageFile && (
-                <p className="text-xs text-storm-400 truncate">{imageFile.name}</p>
+                <p className="text-xs text-slate-400 truncate">{imageFile.name}</p>
               )}
             </div>
           )}
@@ -164,7 +164,7 @@ export const HandoutManager: React.FC = () => {
       )}
 
       {handouts.length === 0 ? (
-        <p className="text-storm-500 text-sm text-center py-4">
+        <p className="text-slate-500 text-sm text-center py-4">
           No handouts yet
         </p>
       ) : (
@@ -172,18 +172,18 @@ export const HandoutManager: React.FC = () => {
           {handouts.map((handout) => (
             <div
               key={handout.id}
-              className="flex items-center gap-2 p-2 bg-storm-800/50 rounded border border-storm-700"
+              className="flex items-center gap-2 p-2 bg-slate-800/50 rounded border border-slate-700"
             >
-              <div className="w-8 h-8 rounded bg-storm-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center">
                 {handout.kind === 'text' ? (
-                  <FileText className="w-4 h-4 text-storm-300" />
+                  <FileText className="w-4 h-4 text-slate-300" />
                 ) : (
-                  <ImageIcon className="w-4 h-4 text-storm-300" />
+                  <ImageIcon className="w-4 h-4 text-slate-300" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-storm-200 truncate">{handout.title}</p>
-                <p className="text-xs text-storm-500 capitalize">{handout.kind}</p>
+                <p className="text-sm text-slate-200 truncate">{handout.title}</p>
+                <p className="text-xs text-slate-500 capitalize">{handout.kind}</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => handleDelete(handout.id)}>
                 <Trash2 className="w-4 h-4 text-red-400" />

@@ -189,13 +189,13 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-storm-950">
+    <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <header className="bg-storm-900 border-b border-storm-700 px-6 py-4">
+      <header className="bg-slate-900 border-b border-slate-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-yellow-500" />
-            <h1 className="text-xl font-bold text-storm-100">Admin Dashboard</h1>
+            <h1 className="text-xl font-bold text-slate-100">Admin Dashboard</h1>
           </div>
           <Button variant="ghost" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" />
@@ -206,7 +206,7 @@ export const AdminDashboard: React.FC = () => {
 
       <div className="max-w-7xl mx-auto p-6">
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-storm-700 pb-2">
+        <div className="flex gap-2 mb-6 border-b border-slate-700 pb-2">
           {[
             { id: 'sessions', label: 'Sessions', icon: FileText },
             { id: 'assets', label: 'Global Assets', icon: Image },
@@ -220,8 +220,8 @@ export const AdminDashboard: React.FC = () => {
                 flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors
                 ${
                   activeTab === id
-                    ? 'bg-storm-800 text-storm-100 border-b-2 border-storm-400'
-                    : 'text-storm-400 hover:text-storm-200'
+                    ? 'bg-slate-800 text-slate-100 border-b-2 border-tempest-400'
+                    : 'text-slate-400 hover:text-slate-200'
                 }
               `}
             >
@@ -248,7 +248,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="space-y-3">
               {sessions.length === 0 ? (
                 <Card>
-                  <div className="text-center py-8 text-storm-400">
+                  <div className="text-center py-8 text-slate-400">
                     No sessions found
                   </div>
                 </Card>
@@ -260,7 +260,7 @@ export const AdminDashboard: React.FC = () => {
                       onClick={() => handleExpandSession(session.id)}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="text-storm-400">
+                        <div className="text-slate-400">
                           {expandedSession === session.id ? (
                             <ChevronDown className="w-5 h-5" />
                           ) : (
@@ -268,13 +268,13 @@ export const AdminDashboard: React.FC = () => {
                           )}
                         </div>
                         <div>
-                          <h3 className="font-medium text-storm-100">{session.name}</h3>
-                          <p className="text-sm text-storm-400 font-mono">{session.code}</p>
+                          <h3 className="font-medium text-slate-100">{session.name}</h3>
+                          <p className="text-sm text-slate-400 font-mono">{session.code}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-4 text-sm text-storm-400">
+                        <div className="flex items-center gap-4 text-sm text-slate-400">
                           <span className="flex items-center gap-1">
                             <Users className="w-4 h-4" />
                             {session.playerCount}
@@ -301,40 +301,40 @@ export const AdminDashboard: React.FC = () => {
 
                     {/* Expanded details */}
                     {expandedSession === session.id && (
-                      <div className="mt-4 pt-4 border-t border-storm-700">
+                      <div className="mt-4 pt-4 border-t border-slate-700">
                         <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                           <div>
-                            <span className="text-storm-400">Created:</span>{' '}
-                            <span className="text-storm-200">{formatDate(session.createdAt)}</span>
+                            <span className="text-slate-400">Created:</span>{' '}
+                            <span className="text-slate-200">{formatDate(session.createdAt)}</span>
                           </div>
                           <div>
-                            <span className="text-storm-400">GM:</span>{' '}
-                            <span className="text-storm-200">
+                            <span className="text-slate-400">GM:</span>{' '}
+                            <span className="text-slate-200">
                               {session.currentGmUsername || 'None'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-storm-400">Characters:</span>{' '}
-                            <span className="text-storm-200">{session.characterCount}</span>
+                            <span className="text-slate-400">Characters:</span>{' '}
+                            <span className="text-slate-200">{session.characterCount}</span>
                           </div>
                         </div>
 
                         {/* Players list */}
                         <div>
-                          <h4 className="text-sm font-medium text-storm-300 mb-2">
+                          <h4 className="text-sm font-medium text-slate-300 mb-2">
                             Active Players
                           </h4>
                           {sessionPlayers[session.id]?.length === 0 ? (
-                            <p className="text-sm text-storm-500">No active players</p>
+                            <p className="text-sm text-slate-500">No active players</p>
                           ) : (
                             <div className="space-y-2">
                               {sessionPlayers[session.id]?.map((player) => (
                                 <div
                                   key={player.id}
-                                  className="flex items-center justify-between bg-storm-800/50 rounded px-3 py-2"
+                                  className="flex items-center justify-between bg-slate-800/50 rounded px-3 py-2"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <span className="text-storm-200">{player.username}</span>
+                                    <span className="text-slate-200">{player.username}</span>
                                     {player.isGm && (
                                       <span className="text-xs bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded">
                                         GM
@@ -367,7 +367,7 @@ export const AdminDashboard: React.FC = () => {
           {activeTab === 'assets' && (
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <p className="text-storm-400">
+                <p className="text-slate-400">
                   Global assets can be used by GMs across all sessions.
                 </p>
                 <Button variant="primary" onClick={() => navigate('/admin/assets/new')}>
@@ -377,7 +377,7 @@ export const AdminDashboard: React.FC = () => {
 
               {assets.length === 0 ? (
                 <Card>
-                  <div className="text-center py-8 text-storm-400">
+                  <div className="text-center py-8 text-slate-400">
                     No global assets. Add tokens or maps for GMs to use.
                   </div>
                 </Card>
@@ -386,7 +386,7 @@ export const AdminDashboard: React.FC = () => {
                   {assets.map((asset) => (
                     <Card key={asset.id}>
                       <div className="flex gap-3">
-                        <div className="w-16 h-16 rounded bg-storm-700 overflow-hidden flex-shrink-0">
+                        <div className="w-16 h-16 rounded bg-slate-700 overflow-hidden flex-shrink-0">
                           <img
                             src={asset.imageUrl}
                             alt={asset.name}
@@ -394,8 +394,8 @@ export const AdminDashboard: React.FC = () => {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-storm-100 truncate">{asset.name}</h3>
-                          <p className="text-sm text-storm-400 capitalize">
+                          <h3 className="font-medium text-slate-100 truncate">{asset.name}</h3>
+                          <p className="text-sm text-slate-400 capitalize">
                             {asset.assetType}
                             {asset.category && ` - ${asset.category}`}
                           </p>
@@ -425,23 +425,23 @@ export const AdminDashboard: React.FC = () => {
                 <CardTitle>Activity Logs</CardTitle>
               </CardHeader>
               {logs.length === 0 ? (
-                <div className="text-center py-8 text-storm-400">No logs found</div>
+                <div className="text-center py-8 text-slate-400">No logs found</div>
               ) : (
                 <div className="space-y-2">
                   {logs.map((log) => (
                     <div
                       key={log.id}
-                      className="flex items-center justify-between bg-storm-800/50 rounded px-3 py-2 text-sm"
+                      className="flex items-center justify-between bg-slate-800/50 rounded px-3 py-2 text-sm"
                     >
                       <div>
-                        <span className="text-storm-200 font-medium">{log.action}</span>
+                        <span className="text-slate-200 font-medium">{log.action}</span>
                         {Object.keys(log.details).length > 0 && (
-                          <span className="text-storm-400 ml-2">
+                          <span className="text-slate-400 ml-2">
                             {JSON.stringify(log.details)}
                           </span>
                         )}
                       </div>
-                      <span className="text-storm-500">{formatDate(log.createdAt)}</span>
+                      <span className="text-slate-500">{formatDate(log.createdAt)}</span>
                     </div>
                   ))}
                 </div>
