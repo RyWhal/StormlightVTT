@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { generateSessionCode } from '../lib/sessionCode';
+import { generateSessionCode, normalizeSessionCode } from '../lib/sessionCode';
 import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
 import { useChatStore } from '../stores/chatStore';
@@ -34,6 +34,13 @@ import {
 
 const isMissingRelationError = (error: { code?: string; message?: string } | null) =>
   error?.code === '42P01' || error?.message?.toLowerCase().includes('does not exist');
+
+const testSessionCode = import.meta.env.VITE_TEST_SESSION_CODE;
+const normalizedTestSessionCode = testSessionCode
+  ? normalizeSessionCode(testSessionCode)
+  : null;
+const testSessionName = import.meta.env.VITE_TEST_SESSION_NAME ?? 'Test Session';
+const testSessionGmUsername = import.meta.env.VITE_TEST_SESSION_GM_USERNAME ?? 'Test GM';
 
 export const useSession = () => {
   const {
@@ -126,10 +133,44 @@ export const useSession = () => {
       username: string
     ): Promise<{ success: boolean; error?: string }> => {
       try {
+        const normalizedCode = normalizeSessionCode(code);
+        if (normalizedTestSessionCode && normalizedCode === normalizedTestSessionCode) {
+          const now = new Date().toISOString();
+          const testSession: Session = {
+            id: 'test-session',
+            code: normalizedTestSessionCode,
+            name: testSessionName,
+            activeMapId: null,
+            currentGmUsername: testSessionGmUsername,
+            notepadContent: '',
+            allowPlayersRenameNpcs: true,
+            allowPlayersMoveNpcs: true,
+            createdAt: now,
+            updatedAt: now,
+          };
+          const isGm = username === testSessionGmUsername;
+
+          setSession(testSession);
+          setCurrentUser({ username, characterId: null, isGm });
+          setPlayers([
+            {
+              id: `test-player-${username}`,
+              sessionId: testSession.id,
+              username,
+              characterId: null,
+              isGm,
+              initiativeModifier: 0,
+              lastSeen: now,
+            },
+          ]);
+
+          return { success: true };
+        }
+
         const { data: sessionData, error: sessionError } = await supabase
           .from('sessions')
           .select('*')
-          .eq('code', code.toUpperCase())
+          .eq('code', normalizedCode)
           .single();
 
         if (sessionError || !sessionData) {
