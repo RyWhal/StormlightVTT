@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
   ListOrdered,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import { MapManager } from './MapManager';
 import { CharacterManager } from './CharacterManager';
@@ -17,8 +18,9 @@ import { GMSettings } from './GMSettings';
 import { InitiativePanel } from '../initiative/InitiativePanel';
 import { useMapStore } from '../../stores/mapStore';
 import { HandoutManager } from './HandoutManager';
+import { EffectsTools } from './EffectsTools';
 
-type GMTab = 'maps' | 'characters' | 'npcs' | 'handouts' | 'fog' | 'initiative' | 'settings';
+type GMTab = 'maps' | 'characters' | 'npcs' | 'handouts' | 'fog' | 'effects' | 'initiative' | 'settings';
 
 interface GMPanelProps {
   onClose: () => void;
@@ -82,6 +84,12 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
           label="Fog"
         />
         <GMTabButton
+          active={activeTab === 'effects'}
+          onClick={() => handleTabChange('effects')}
+          icon={<Sparkles className="w-4 h-4" />}
+          label="Effects"
+        />
+        <GMTabButton
           active={activeTab === 'initiative'}
           onClick={() => handleTabChange('initiative')}
           icon={<ListOrdered className="w-4 h-4" />}
@@ -101,6 +109,7 @@ export const GMPanel: React.FC<GMPanelProps> = ({ onClose }) => {
         {activeTab === 'npcs' && <NPCManager />}
         {activeTab === 'handouts' && <HandoutManager />}
         {activeTab === 'fog' && <FogTools />}
+        {activeTab === 'effects' && <EffectsTools />}
         {activeTab === 'initiative' && <InitiativePanel gmView />}
         {activeTab === 'settings' && <GMSettings />}
       </div>

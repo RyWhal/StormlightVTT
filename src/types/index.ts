@@ -59,6 +59,8 @@ export interface Map {
   fogDefaultState: 'fogged' | 'revealed';
   fogData: FogRegion[];
   drawingData: DrawingRegion[];
+  effectsEnabled: boolean;
+  effectData: MapEffectTile[];
 
   showPlayerTokens: boolean;
 }
@@ -82,8 +84,17 @@ export interface FogRegion {
   brushSize: number;
 }
 
-export type DrawingShape = 'free' | 'line' | 'square' | 'circle' | 'triangle';
+export type DrawingShape = 'free' | 'line' | 'square' | 'circle' | 'triangle' | 'emoji';
 export type DrawingAuthorRole = 'gm' | 'player';
+export type MapEffectType = 'fire' | 'poison' | 'water' | 'ice' | 'arcane' | 'darkness';
+
+export interface MapEffectTile {
+  id: string;
+  gridX: number;
+  gridY: number;
+  type: MapEffectType;
+  seed: number;
+}
 
 export const DRAWING_COLORS = {
   black: '#000000',
@@ -121,6 +132,8 @@ export interface DrawingRegion {
   strokeWidth: number;
   color: DrawingColor;
   filled: boolean;
+  emoji?: string;
+  emojiScale?: number;
   createdAt: string;
 }
 
@@ -339,6 +352,8 @@ export interface DbMap {
   fog_default_state: 'fogged' | 'revealed';
   fog_data: FogRegion[];
   drawing_data: DrawingRegion[];
+  effects_enabled: boolean;
+  effect_data: MapEffectTile[];
   show_player_tokens: boolean;
 }
 
@@ -487,6 +502,8 @@ export function dbMapToMap(db: DbMap): Map {
     fogDefaultState: db.fog_default_state,
     fogData: db.fog_data || [],
     drawingData: db.drawing_data || [],
+    effectsEnabled: db.effects_enabled ?? false,
+    effectData: db.effect_data || [],
     showPlayerTokens: db.show_player_tokens,
   };
 }

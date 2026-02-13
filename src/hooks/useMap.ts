@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { supabase, uploadFile, deleteFile, STORAGE_BUCKETS } from '../lib/supabase';
 import { useSessionStore } from '../stores/sessionStore';
 import { useMapStore } from '../stores/mapStore';
-import { dbMapToMap, type DbMap, type Map, type FogRegion, type DrawingRegion } from '../types';
+import { dbMapToMap, type DbMap, type Map, type FogRegion, type DrawingRegion, type MapEffectTile } from '../types';
 import { nanoid } from 'nanoid';
 import { broadcastActiveMap } from '../lib/tokenBroadcast';
 
@@ -181,6 +181,7 @@ export const useMap = () => {
           | 'fogEnabled'
           | 'fogDefaultState'
           | 'showPlayerTokens'
+          | 'effectsEnabled'
         >
       >
     ): Promise<{ success: boolean; error?: string }> => {
@@ -195,6 +196,7 @@ export const useMap = () => {
         if (settings.fogEnabled !== undefined) dbSettings.fog_enabled = settings.fogEnabled;
         if (settings.fogDefaultState !== undefined) dbSettings.fog_default_state = settings.fogDefaultState;
         if (settings.showPlayerTokens !== undefined) dbSettings.show_player_tokens = settings.showPlayerTokens;
+        if (settings.effectsEnabled !== undefined) dbSettings.effects_enabled = settings.effectsEnabled;
 
         const { error } = await supabase
           .from('maps')
@@ -275,6 +277,33 @@ export const useMap = () => {
   );
 
   /**
+   * Update map effect tiles
+   */
+  const updateEffectData = useCallback(
+    async (mapId: string, effectData: MapEffectTile[]): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const { error } = await supabase
+          .from('maps')
+          .update({ effect_data: effectData })
+          .eq('id', mapId);
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        updateMap(mapId, { effectData });
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+    [updateMap]
+  );
+
+  /**
    * Delete a map
    */
   const deleteMap = useCallback(
@@ -328,6 +357,7 @@ export const useMap = () => {
     updateMapSettings,
     updateFogData,
     updateDrawingData,
+    updateEffectData,
     deleteMap,
   };
 };
