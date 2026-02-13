@@ -50,25 +50,25 @@ export const GMSettings: React.FC = () => {
         <h3 className="text-slate-100 font-semibold">Game Settings</h3>
 
         <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Disallow players from renaming NPCs</span>
+          <span>Enable player NPC renaming</span>
           <input
             type="checkbox"
-            checked={!session.allowPlayersRenameNpcs}
-            onChange={(e) => handleToggle('allowPlayersRenameNpcs', !e.target.checked)}
+            checked={session.allowPlayersRenameNpcs}
+            onChange={(e) => handleToggle('allowPlayersRenameNpcs', e.target.checked)}
           />
         </label>
 
         <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Disallow players from moving NPCs</span>
+          <span>Enable player NPC movement</span>
           <input
             type="checkbox"
-            checked={!session.allowPlayersMoveNpcs}
-            onChange={(e) => handleToggle('allowPlayersMoveNpcs', !e.target.checked)}
+            checked={session.allowPlayersMoveNpcs}
+            onChange={(e) => handleToggle('allowPlayersMoveNpcs', e.target.checked)}
           />
         </label>
 
         <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Enable initiative phases (fast/slow turns)</span>
+          <span>Enable initiative phases (fast/slow)</span>
           <input
             type="checkbox"
             checked={session.enableInitiativePhase}
@@ -77,7 +77,7 @@ export const GMSettings: React.FC = () => {
         </label>
 
         <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Enable plot dice in player dice roller</span>
+          <span>Enable plot dice</span>
           <input
             type="checkbox"
             checked={session.enablePlotDice}
@@ -86,7 +86,7 @@ export const GMSettings: React.FC = () => {
         </label>
 
         <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Allow player drawings on maps</span>
+          <span>Enable player drawings</span>
           <input
             type="checkbox"
             checked={session.allowPlayersDrawings}
