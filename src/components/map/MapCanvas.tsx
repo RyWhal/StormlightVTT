@@ -89,6 +89,8 @@ export const MapCanvas: React.FC = () => {
   const [rectEnd, setRectEnd] = useState<{ x: number; y: number } | null>(null);
   const [currentDrawing, setCurrentDrawing] = useState<DrawingRegion | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isEffectPainting, setIsEffectPainting] = useState(false);
+  const [lastEffectCellKey, setLastEffectCellKey] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'map' | 'handouts'>('map');
   const [selectedTokenKeys, setSelectedTokenKeys] = useState<string[]>([]);
   const [groupDragStartPositions, setGroupDragStartPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -135,7 +137,9 @@ export const MapCanvas: React.FC = () => {
   useEffect(() => {
     setCurrentDrawing(null);
     setIsDrawing(false);
-  }, [activeMap?.id]);
+    setIsEffectPainting(false);
+    setLastEffectCellKey(null);
+  }, [activeMap?.id, effectTool]);
 
   // Handle wheel zoom
   const handleWheel = useCallback(
@@ -570,6 +574,10 @@ export const MapCanvas: React.FC = () => {
       const row = Math.floor((mapPos.y - activeMap.gridOffsetY) / cellSize);
       if (col < 0 || row < 0) return;
 
+      const cellKey = `${col}:${row}`;
+      if (lastEffectCellKey === cellKey) return;
+      setLastEffectCellKey(cellKey);
+
       if (effectTool === 'eraser') {
         const next = activeMap.effectData.filter((tile) => !(tile.col === col && tile.row === row));
         setEffectData(activeMap.id, next);
@@ -587,7 +595,7 @@ export const MapCanvas: React.FC = () => {
       setEffectData(activeMap.id, next);
       void updateEffectData(activeMap.id, next);
     },
-    [activeMap, effectTool, isGM, setEffectData, updateEffectData]
+    [activeMap, effectTool, isGM, lastEffectCellKey, setEffectData, updateEffectData]
   );
 
   const handleEffectMouseDown = useCallback(() => {
@@ -595,8 +603,25 @@ export const MapCanvas: React.FC = () => {
     if (!stage) return;
     const pointer = stage.getPointerPosition();
     const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
+    setIsEffectPainting(true);
+    setLastEffectCellKey(null);
     paintEffectAtPoint(mapPos);
   }, [clampToMapBounds, screenToMap, paintEffectAtPoint]);
+
+  const handleEffectMouseMove = useCallback(() => {
+    if (!isEffectPainting) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const pointer = stage.getPointerPosition();
+    const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
+    paintEffectAtPoint(mapPos);
+  }, [isEffectPainting, clampToMapBounds, screenToMap, paintEffectAtPoint]);
+
+  const handleEffectMouseUp = useCallback(() => {
+    if (!isEffectPainting) return;
+    setIsEffectPainting(false);
+    setLastEffectCellKey(null);
+  }, [isEffectPainting]);
 
   // Fog painting handlers
   const handleFogMouseDown = useCallback(
@@ -783,13 +808,13 @@ export const MapCanvas: React.FC = () => {
               effectTool ? handleEffectMouseDown : fogToolMode ? handleFogMouseDown : drawingTool ? handleDrawingMouseDown : undefined
             }
             onMouseMove={
-              fogToolMode ? handleFogMouseMove : drawingTool ? handleDrawingMouseMove : undefined
+              effectTool ? handleEffectMouseMove : fogToolMode ? handleFogMouseMove : drawingTool ? handleDrawingMouseMove : undefined
             }
             onMouseUp={
-              fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+              effectTool ? handleEffectMouseUp : fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
             }
             onMouseLeave={
-              fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+              effectTool ? handleEffectMouseUp : fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
             }
           >
             {/* Map image layer */}
