@@ -16,7 +16,15 @@ export const GMSettings: React.FC = () => {
 
   if (!session) return null;
 
-  const handleToggle = async (field: 'allowPlayersRenameNpcs' | 'allowPlayersMoveNpcs', value: boolean) => {
+  const handleToggle = async (
+    field:
+      | 'allowPlayersRenameNpcs'
+      | 'allowPlayersMoveNpcs'
+      | 'enableInitiativePhase'
+      | 'enablePlotDice'
+      | 'allowPlayersDrawings',
+    value: boolean
+  ) => {
     const result = await updateSessionSettings({ [field]: value });
     if (!result.success) {
       showToast(result.error || 'Failed to update setting', 'error');
@@ -39,23 +47,50 @@ export const GMSettings: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
       <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
-        <h3 className="text-slate-100 font-semibold">GM Permissions</h3>
+        <h3 className="text-slate-100 font-semibold">Game Settings</h3>
 
         <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Allow players to rename NPCs</span>
+          <span>Disallow players from renaming NPCs</span>
           <input
             type="checkbox"
-            checked={session.allowPlayersRenameNpcs}
-            onChange={(e) => handleToggle('allowPlayersRenameNpcs', e.target.checked)}
+            checked={!session.allowPlayersRenameNpcs}
+            onChange={(e) => handleToggle('allowPlayersRenameNpcs', !e.target.checked)}
           />
         </label>
 
         <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
-          <span>Allow players to move NPCs</span>
+          <span>Disallow players from moving NPCs</span>
           <input
             type="checkbox"
-            checked={session.allowPlayersMoveNpcs}
-            onChange={(e) => handleToggle('allowPlayersMoveNpcs', e.target.checked)}
+            checked={!session.allowPlayersMoveNpcs}
+            onChange={(e) => handleToggle('allowPlayersMoveNpcs', !e.target.checked)}
+          />
+        </label>
+
+        <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
+          <span>Enable initiative phases (fast/slow turns)</span>
+          <input
+            type="checkbox"
+            checked={session.enableInitiativePhase}
+            onChange={(e) => handleToggle('enableInitiativePhase', e.target.checked)}
+          />
+        </label>
+
+        <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
+          <span>Enable plot dice in player dice roller</span>
+          <input
+            type="checkbox"
+            checked={session.enablePlotDice}
+            onChange={(e) => handleToggle('enablePlotDice', e.target.checked)}
+          />
+        </label>
+
+        <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
+          <span>Allow player drawings on maps</span>
+          <input
+            type="checkbox"
+            checked={session.allowPlayersDrawings}
+            onChange={(e) => handleToggle('allowPlayersDrawings', e.target.checked)}
           />
         </label>
       </div>

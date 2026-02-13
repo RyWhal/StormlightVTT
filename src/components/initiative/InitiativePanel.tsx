@@ -15,6 +15,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
   const { showToast } = useToast();
   const players = useSessionStore((state) => state.players);
   const currentUser = useSessionStore((state) => state.currentUser);
+  const session = useSessionStore((state) => state.session);
   const isGM = currentUser?.isGm ?? false;
   const {
     entries,
@@ -39,6 +40,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
   const [visibility, setVisibility] = useState<InitiativeVisibility>('public');
   const [npcModifier, setNpcModifier] = useState('0');
   const [selectedNpcIds, setSelectedNpcIds] = useState<string[]>([]);
+  const phaseEnabled = Boolean(session?.enableInitiativePhase);
 
   const handleSaveModifier = async () => {
     const parsed = parseInt(modifierInput, 10);
@@ -48,7 +50,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
   };
 
   const handleRollSelf = async () => {
-    const result = await addPlayerInitiative(phase, visibility);
+    const result = await addPlayerInitiative(phaseEnabled ? phase : 'fast', visibility);
     if (result.success) showToast('Initiative rolled', 'success');
     else showToast(result.error || 'Failed to roll initiative', 'error');
   };
@@ -57,7 +59,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
     const parsed = parseInt(npcModifier, 10);
     const result = await addNpcInitiative(
       selectedNpcIds,
-      phase,
+      phaseEnabled ? phase : 'fast',
       visibility,
       Number.isNaN(parsed) ? 0 : parsed
     );
@@ -104,17 +106,19 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-sm text-slate-300">
-              Phase
-              <select
-                value={phase}
-                onChange={(e) => setPhase(e.target.value as InitiativePhase)}
-                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
-              >
-                <option value="fast">Fast</option>
-                <option value="slow">Slow</option>
-              </select>
-            </label>
+            {phaseEnabled && (
+              <label className="text-sm text-slate-300">
+                Phase
+                <select
+                  value={phase}
+                  onChange={(e) => setPhase(e.target.value as InitiativePhase)}
+                  className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
+                >
+                  <option value="fast">Fast</option>
+                  <option value="slow">Slow</option>
+                </select>
+              </label>
+            )}
 
             <label className="text-sm text-slate-300">
               Visibility
@@ -138,7 +142,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
       {isGM && (
         <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
           <h3 className="font-semibold text-slate-100">GM: Roll NPC Initiative</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className={`grid gap-2 ${phaseEnabled ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <label className="text-sm text-slate-300">
               Modifier
               <input
@@ -148,17 +152,19 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                 className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
               />
             </label>
-            <label className="text-sm text-slate-300">
-              Phase
-              <select
-                value={phase}
-                onChange={(e) => setPhase(e.target.value as InitiativePhase)}
-                className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
-              >
-                <option value="fast">Fast</option>
-                <option value="slow">Slow</option>
-              </select>
-            </label>
+            {phaseEnabled && (
+              <label className="text-sm text-slate-300">
+                Phase
+                <select
+                  value={phase}
+                  onChange={(e) => setPhase(e.target.value as InitiativePhase)}
+                  className="w-full mt-1 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100"
+                >
+                  <option value="fast">Fast</option>
+                  <option value="slow">Slow</option>
+                </select>
+              </label>
+            )}
             <label className="text-sm text-slate-300">
               Visibility
               <select
@@ -218,7 +224,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                   <div>
                     <p className="text-sm text-slate-100 font-medium">{entry.sourceName}</p>
                     <p className="text-xs text-slate-400">
-                      {entry.phase.toUpperCase()} ·{' '}
+                      {phaseEnabled ? `${entry.phase.toUpperCase()} · ` : ''}
                       {entry.visibility === 'public' ? 'Public' : 'GM only'}
                     </p>
                   </div>
@@ -260,16 +266,18 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <select
-                        defaultValue={entry.phase}
-                        className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                        onChange={async (e) => {
-                          await updateEntry(entry.id, { phase: e.target.value as InitiativePhase });
-                        }}
-                      >
-                        <option value="fast">Fast</option>
-                        <option value="slow">Slow</option>
-                      </select>
+                      {phaseEnabled && (
+                        <select
+                          defaultValue={entry.phase}
+                          className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
+                          onChange={async (e) => {
+                            await updateEntry(entry.id, { phase: e.target.value as InitiativePhase });
+                          }}
+                        >
+                          <option value="fast">Fast</option>
+                          <option value="slow">Slow</option>
+                        </select>
+                      )}
                       <select
                         defaultValue={entry.visibility}
                         className="px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
@@ -311,7 +319,7 @@ export const InitiativePanel: React.FC<InitiativePanelProps> = ({ gmView = false
                   <span className="text-slate-100">{log.sourceName}</span> rolled {log.rollValue}{' '}
                   ({log.modifier >= 0 ? '+' : ''}{log.modifier}) ={' '}
                   <span className="text-slate-100">{log.total}</span>{' '}
-                  <span className="text-slate-500">[{log.phase}] by {log.rolledByUsername}</span>
+                  <span className="text-slate-500">{phaseEnabled ? `[${log.phase}] ` : ''}by {log.rolledByUsername}</span>
                 </div>
               ))}
             </div>

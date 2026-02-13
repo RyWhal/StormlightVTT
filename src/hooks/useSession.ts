@@ -442,7 +442,7 @@ export const useSession = () => {
   );
 
   const updateSessionSettings = useCallback(
-    async (settings: Partial<Pick<Session, 'allowPlayersRenameNpcs' | 'allowPlayersMoveNpcs'>>) => {
+    async (settings: Partial<Pick<Session, 'allowPlayersRenameNpcs' | 'allowPlayersMoveNpcs' | 'enableInitiativePhase' | 'enablePlotDice' | 'allowPlayersDrawings'>>) => {
       if (!session) return { success: false, error: 'Not in a session' };
 
       try {
@@ -452,6 +452,16 @@ export const useSession = () => {
         }
         if (settings.allowPlayersMoveNpcs !== undefined) {
           dbUpdates.allow_players_move_npcs = settings.allowPlayersMoveNpcs;
+        }
+
+        if (settings.enableInitiativePhase !== undefined) {
+          dbUpdates.enable_initiative_phase = settings.enableInitiativePhase;
+        }
+        if (settings.enablePlotDice !== undefined) {
+          dbUpdates.enable_plot_dice = settings.enablePlotDice;
+        }
+        if (settings.allowPlayersDrawings !== undefined) {
+          dbUpdates.allow_players_drawings = settings.allowPlayersDrawings;
         }
 
         const { error } = await supabase.from('sessions').update(dbUpdates).eq('id', session.id);

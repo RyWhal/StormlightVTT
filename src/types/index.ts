@@ -20,6 +20,9 @@ export interface Session {
   notepadContent: string;
   allowPlayersRenameNpcs: boolean;
   allowPlayersMoveNpcs: boolean;
+  enableInitiativePhase: boolean;
+  enablePlotDice: boolean;
+  allowPlayersDrawings: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -301,6 +304,9 @@ export interface DbSession {
   notepad_content: string;
   allow_players_rename_npcs: boolean;
   allow_players_move_npcs: boolean;
+  enable_initiative_phase: boolean;
+  enable_plot_dice: boolean;
+  allow_players_drawings: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -452,8 +458,11 @@ export function dbSessionToSession(db: DbSession): Session {
     activeMapId: db.active_map_id,
     currentGmUsername: db.current_gm_username,
     notepadContent: db.notepad_content,
-    allowPlayersRenameNpcs: db.allow_players_rename_npcs ?? false,
-    allowPlayersMoveNpcs: db.allow_players_move_npcs ?? false,
+    allowPlayersRenameNpcs: db.allow_players_rename_npcs ?? true,
+    allowPlayersMoveNpcs: db.allow_players_move_npcs ?? true,
+    enableInitiativePhase: db.enable_initiative_phase ?? true,
+    enablePlotDice: db.enable_plot_dice ?? true,
+    allowPlayersDrawings: db.allow_players_drawings ?? true,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
   };

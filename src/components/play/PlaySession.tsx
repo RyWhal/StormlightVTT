@@ -14,8 +14,7 @@ import {
   SidebarClose,
   SidebarOpen,
   PencilLine,
-  Package,
-  Wrench,
+  Package
 } from 'lucide-react';
 import { MapCanvas } from '../map/MapCanvas';
 import { ChatPanel } from '../chat/ChatPanel';
@@ -32,7 +31,7 @@ import { useSession } from '../../hooks/useSession';
 import { useMap } from '../../hooks/useMap';
 import { useToast } from '../shared/Toast';
 
-type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'draw' | 'session';
+type SideTab = 'chat' | 'dice' | 'initiative' | 'notes' | 'inventory' | 'draw';
 
 const PLAYER_PANEL_KEY = 'tempest-player-panel-collapsed';
 
@@ -48,6 +47,7 @@ export const PlaySession: React.FC = () => {
   const isGM = useIsGM();
   const { leaveSession, claimGM, releaseGM } = useSession();
   const { updateDrawingData } = useMap();
+  const canUseDrawTools = isGM || Boolean(session?.allowPlayersDrawings);
 
   const [sideTab, setSideTab] = useState<SideTab>('chat');
   const [showGMPanel, setShowGMPanel] = useState(false);
@@ -65,6 +65,13 @@ export const PlaySession: React.FC = () => {
       setShowGMPanel(true);
     }
   }, [isGM]);
+
+
+  useEffect(() => {
+    if (sideTab === 'draw' && !canUseDrawTools) {
+      setSideTab('chat');
+    }
+  }, [sideTab, canUseDrawTools]);
 
   if (!session || !currentUser) return null;
 
@@ -161,8 +168,9 @@ export const PlaySession: React.FC = () => {
               {!isGM && <TabButton active={sideTab === 'initiative'} onClick={() => setSideTab('initiative')} icon={<Users className="h-4 w-4" />} label="Init" />}
               <TabButton active={sideTab === 'notes'} onClick={() => setSideTab('notes')} icon={<FileText className="h-4 w-4" />} label="Notes" />
               <TabButton active={sideTab === 'inventory'} onClick={() => setSideTab('inventory')} icon={<Package className="h-4 w-4" />} label="Items" />
-              <TabButton active={sideTab === 'draw'} onClick={() => setSideTab('draw')} icon={<PencilLine className="h-4 w-4" />} label="Draw" />
-              <TabButton active={sideTab === 'session'} onClick={() => setSideTab('session')} icon={<Wrench className="h-4 w-4" />} label="Session" />
+              {canUseDrawTools && (
+                <TabButton active={sideTab === 'draw'} onClick={() => setSideTab('draw')} icon={<PencilLine className="h-4 w-4" />} label="Draw" />
+              )}
             </nav>
 
             <div className="flex-1 overflow-hidden">
@@ -189,21 +197,6 @@ export const PlaySession: React.FC = () => {
                     <div className="mt-3 max-h-72 overflow-y-auto pr-2">
                       <DrawingTools />
                     </div>
-                  </div>
-                </div>
-              )}
-              {sideTab === 'session' && (
-                <div className="h-full overflow-y-auto p-4 text-sm text-slate-300">
-                  <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
-                    <h3 className="font-semibold text-slate-100">Session layout</h3>
-                    <p className="mt-2 text-slate-400">
-                      Tools are grouped by in-session actions: communication, rolling, tracking, and map interaction.
-                    </p>
-                    <ul className="mt-3 list-disc space-y-1 pl-5 text-slate-400">
-                      <li>GM controls stay isolated in the left rail.</li>
-                      <li>Player tools are focused in the right rail.</li>
-                      <li>The map remains center stage.</li>
-                    </ul>
                   </div>
                 </div>
               )}

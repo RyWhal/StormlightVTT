@@ -76,6 +76,7 @@ export const MapCanvas: React.FC = () => {
   const { characters, moveCharacterPosition, updateCharacterDetails } = useCharacters();
   const { currentMapNPCs, moveNPCPosition, updateNPCInstanceDetails } = useNPCs();
   const { updateFogData, updateDrawingData } = useMap();
+  const canDrawOnMap = isGM || Boolean(session?.allowPlayersDrawings);
 
   const [mapImage] = useImage(activeMap?.imageUrl || '');
   const [currentFogStroke, setCurrentFogStroke] = useState<{ x: number; y: number }[]>([]);
@@ -447,7 +448,7 @@ export const MapCanvas: React.FC = () => {
   }, []);
 
   const handleDrawingMouseDown = useCallback(() => {
-    if (!drawingTool || !activeMap) return;
+    if (!drawingTool || !activeMap || !canDrawOnMap) return;
 
     const stage = stageRef.current;
     if (!stage) return;
@@ -478,6 +479,7 @@ export const MapCanvas: React.FC = () => {
   }, [
     drawingTool,
     activeMap,
+    canDrawOnMap,
     drawingData,
     clampToMapBounds,
     screenToMap,
@@ -488,7 +490,7 @@ export const MapCanvas: React.FC = () => {
   ]);
 
   const handleDrawingMouseMove = useCallback(() => {
-    if (!isDrawing || !currentDrawing) return;
+    if (!isDrawing || !currentDrawing || !canDrawOnMap) return;
 
     const stage = stageRef.current;
     if (!stage) return;
@@ -510,10 +512,10 @@ export const MapCanvas: React.FC = () => {
       nextPoints[nextPoints.length - 1] = mapPos;
       return { ...prev, points: nextPoints };
     });
-  }, [isDrawing, currentDrawing, clampToMapBounds, screenToMap]);
+  }, [isDrawing, currentDrawing, canDrawOnMap, clampToMapBounds, screenToMap]);
 
   const handleDrawingMouseUp = useCallback(() => {
-    if (!isDrawing || !currentDrawing || !activeMap) return;
+    if (!isDrawing || !currentDrawing || !activeMap || !canDrawOnMap) return;
 
     const start = currentDrawing.points[0];
     const end = currentDrawing.points[currentDrawing.points.length - 1];
@@ -685,7 +687,7 @@ export const MapCanvas: React.FC = () => {
     <div
       ref={containerRef}
       className="w-full h-full bg-slate-950 overflow-hidden relative"
-      style={{ cursor: isMapTab && (fogToolMode || drawingTool) ? 'crosshair' : 'default' }}
+      style={{ cursor: isMapTab && (fogToolMode || (canDrawOnMap && drawingTool)) ? 'crosshair' : 'default' }}
     >
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/90 backdrop-blur-sm p-1">
         <button
@@ -717,21 +719,21 @@ export const MapCanvas: React.FC = () => {
             scaleY={viewportScale}
             x={viewportX}
             y={viewportY}
-            draggable={!fogToolMode && !drawingTool}
+            draggable={!fogToolMode && !(canDrawOnMap && drawingTool)}
             onWheel={handleWheel}
             onDragEnd={handleDragEnd}
             onClick={handleStageClick}
             onMouseDown={
-              fogToolMode ? handleFogMouseDown : drawingTool ? handleDrawingMouseDown : undefined
+              fogToolMode ? handleFogMouseDown : canDrawOnMap && drawingTool ? handleDrawingMouseDown : undefined
             }
             onMouseMove={
-              fogToolMode ? handleFogMouseMove : drawingTool ? handleDrawingMouseMove : undefined
+              fogToolMode ? handleFogMouseMove : canDrawOnMap && drawingTool ? handleDrawingMouseMove : undefined
             }
             onMouseUp={
-              fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+              fogToolMode ? handleFogMouseUp : canDrawOnMap && drawingTool ? handleDrawingMouseUp : undefined
             }
             onMouseLeave={
-              fogToolMode ? handleFogMouseUp : drawingTool ? handleDrawingMouseUp : undefined
+              fogToolMode ? handleFogMouseUp : canDrawOnMap && drawingTool ? handleDrawingMouseUp : undefined
             }
           >
             {/* Map image layer */}
@@ -889,7 +891,7 @@ export const MapCanvas: React.FC = () => {
       )}
 
       {/* Drawing tool indicator */}
-      {drawingTool && isMapTab && (
+      {drawingTool && canDrawOnMap && isMapTab && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-slate-600">
           <span className="text-slate-100">
             Drawing Tool: <span className="font-semibold capitalize">{drawingTool}</span>
