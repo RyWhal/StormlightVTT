@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Dices, Eye, EyeOff, Lock, Star, AlertTriangle, Circle } from 'lucide-react';
 import { useChat } from '../../hooks/useChat';
 import { useCharacters } from '../../hooks/useCharacters';
+import { useSessionStore } from '../../stores/sessionStore';
 import { Button } from '../shared/Button';
 import { buildDiceExpression, getPlotDieFaceName } from '../../lib/dice';
 import type { RollVisibility, PlotDieFace } from '../../types';
@@ -11,6 +12,8 @@ const DICE_TYPES = [4, 6, 8, 10, 12, 20] as const;
 export const DicePanel: React.FC = () => {
   const { diceRolls, rollDice } = useChat();
   const { myCharacter } = useCharacters();
+  const session = useSessionStore((state) => state.session);
+  const plotDiceEnabled = Boolean(session?.enablePlotDice);
 
   const [dice, setDice] = useState<Record<number, number>>({});
   const [modifier, setModifier] = useState(0);
@@ -40,13 +43,14 @@ export const DicePanel: React.FC = () => {
 
   const handleRoll = async () => {
     const expression = buildDiceExpression(dice, modifier);
-    if (expression === '0' && plotDiceCount === 0) return;
+    const effectivePlotDiceCount = plotDiceEnabled ? plotDiceCount : 0;
+    if (expression === '0' && effectivePlotDiceCount === 0) return;
 
     setIsRolling(true);
     await rollDice(
       expression || '0',
       visibility,
-      plotDiceCount,
+      effectivePlotDiceCount,
       myCharacter?.name
     );
     setIsRolling(false);
@@ -96,7 +100,7 @@ export const DicePanel: React.FC = () => {
                 {modifier > 0 ? `+${modifier}` : modifier}
               </span>
             )}
-            {totalDice === 0 && modifier === 0 && plotDiceCount === 0 && (
+            {totalDice === 0 && modifier === 0 && (!plotDiceEnabled || plotDiceCount === 0) && (
               <span className="text-slate-500 text-sm">
                 Click dice above to add
               </span>
@@ -128,6 +132,7 @@ export const DicePanel: React.FC = () => {
         </div>
 
         {/* Plot dice (Tempest system) */}
+        {plotDiceEnabled && (
         <div className="flex items-center gap-2 mb-3">
           <label className="text-sm text-slate-400">Plot Dice:</label>
           <button
@@ -145,6 +150,7 @@ export const DicePanel: React.FC = () => {
           </button>
           <span className="text-xs text-slate-500">(Tempest RPG)</span>
         </div>
+        )}
 
         {/* Visibility */}
         <div className="flex items-center gap-2 mb-4">
@@ -168,7 +174,7 @@ export const DicePanel: React.FC = () => {
           <Button
             variant="primary"
             onClick={handleRoll}
-            disabled={isRolling || (totalDice === 0 && modifier === 0 && plotDiceCount === 0)}
+            disabled={isRolling || (totalDice === 0 && modifier === 0 && (!plotDiceEnabled || plotDiceCount === 0))}
             isLoading={isRolling}
             className="flex-1"
           >
