@@ -9,6 +9,8 @@ import type {
   DrawingRegion,
   DrawingColor,
   DrawingShape,
+  MapEffectTile,
+  MapEffectType,
 } from '../types';
 
 interface MapState {
@@ -59,6 +61,12 @@ interface MapState {
   drawingTool: DrawingShape | 'eraser' | null;
   drawingColor: DrawingColor;
   drawingStrokeWidth: number;
+  drawingEmoji: string;
+  drawingEmojiScale: number;
+
+  // Map effects state
+  effectPaintMode: boolean;
+  effectType: MapEffectType;
 
   // Actions - Maps
   setMaps: (maps: Map[]) => void;
@@ -116,10 +124,17 @@ interface MapState {
   setDrawingTool: (tool: DrawingShape | 'eraser' | null) => void;
   setDrawingColor: (color: DrawingColor) => void;
   setDrawingStrokeWidth: (width: number) => void;
+  setDrawingEmoji: (emoji: string) => void;
+  setDrawingEmojiScale: (scale: number) => void;
   setDrawingData: (data: DrawingRegion[]) => void;
   addDrawingRegion: (mapId: string, region: DrawingRegion) => void;
   updateDrawingRegion: (mapId: string, regionId: string, updates: Partial<DrawingRegion>) => void;
   removeDrawingRegion: (mapId: string, regionId: string) => void;
+
+  // Actions - Effects
+  setEffectPaintMode: (enabled: boolean) => void;
+  setEffectType: (effect: MapEffectType) => void;
+  setEffectData: (mapId: string, tiles: MapEffectTile[]) => void;
 
   // Actions - Handouts
   setHandouts: (handouts: Handout[]) => void;
@@ -161,6 +176,10 @@ export const useMapStore = create<MapState>()((set, get) => ({
   drawingTool: null,
   drawingColor: '#000000',
   drawingStrokeWidth: 4,
+  drawingEmoji: '🌲',
+  drawingEmojiScale: 1,
+  effectPaintMode: false,
+  effectType: 'fire',
 
   // Map actions
   setMaps: (maps) => set({ maps }),
@@ -549,6 +568,10 @@ export const useMapStore = create<MapState>()((set, get) => ({
 
   setDrawingStrokeWidth: (width) => set({ drawingStrokeWidth: Math.max(1, width) }),
 
+  setDrawingEmoji: (emoji) => set({ drawingEmoji: emoji }),
+
+  setDrawingEmojiScale: (scale) => set({ drawingEmojiScale: Math.max(0.5, Math.min(3, scale)) }),
+
   setDrawingData: (data) => set({ drawingData: data }),
 
   addDrawingRegion: (mapId, region) => {
@@ -610,6 +633,16 @@ export const useMapStore = create<MapState>()((set, get) => ({
     }));
   },
 
+  setEffectPaintMode: (enabled) => set({ effectPaintMode: enabled }),
+
+  setEffectType: (effect) => set({ effectType: effect }),
+
+  setEffectData: (mapId, tiles) =>
+    set((state) => ({
+      maps: state.maps.map((m) => (m.id === mapId ? { ...m, effectData: tiles } : m)),
+      activeMap: state.activeMap?.id === mapId ? { ...state.activeMap, effectData: tiles } : state.activeMap,
+    })),
+
   setHandouts: (handouts) => set({ handouts }),
 
   addHandout: (handout) =>
@@ -650,6 +683,10 @@ export const useMapStore = create<MapState>()((set, get) => ({
       drawingTool: null,
       drawingColor: '#000000',
       drawingStrokeWidth: 4,
+  drawingEmoji: '🌲',
+  drawingEmojiScale: 1,
+  effectPaintMode: false,
+  effectType: 'fire',
     }),
 }));
 
