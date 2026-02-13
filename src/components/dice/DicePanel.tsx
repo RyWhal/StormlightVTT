@@ -5,6 +5,7 @@ import { useCharacters } from '../../hooks/useCharacters';
 import { useSessionStore } from '../../stores/sessionStore';
 import { Button } from '../shared/Button';
 import { buildDiceExpression, getPlotDieFaceName } from '../../lib/dice';
+import { useSoundEffects } from '../../hooks/useSoundEffects';
 import type { RollVisibility, PlotDieFace } from '../../types';
 
 const DICE_TYPES = [4, 6, 8, 10, 12, 20] as const;
@@ -14,6 +15,7 @@ export const DicePanel: React.FC = () => {
   const { myCharacter } = useCharacters();
   const session = useSessionStore((state) => state.session);
   const plotDiceEnabled = Boolean(session?.enablePlotDice);
+  const { playSound } = useSoundEffects();
 
   const [dice, setDice] = useState<Record<number, number>>({});
   const [modifier, setModifier] = useState(0);
@@ -47,12 +49,15 @@ export const DicePanel: React.FC = () => {
     if (expression === '0' && effectivePlotDiceCount === 0) return;
 
     setIsRolling(true);
-    await rollDice(
+    const result = await rollDice(
       expression || '0',
       visibility,
       effectivePlotDiceCount,
       myCharacter?.name
     );
+    if (result.success) {
+      void playSound('diceRoll');
+    }
     setIsRolling(false);
   };
 
