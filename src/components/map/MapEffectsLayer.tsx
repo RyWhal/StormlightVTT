@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Circle, Group, Line, Rect, RegularPolygon, Star } from 'react-konva';
+import { Circle, Group, Line, Rect, RegularPolygon, Star, Text } from 'react-konva';
 import type { Map, MapEffectTile } from '../../types';
 import { MAP_EFFECTS } from '../../lib/mapDecor';
 
@@ -18,6 +18,22 @@ const tileOrigin = (map: Map, tile: MapEffectTile) => ({
   x: map.gridOffsetX + tile.gridX * map.gridCellSize,
   y: map.gridOffsetY + tile.gridY * map.gridCellSize,
 });
+
+const renderGlyph = (tile: MapEffectTile, map: Map, glyph: string, color: string, pulse: number) => {
+  const { x, y } = tileOrigin(map, tile);
+  const size = map.gridCellSize;
+  return (
+    <Text
+      x={x + size * 0.26}
+      y={y + size * 0.24}
+      text={glyph}
+      fontSize={size * 0.46}
+      fill={color}
+      opacity={0.28 + ((Math.sin(pulse * 0.03 + tile.seed) + 1) / 2) * 0.34}
+      listening={false}
+    />
+  );
+};
 
 const renderFire = (tile: MapEffectTile, map: Map, pulse: number) => {
   const { x, y } = tileOrigin(map, tile);
@@ -61,6 +77,7 @@ const renderFire = (tile: MapEffectTile, map: Map, pulse: number) => {
           />
         );
       })}
+      {renderGlyph(tile, map, '🔥', '#fff7ed', pulse)}
     </Group>
   );
 };
@@ -103,6 +120,7 @@ const renderPoison = (tile: MapEffectTile, map: Map, pulse: number) => {
           opacity={0.1 + ((Math.sin(t * 2 + i) + 1) / 2) * 0.25}
         />
       ))}
+      {renderGlyph(tile, map, '☠️', '#ecfccb', pulse)}
     </Group>
   );
 };
@@ -141,6 +159,7 @@ const renderWater = (tile: MapEffectTile, map: Map, pulse: number) => {
           opacity={0.18 + ((Math.sin(t * 2.2 + i) + 1) / 2) * 0.45}
         />
       ))}
+      {renderGlyph(tile, map, '💧', '#f0f9ff', pulse)}
     </Group>
   );
 };
@@ -183,6 +202,7 @@ const renderIce = (tile: MapEffectTile, map: Map, pulse: number) => {
         strokeWidth={1.5}
         opacity={0.22}
       />
+      {renderGlyph(tile, map, '❄️', '#f8fafc', pulse)}
     </Group>
   );
 };
@@ -237,6 +257,7 @@ const renderArcane = (tile: MapEffectTile, map: Map, pulse: number) => {
         strokeWidth={1.2}
         opacity={0.35}
       />
+      {renderGlyph(tile, map, '🌀', '#faf5ff', pulse)}
     </Group>
   );
 };
@@ -283,6 +304,7 @@ const renderDarkness = (tile: MapEffectTile, map: Map, pulse: number) => {
           opacity={0.2 + ((Math.sin(t * 2 + i) + 1) / 2) * 0.22}
         />
       ))}
+      {renderGlyph(tile, map, '🌑', '#e5e7eb', pulse)}
     </Group>
   );
 };

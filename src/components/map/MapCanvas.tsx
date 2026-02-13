@@ -582,7 +582,13 @@ export const MapCanvas: React.FC = () => {
 
     const existing = activeMap.effectData.find((tile) => tile.gridX === gridX && tile.gridY === gridY);
     const nextTiles: MapEffectTile[] = existing
-      ? activeMap.effectData.filter((tile) => tile.id !== existing.id)
+      ? existing.type === effectType
+        ? activeMap.effectData.filter((tile) => tile.id !== existing.id)
+        : activeMap.effectData.map((tile) =>
+            tile.id === existing.id
+              ? { ...tile, type: effectType, seed: Math.floor(Math.random() * 100000) }
+              : tile
+          )
       : [
           ...activeMap.effectData,
           { id: nanoid(), gridX, gridY, type: effectType, seed: Math.floor(Math.random() * 100000) },
