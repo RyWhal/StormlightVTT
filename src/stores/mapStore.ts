@@ -9,6 +9,8 @@ import type {
   DrawingRegion,
   DrawingColor,
   DrawingShape,
+  MapEffectType,
+  EffectTile,
 } from '../types';
 
 interface MapState {
@@ -59,6 +61,10 @@ interface MapState {
   drawingTool: DrawingShape | 'eraser' | null;
   drawingColor: DrawingColor;
   drawingStrokeWidth: number;
+  drawingEmoji: string;
+  drawingEmojiScale: number;
+
+  effectTool: MapEffectType | 'eraser' | null;
 
   // Actions - Maps
   setMaps: (maps: Map[]) => void;
@@ -116,7 +122,11 @@ interface MapState {
   setDrawingTool: (tool: DrawingShape | 'eraser' | null) => void;
   setDrawingColor: (color: DrawingColor) => void;
   setDrawingStrokeWidth: (width: number) => void;
+  setDrawingEmoji: (emoji: string) => void;
+  setDrawingEmojiScale: (scale: number) => void;
   setDrawingData: (data: DrawingRegion[]) => void;
+  setEffectTool: (tool: MapEffectType | 'eraser' | null) => void;
+  setEffectData: (mapId: string, data: EffectTile[]) => void;
   addDrawingRegion: (mapId: string, region: DrawingRegion) => void;
   updateDrawingRegion: (mapId: string, regionId: string, updates: Partial<DrawingRegion>) => void;
   removeDrawingRegion: (mapId: string, regionId: string) => void;
@@ -161,6 +171,9 @@ export const useMapStore = create<MapState>()((set, get) => ({
   drawingTool: null,
   drawingColor: '#000000',
   drawingStrokeWidth: 4,
+  drawingEmoji: '🔥',
+  drawingEmojiScale: 1,
+  effectTool: null,
 
   // Map actions
   setMaps: (maps) => set({ maps }),
@@ -549,7 +562,24 @@ export const useMapStore = create<MapState>()((set, get) => ({
 
   setDrawingStrokeWidth: (width) => set({ drawingStrokeWidth: Math.max(1, width) }),
 
+  setDrawingEmoji: (emoji) => set({ drawingEmoji: emoji || '🔥' }),
+
+  setDrawingEmojiScale: (scale) => set({ drawingEmojiScale: Math.max(0.5, Math.min(3, scale)) }),
+
   setDrawingData: (data) => set({ drawingData: data }),
+
+  setEffectTool: (tool) => set({ effectTool: tool }),
+
+  setEffectData: (mapId, data) =>
+    set((state) => ({
+      maps: state.maps.map((m) =>
+        m.id === mapId ? { ...m, effectData: data } : m
+      ),
+      activeMap:
+        state.activeMap?.id === mapId
+          ? { ...state.activeMap, effectData: data }
+          : state.activeMap,
+    })),
 
   addDrawingRegion: (mapId, region) => {
     const state = get();
@@ -650,6 +680,9 @@ export const useMapStore = create<MapState>()((set, get) => ({
       drawingTool: null,
       drawingColor: '#000000',
       drawingStrokeWidth: 4,
+      drawingEmoji: '🔥',
+      drawingEmojiScale: 1,
+      effectTool: null,
     }),
 }));
 

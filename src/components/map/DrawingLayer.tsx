@@ -1,5 +1,5 @@
 import React from 'react';
-import { Line, Rect, Circle, RegularPolygon, Group } from 'react-konva';
+import { Line, Rect, Circle, RegularPolygon, Group, Text } from 'react-konva';
 import type { DrawingRegion } from '../../types';
 
 interface DrawingLayerProps {
@@ -59,6 +59,20 @@ const renderDrawing = (drawing: DrawingRegion) => {
         strokeWidth={strokeWidth}
         fill={filled ? color : undefined}
         opacity={filled ? 0.25 : 1}
+      />
+    );
+  }
+
+
+  if (shape === 'emoji') {
+    const fontSize = Math.max(16, strokeWidth * 8 * (drawing.emojiScale ?? 1));
+    return (
+      <Text
+        key={id}
+        x={centerX - fontSize / 2}
+        y={centerY - fontSize / 2}
+        text={drawing.emoji || '🔥'}
+        fontSize={fontSize}
       />
     );
   }

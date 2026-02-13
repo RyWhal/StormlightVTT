@@ -80,6 +80,9 @@ export const SessionExport: React.FC = () => {
               defaultState: map.fogDefaultState,
               fogData: map.fogData,
             },
+            drawingData: map.drawingData,
+            effectsEnabled: map.effectsEnabled,
+            effectData: map.effectData,
             showPlayerTokens: map.showPlayerTokens,
             npcInstances: npcInstancesData,
           };

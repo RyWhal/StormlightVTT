@@ -22,7 +22,8 @@ import { GridOverlay } from './GridOverlay';
 import { FogLayer } from './FogLayer';
 import { DrawingLayer } from './DrawingLayer';
 import { HandoutViewer } from './HandoutViewer';
-import type { FogRegion, DrawingRegion, DrawingShape, TokenSize } from '../../types';
+import { MapEffectsLayer } from './MapEffectsLayer';
+import type { FogRegion, DrawingRegion, DrawingShape, TokenSize, EffectTile } from '../../types';
 import { isDrawingColor } from '../../types';
 import { nanoid } from 'nanoid';
 
@@ -55,8 +56,12 @@ export const MapCanvas: React.FC = () => {
     drawingTool,
     drawingColor,
     drawingStrokeWidth,
+    drawingEmoji,
+    drawingEmojiScale,
+    effectTool,
     addDrawingRegion,
     removeDrawingRegion,
+    setEffectData,
     setViewportScale,
     setViewportPosition,
     setStageSize,
@@ -75,7 +80,7 @@ export const MapCanvas: React.FC = () => {
   const isGM = useIsGM();
   const { characters, moveCharacterPosition, updateCharacterDetails } = useCharacters();
   const { currentMapNPCs, moveNPCPosition, updateNPCInstanceDetails } = useNPCs();
-  const { updateFogData, updateDrawingData } = useMap();
+  const { updateFogData, updateDrawingData, updateEffectData } = useMap();
 
   const [mapImage] = useImage(activeMap?.imageUrl || '');
   const [currentFogStroke, setCurrentFogStroke] = useState<{ x: number; y: number }[]>([]);
@@ -426,14 +431,21 @@ export const MapCanvas: React.FC = () => {
         id: nanoid(),
         authorRole: isGM ? 'gm' : 'player',
         shape,
-        points: shape === 'free' ? [startPoint] : [startPoint, startPoint],
+        points:
+          shape === 'free'
+            ? [startPoint]
+            : shape === 'emoji'
+              ? [startPoint, { x: startPoint.x + drawingStrokeWidth * 8 * drawingEmojiScale, y: startPoint.y + drawingStrokeWidth * 8 * drawingEmojiScale }]
+              : [startPoint, startPoint],
         strokeWidth: drawingStrokeWidth,
         color: drawingColor,
         filled: false,
+        emoji: shape === 'emoji' ? drawingEmoji : undefined,
+        emojiScale: shape === 'emoji' ? drawingEmojiScale : undefined,
         createdAt: new Date().toISOString(),
       };
     },
-    [drawingColor, drawingStrokeWidth, isGM]
+    [drawingColor, drawingStrokeWidth, drawingEmoji, drawingEmojiScale, isGM]
   );
 
   const getDrawingBounds = useCallback((region: DrawingRegion) => {
@@ -473,6 +485,13 @@ export const MapCanvas: React.FC = () => {
     const newRegion = createDrawingRegion(drawingTool, mapPos);
     if (!newRegion) return;
 
+    if (drawingTool === 'emoji') {
+      const newDrawingData = [...drawingData, newRegion];
+      addDrawingRegion(activeMap.id, newRegion);
+      void updateDrawingData(activeMap.id, newDrawingData);
+      return;
+    }
+
     setIsDrawing(true);
     setCurrentDrawing(newRegion);
   }, [
@@ -483,6 +502,7 @@ export const MapCanvas: React.FC = () => {
     screenToMap,
     createDrawingRegion,
     getDrawingBounds,
+    addDrawingRegion,
     removeDrawingRegion,
     updateDrawingData,
   ]);
@@ -539,6 +559,44 @@ export const MapCanvas: React.FC = () => {
     addDrawingRegion,
     updateDrawingData,
   ]);
+
+
+  const paintEffectAtPoint = useCallback(
+    (mapPos: { x: number; y: number }) => {
+      if (!activeMap || !effectTool || !isGM || !activeMap.gridEnabled) return;
+      const cellSize = activeMap.gridCellSize;
+      if (cellSize <= 0) return;
+      const col = Math.floor((mapPos.x - activeMap.gridOffsetX) / cellSize);
+      const row = Math.floor((mapPos.y - activeMap.gridOffsetY) / cellSize);
+      if (col < 0 || row < 0) return;
+
+      if (effectTool === 'eraser') {
+        const next = activeMap.effectData.filter((tile) => !(tile.col === col && tile.row === row));
+        setEffectData(activeMap.id, next);
+        void updateEffectData(activeMap.id, next);
+        return;
+      }
+
+      const existing = activeMap.effectData.find((tile) => tile.col === col && tile.row === row);
+      const next: EffectTile[] = existing
+        ? activeMap.effectData.map((tile) =>
+            tile.col === col && tile.row === row ? { ...tile, effect: effectTool } : tile
+          )
+        : [...activeMap.effectData, { id: nanoid(), effect: effectTool, col, row }];
+
+      setEffectData(activeMap.id, next);
+      void updateEffectData(activeMap.id, next);
+    },
+    [activeMap, effectTool, isGM, setEffectData, updateEffectData]
+  );
+
+  const handleEffectMouseDown = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const pointer = stage.getPointerPosition();
+    const mapPos = clampToMapBounds(screenToMap(pointer.x, pointer.y));
+    paintEffectAtPoint(mapPos);
+  }, [clampToMapBounds, screenToMap, paintEffectAtPoint]);
 
   // Fog painting handlers
   const handleFogMouseDown = useCallback(
@@ -685,7 +743,7 @@ export const MapCanvas: React.FC = () => {
     <div
       ref={containerRef}
       className="w-full h-full bg-slate-950 overflow-hidden relative"
-      style={{ cursor: isMapTab && (fogToolMode || drawingTool) ? 'crosshair' : 'default' }}
+      style={{ cursor: isMapTab && (fogToolMode || drawingTool || effectTool) ? 'crosshair' : 'default' }}
     >
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/90 backdrop-blur-sm p-1">
         <button
@@ -717,12 +775,12 @@ export const MapCanvas: React.FC = () => {
             scaleY={viewportScale}
             x={viewportX}
             y={viewportY}
-            draggable={!fogToolMode && !drawingTool}
+            draggable={!fogToolMode && !drawingTool && !effectTool}
             onWheel={handleWheel}
             onDragEnd={handleDragEnd}
             onClick={handleStageClick}
             onMouseDown={
-              fogToolMode ? handleFogMouseDown : drawingTool ? handleDrawingMouseDown : undefined
+              effectTool ? handleEffectMouseDown : fogToolMode ? handleFogMouseDown : drawingTool ? handleDrawingMouseDown : undefined
             }
             onMouseMove={
               fogToolMode ? handleFogMouseMove : drawingTool ? handleDrawingMouseMove : undefined
@@ -754,6 +812,18 @@ export const MapCanvas: React.FC = () => {
                   offsetX={activeMap.gridOffsetX}
                   offsetY={activeMap.gridOffsetY}
                   color={activeMap.gridColor}
+                />
+              </Layer>
+            )}
+
+            {/* Effects layer */}
+            {activeMap.effectsEnabled && (
+              <Layer listening={false} hitGraphEnabled={false}>
+                <MapEffectsLayer
+                  cellSize={activeMap.gridCellSize}
+                  offsetX={activeMap.gridOffsetX}
+                  offsetY={activeMap.gridOffsetY}
+                  tiles={activeMap.effectData}
                 />
               </Layer>
             )}
@@ -889,10 +959,11 @@ export const MapCanvas: React.FC = () => {
       )}
 
       {/* Drawing tool indicator */}
-      {drawingTool && isMapTab && (
+      {(drawingTool || effectTool) && isMapTab && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border border-slate-600">
           <span className="text-slate-100">
-            Drawing Tool: <span className="font-semibold capitalize">{drawingTool}</span>
+            {drawingTool && <>Drawing Tool: <span className="font-semibold capitalize">{drawingTool}</span></>}
+            {effectTool && <>Effect Tool: <span className="font-semibold capitalize">{effectTool}</span></>}
           </span>
         </div>
       )}
