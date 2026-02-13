@@ -26,6 +26,7 @@ import { HandoutViewer } from './HandoutViewer';
 import type { FogRegion, DrawingRegion, DrawingShape, TokenSize, MapEffectTile } from '../../types';
 import { isDrawingColor } from '../../types';
 import { nanoid } from 'nanoid';
+import { useSoundEffects } from '../../hooks/useSoundEffects';
 
 const TOKEN_SIZE_ORDER: TokenSize[] = [
   'tiny',
@@ -83,6 +84,7 @@ export const MapCanvas: React.FC = () => {
   const { currentMapNPCs, moveNPCPosition, updateNPCInstanceDetails } = useNPCs();
   const { updateFogData, updateDrawingData, updateEffectData } = useMap();
   const canDrawOnMap = isGM || Boolean(session?.allowPlayersDrawings);
+  const { playSound } = useSoundEffects();
 
   const [mapImage] = useImage(activeMap?.imageUrl || '');
   const [currentFogStroke, setCurrentFogStroke] = useState<{ x: number; y: number }[]>([]);
@@ -330,6 +332,7 @@ export const MapCanvas: React.FC = () => {
 
       const isAlreadySelected = selectedTokenId === npcId && selectedTokenType === 'npc';
       selectToken(npcId, 'npc');
+      void playSound('tokenSelect');
 
       const canRename = isGM || session?.allowPlayersRenameNpcs;
       if (!isAlreadySelected || !canRename) return;
@@ -350,6 +353,7 @@ export const MapCanvas: React.FC = () => {
       isGM,
       session?.allowPlayersRenameNpcs,
       updateNPCInstanceDetails,
+      playSound,
     ]
   );
 
@@ -384,8 +388,9 @@ export const MapCanvas: React.FC = () => {
         setSelectedTokenKeys([tokenKey]);
       }
       selectToken(characterId, 'character');
+      void playSound('tokenSelect');
     },
-    [buildTokenKey, selectToken]
+    [buildTokenKey, selectToken, playSound]
   );
 
   const handleNPCResize = useCallback(
